@@ -1,6 +1,7 @@
 const {
   User,
-  Usercontactinfo
+  Usercontactinfo,
+  BlackToken
 } = require('../../models');
 
 const bcrypt = require('bcrypt');
@@ -68,6 +69,24 @@ const login = async (req, res) => {
     });
   }
 
+};
+
+// 登出接口
+const logout = async (req, res) => {
+  const {
+    token
+  } = req.body;
+
+  console.log('token', token)
+
+  // 将 Token 添加到 BlacklistToken 表中
+  await BlackToken.create({
+    token
+  });
+
+  res.status(200).json({
+    message: '登出成功',
+  });
 };
 
 // 创建新用户
@@ -200,5 +219,6 @@ module.exports = {
   createUser,
   deleteUser,
   updateUser,
-  login
+  login,
+  logout
 };

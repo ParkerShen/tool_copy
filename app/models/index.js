@@ -3,6 +3,7 @@ const {
 } = require('sequelize');
 const dbConfig = require('../config/db.config');
 const UserModel = require('./user'); // 修改为正确的路径和文件名
+const BlackTokenModel = require('./blackToken');
 const UserContactInfoModel = require('./usercontactinfo');
 const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   host: dbConfig.HOST,
@@ -24,7 +25,7 @@ const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
 });
 const User = UserModel(sequelize);
 const Usercontactinfo = UserContactInfoModel(sequelize);
-
+const BlackToken = BlackTokenModel(sequelize);
 // 设置 User 与 UserContactInfo 的关联
 User.hasOne(Usercontactinfo, {
   foreignKey: 'uid',
@@ -40,6 +41,7 @@ const db = {
   Sequelize,
   sequelize,
   User,
-  Usercontactinfo
+  Usercontactinfo,
+  BlackToken
 };
 module.exports = db;

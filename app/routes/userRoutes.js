@@ -4,16 +4,21 @@ const {
   createUser,
   updateUser,
   deleteUser,
-  login
+  login,
+  logout
 } = require('../controllers/user/post');
 const {
   getUsers
 } = require('../controllers/user/get');
-const authenticateToken = require('./authMiddleware');
+const {
+  authenticateToken
+} = require('./authMiddleware');
 
 // 登录
 router.post('/login', login);
 
+// 登出
+router.post('/logout', logout);
 // 定义需要拦截的接口
 router.use(authenticateToken);
 
