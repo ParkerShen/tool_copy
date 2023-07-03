@@ -3,6 +3,73 @@ const {
   Usercontactinfo
 } = require('../../models');
 
+const bcrypt = require('bcrypt');
+
+const {
+  generateToken
+} = require('../../../util/jwtUtils');
+
+// 登录接口
+const login = async (req, res) => {
+
+  try {
+
+    // 处理登录逻辑，验证用户名和密码等
+    const {
+      username,
+      password
+    } = req.body
+
+    const user = await User.findOne({
+      where: {
+        username,
+        deleted: 0
+      },
+      raw: true
+    });
+
+
+    // const saltRounds = 10; // 盐的轮数，用于增加哈希复杂度
+    // 密码加密方式  ,注册有用到
+    // const hashedPassword = bcrypt.hashSync('123456a1111', saltRounds);
+
+    // 判断用户是否存在
+    if (user) {
+      //判断密码是否准确
+      if (bcrypt.compareSync(password + user.salt, user.password)) {
+        // console.log('密码验证通过');
+        // 登录成功，生成 token
+        const token = await generateToken(username);
+        // 将 token 返回给客户端
+        res.status(200).json({
+          status: 0,
+          token: token,
+          message: '登录成功'
+        });
+      } else {
+        // console.log('密码验证失败');
+        res.status(200).json({
+          status: 0,
+          message: '密码错误，请重新输入'
+        });
+      }
+
+
+    } else {
+      res.status(200).json({
+        message: '用户不存在，请重新输入'
+      });
+
+    }
+
+  } catch (error) {
+    res.status(500).json({
+      message: '错误'
+    });
+  }
+
+};
+
 // 创建新用户
 const createUser = async (req, res) => {
 
@@ -132,5 +199,6 @@ const updateUser = async (req, res) => {
 module.exports = {
   createUser,
   deleteUser,
-  updateUser
+  updateUser,
+  login
 };

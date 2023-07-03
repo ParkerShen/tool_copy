@@ -3,11 +3,21 @@ const router = express.Router();
 const {
   createUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  login
 } = require('../controllers/user/post');
 const {
   getUsers
 } = require('../controllers/user/get');
+const authenticateToken = require('./authMiddleware');
+
+// 登录
+router.post('/login', login);
+
+// 定义需要拦截的接口
+router.use(authenticateToken);
+
+
 // // 获取所有用户
 router.get('/getUsers', getUsers);
 
