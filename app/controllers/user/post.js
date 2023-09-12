@@ -15,6 +15,7 @@ const login = async (req, res) => {
 
   try {
 
+
     // 处理登录逻辑，验证用户名和密码等
     const {
       username,
@@ -29,10 +30,10 @@ const login = async (req, res) => {
       raw: true
     });
 
-
     // const saltRounds = 10; // 盐的轮数，用于增加哈希复杂度
-    // 密码加密方式  ,注册有用到
-    // const hashedPassword = bcrypt.hashSync('123456a1111', saltRounds);
+    // // 密码加密方式  ,注册有用到
+    // const hashedPassword = bcrypt.hashSync('123456a123', saltRounds);
+    // console.log('hashedPassword', hashedPassword)
 
     // 判断用户是否存在
     if (user) {
@@ -43,14 +44,14 @@ const login = async (req, res) => {
         const token = await generateToken(username);
         // 将 token 返回给客户端
         res.status(200).json({
-          status: 0,
+          code: 1,
           token: token,
           message: '登录成功'
         });
       } else {
         // console.log('密码验证失败');
         res.status(200).json({
-          status: 0,
+          code: 0,
           message: '密码错误，请重新输入'
         });
       }
@@ -58,6 +59,7 @@ const login = async (req, res) => {
 
     } else {
       res.status(200).json({
+        code: 0,
         message: '用户不存在，请重新输入'
       });
 
@@ -77,7 +79,6 @@ const logout = async (req, res) => {
     token
   } = req.body;
 
-  console.log('token', token)
 
   // 将 Token 添加到 BlacklistToken 表中
   await BlackToken.create({
@@ -85,6 +86,7 @@ const logout = async (req, res) => {
   });
 
   res.status(200).json({
+    code: 1,
     message: '登出成功',
   });
 };

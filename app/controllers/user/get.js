@@ -18,7 +18,11 @@ const getUsers = async (req, res) => {
       }
     });
 
-    res.status(200).json(users);
+    res.status(200).json({
+      code: 1,
+      message: '获取成功',
+      data: users
+    });
   } catch (error) {
     console.error('Error retrieving users with contact info:', error);
     res.status(500).json({
