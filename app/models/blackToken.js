@@ -11,7 +11,9 @@ module.exports = (sequelize) => {
       unique: true,
     },
     ...timestamps
-  }, modelConfig);
-
+  }, {
+    ...modelConfig, // 启用软删除
+    tableName: 'black_token'
+  });
   return BlackToken;
 };

@@ -1,6 +1,8 @@
 const {
   User,
-  Usercontactinfo
+  Usercontactinfo,
+  Role,
+  Permission
 } = require('../../models');
 
 // 获取所有用户

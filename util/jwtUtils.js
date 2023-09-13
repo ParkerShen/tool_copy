@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const {
-  User
+  User,
+  Role,
 } = require('../app/models');
 
 // 生成 JWT token
@@ -12,6 +13,10 @@ const generateToken = async (username) => {
         username,
         deleted: 0
       },
+      include: [{
+        model: Role,
+        as: 'userRole'
+      }],
       raw: true
     });
 
