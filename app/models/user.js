@@ -27,11 +27,27 @@ module.exports = (sequelize) => {
     },
     email: {
       type: DataTypes.STRING,
-      allowNull: false,
     },
     phone: {
       type: DataTypes.STRING,
-      allowNull: false,
+    },
+    isAdmin: {
+      type: DataTypes.TINYINT,
+    },
+    truename: {
+      type: DataTypes.STRING,
+    },
+    loginip: {
+      type: DataTypes.STRING,
+    },
+    logins: {
+      type: DataTypes.INTEGER,
+      Comment: '登录次数'
+    },
+    logintime: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      Comment: '最新登录时间'
     },
     ...timestamps
   }, modelConfig);

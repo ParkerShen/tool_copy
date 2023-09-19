@@ -27,8 +27,9 @@ const authenticateToken = async (req, res, next) => {
     next();
   } catch (error) {
     // token 验证失败，返回错误响应
-    return res.status(401).json({
-      message: 'Token验证失败'
+    return res.status(200).json({
+      code: 201,
+      message: 'Token过期，重新登陆'
     });
   }
 

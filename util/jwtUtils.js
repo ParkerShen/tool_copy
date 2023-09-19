@@ -17,7 +17,8 @@ const generateToken = async (username) => {
         model: Role,
         as: 'userRole'
       }],
-      raw: true
+      raw: true,
+      nest: true
     });
 
     const payload = user;

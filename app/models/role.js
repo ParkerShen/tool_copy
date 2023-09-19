@@ -11,6 +11,10 @@ module.exports = (sequelize) => {
       autoIncrement: true,
       comment: '角色ID',
     },
+    creatorId: {
+      type: DataTypes.INTEGER,
+      comment: '创建人id',
+    },
     roleMenuId: {
       type: DataTypes.STRING,
       comment: '菜单列表id',

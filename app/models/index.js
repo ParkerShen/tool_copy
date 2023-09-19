@@ -4,6 +4,7 @@ const {
 const dbConfig = require('../config/db.config');
 const UserModel = require('./user'); // 修改为正确的路径和文件名
 const RoleModel = require('./role');
+const PermissionModel = require('./permission');
 const BlackTokenModel = require('./blackToken');
 const UserContactInfoModel = require('./usercontactinfo');
 const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
@@ -11,7 +12,9 @@ const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   dialect: dbConfig.dialect,
   logging: false,
   sync: false, // 禁用模型自动同步
-
+  define: {
+    underscored: true, // 启用下划线命名法
+  },
   pool: {
     max: dbConfig.pool.max,
     min: dbConfig.pool.min,
@@ -22,9 +25,7 @@ const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   //   freezeTableName: true // 全局定义  表名===模型名称
   // },
   // define 配置项用于定义模型的行为
-  define: {
-    underscored: true, // 启用下划线命名法
-  },
+
   timezone: '+08:00' //东八时区
 
 });
@@ -32,6 +33,7 @@ const User = UserModel(sequelize);
 const Usercontactinfo = UserContactInfoModel(sequelize);
 const Role = RoleModel(sequelize);
 const BlackToken = BlackTokenModel(sequelize);
+const Permission = PermissionModel(sequelize);
 // 设置 User 与 UserContactInfo 的关联
 User.hasOne(Usercontactinfo, {
   foreignKey: 'uid',
@@ -50,12 +52,24 @@ User.belongsTo(Role, {
   onDelete: 'SET NULL', // 设置为 SET NULL，如果删除了角色，则将 roleId 置为 NULL
 });
 
+// 建立关联关系
+Role.belongsTo(Permission, {
+  foreignKey: 'role_menu_id',
+  targetKey: 'id',
+  as: 'rp',
+});
+// Permission.belongsTo(User, {
+//   foreignKey: 'creator_id',
+//   targetKey: 'id'
+// });
+
 const db = {
   Sequelize,
   sequelize,
   User,
   Role,
   Usercontactinfo,
-  BlackToken
+  BlackToken,
+  Permission
 };
 module.exports = db;
