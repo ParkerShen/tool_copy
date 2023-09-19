@@ -8,7 +8,7 @@ const {
   Op
 } = require('sequelize');
 
-// 获取所有用户
+// 获取所有角色
 const getAllroles = async (req, res) => {
   // try {
   const {
@@ -22,15 +22,15 @@ const getAllroles = async (req, res) => {
   // 查询总记录数
   Role.count().then(async (totalCount) => {
     // 计算偏移量以用于分页
-    const offset = (page - 1) * pageSize;
+    const offset = (+page - 1) * +pageSize;
 
     // 查询角色
     Role.findAll({
         where: {
           deleted: 0
         },
-        offset: offset,
-        limit: pageSize,
+        offset: parseInt(offset),
+        limit: parseInt(pageSize),
       })
       .then((roles) => {
         // 对每个角色查询关联的菜单
@@ -88,6 +88,34 @@ const getAllroles = async (req, res) => {
   });
 };
 
+// 获取所有节点
+const getAllmenus = async (req, res) => {
+
+  try {
+    const menu = await Permission.findAll({
+      where: {
+        deleted: 0
+      },
+      raw: true,
+      nest: true,
+      attributes: ['id', 'name', 'pid', 'description']
+    })
+
+    const Tree = buildTree(menu, 0)
+
+    res.status(200).json({
+      code: 1,
+      message: '获取成功',
+      data: Tree
+    });
+  } catch (error) {
+    console.log('error', error)
+
+  }
+};
+
+
+
 function buildTree(arr, pid) {
   const result = [];
   for (const item of arr) {
@@ -103,5 +131,6 @@ function buildTree(arr, pid) {
 }
 
 module.exports = {
-  getAllroles
+  getAllroles,
+  getAllmenus
 };

@@ -45,12 +45,14 @@ Usercontactinfo.belongsTo(User, {
   as: 'userC'
 });
 
+
 // 建立 User 与 Role 的关联关系
 User.belongsTo(Role, {
   foreignKey: 'roleId',
   as: 'userRole',
   onDelete: 'SET NULL', // 设置为 SET NULL，如果删除了角色，则将 roleId 置为 NULL
 });
+
 
 // 建立关联关系
 Role.belongsTo(Permission, {
