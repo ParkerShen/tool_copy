@@ -125,7 +125,7 @@ const createUser = async (req, res) => {
     } = req.body
     // 创建新的用户
 
-    const user = User.findOne({
+    const user = await User.findOne({
       where: {
         deleted: 0,
         username

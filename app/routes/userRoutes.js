@@ -19,6 +19,10 @@ router.post('/login', login);
 
 // 登出
 router.post('/logout', logout);
+
+// 创建新用户
+router.post('/create', createUser);
+
 // 定义需要拦截的接口
 router.use(authenticateToken);
 
@@ -26,8 +30,6 @@ router.use(authenticateToken);
 // // 获取所有用户
 router.get('/getUsers', getUsers);
 
-// 创建新用户
-router.post('/create', createUser);
 
 // 更新用户信息
 router.post('/update', updateUser);
