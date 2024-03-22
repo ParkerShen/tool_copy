@@ -127,7 +127,7 @@ function buildTree(arr, pid) {
       result.push(item);
     }
   }
-  return result;
+  return result; 
 }
 
 module.exports = {
