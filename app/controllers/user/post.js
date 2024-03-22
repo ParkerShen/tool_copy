@@ -153,7 +153,7 @@ const createUser = async (req, res) => {
     }
 
     const newUser = await User.create({
-      roleId: 2,
+      roleId: 1,
       username,
       password,
       isAdmin,
