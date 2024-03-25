@@ -6,7 +6,7 @@ const modelConfig = require('./modelConfig');
 module.exports = (sequelize) => {
   const BlackToken = sequelize.define('BlackToken', {
     token: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
       unique: true,
     },

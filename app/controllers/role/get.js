@@ -78,7 +78,7 @@ const getAllroles = async (req, res) => {
         res.status(200).json({
           count: totalCount,
           code: 1,
-          message: '获取成功',
+          msg: '获取成功',
           data: result,
         });
       })
@@ -105,7 +105,7 @@ const getAllmenus = async (req, res) => {
 
     res.status(200).json({
       code: 1,
-      message: '获取成功',
+      msg: '获取成功',
       data: Tree
     });
   } catch (error) {

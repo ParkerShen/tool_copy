@@ -28,7 +28,7 @@ const createRole = async (req, res) => {
     if (role) {
       res.status(200).json({
         status: 2,
-        message: '角色已存在，请修改',
+        msg: '角色已存在，请修改',
       });
       return
     }
@@ -50,7 +50,7 @@ const createRole = async (req, res) => {
     // 返回成功响应
     res.status(200).json({
       code: 1,
-      message: '创建成功',
+      msg: '创建成功',
       // newUser,
       // newContactInfo
     });
@@ -59,7 +59,7 @@ const createRole = async (req, res) => {
     // 处理错误情况
     console.error('Error creating user:', error);
     res.status(500).json({
-      message: 'Error creating user'
+      msg: 'Error creating user'
     });
   }
 
@@ -85,7 +85,7 @@ const updateRole = async (req, res) => {
     if (role) {
       res.status(200).json({
         status: 2,
-        message: '角色已存在，请修改',
+        msg: '角色已存在，请修改',
       });
       return
     }
@@ -112,14 +112,14 @@ const updateRole = async (req, res) => {
     // 返回成功响应
     res.status(200).json({
       code: 1,
-      message: '修改成功',
+      msg: '修改成功',
     });
 
   } catch (error) {
     // 处理错误情况
     console.error('Error update role:', error);
     res.status(500).json({
-      message: 'Error update role'
+      msg: 'Error update role'
     });
   }
 
@@ -139,7 +139,7 @@ const deleteRole = async (req, res) => {
 
     res.status(200).json({
       code: 1,
-      message: '删除成功'
+      msg: '删除成功'
     });
   } catch (error) {
     console.error('Error delete user:', error);

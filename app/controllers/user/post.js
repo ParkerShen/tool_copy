@@ -41,6 +41,7 @@ const login = async (req, res) => {
       },
       raw: true
     });
+    
 
     // const saltRounds = 10; // 盐的轮数，用于增加哈希复杂度
     // // 密码加密方式  ,注册有用到
@@ -58,13 +59,13 @@ const login = async (req, res) => {
         res.status(200).json({
           code: 1,
           token: token,
-          message: '登录成功'
+          msg: '登录成功'
         });
       } else {
         // console.log('密码验证失败');
         res.status(200).json({
           code: 0,
-          message: '密码错误，请重新输入'
+          msg: '密码错误，请重新输入'
         });
       }
 
@@ -72,7 +73,7 @@ const login = async (req, res) => {
     } else {
       res.status(200).json({
         code: 0,
-        message: '用户不存在，请重新输入'
+        msg: '用户不存在，请重新输入'
       });
 
     }
@@ -80,7 +81,7 @@ const login = async (req, res) => {
   } catch (error) {
     console.log('error', error)
     res.status(500).json({
-      message: '错误'
+      msg: '错误'
     });
   }
 
@@ -100,7 +101,7 @@ const logout = async (req, res) => {
 
   res.status(200).json({
     code: 1,
-    message: '登出成功',
+    msg: '登出成功',
   });
 };
 
@@ -134,7 +135,7 @@ const createUser = async (req, res) => {
     if (user) {
       res.status(200).json({
         status: 2,
-        message: '账号已存在，请修改',
+        msg: '账号已存在，请修改',
       });
       return
     }
@@ -174,7 +175,7 @@ const createUser = async (req, res) => {
     // 返回成功响应
     res.status(200).json({
       status: 1,
-      message: '创建成功',
+      msg: '创建成功',
       // newUser,
       // newContactInfo
     });
@@ -183,7 +184,7 @@ const createUser = async (req, res) => {
     // 处理错误情况
     console.error('Error creating user:', error);
     res.status(500).json({
-      message: 'Error creating user'
+      msg: 'Error creating user'
     });
   }
 
@@ -211,7 +212,7 @@ const deleteUser = async (req, res) => {
 
     res.status(200).json({
       code: 1,
-      message: '删除成功'
+      msg: '删除成功'
     });
   } catch (error) {
     console.error('Error updating user:', error);
@@ -273,7 +274,7 @@ const updateUser = async (req, res) => {
 
     res.status(200).json({
       code: 1,
-      message: '更新成功'
+      msg: '更新成功'
     });
   } catch (error) {
     console.error('Error updating user:', error);
