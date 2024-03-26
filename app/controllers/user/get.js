@@ -59,7 +59,7 @@ const getUsers = async (req, res) => {
     res.status(200).json({
       count: totalCount,
       code: 1,
-      msg: '获取成功',
+      message: '获取成功',
       data: users
     });
   } catch (error) {
