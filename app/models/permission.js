@@ -21,10 +21,44 @@ module.exports = (sequelize) => {
       allowNull: false,
       comment: '创建人',
     },
+    label: {
+      type: DataTypes.STRING,
+      comment: '国际化名',
+    },
     name: {
       type: DataTypes.STRING,
       allowNull: false,
-      comment: '权限名称',
+      comment: '菜单名',
+    },
+    icon: {
+      type: DataTypes.STRING,
+      comment: '图标',
+    },
+    type: {
+      type: DataTypes.INTEGER,
+      comment: '是否为目录, 0- 目录， 1-菜单 ',
+    },
+    order: {
+      type: DataTypes.INTEGER,
+      comment: '排序',
+    },
+    hide: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      comment: '是否显示 1- 显示 0-隐藏',
+    },
+    status: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      comment: '是否禁用 0-禁用, 1-启用',
+    },
+    route: {
+      type: DataTypes.STRING,
+      comment: '路由',
+    },
+    component: {
+      type: DataTypes.STRING,
+      comment: '路由指向',
     },
     description: {
       type: DataTypes.STRING,

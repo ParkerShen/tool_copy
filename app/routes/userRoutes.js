@@ -27,8 +27,6 @@ router.post('/create', createUser);
 // 定义需要拦截的接口
 // router.use(authenticateToken);
 
-// // 获取权限
-router.get('/permissions', getPermissions);
 
 // // 获取所有用户
 router.get('/getUsers', getUsers);

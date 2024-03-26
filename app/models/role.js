@@ -24,6 +24,20 @@ module.exports = (sequelize) => {
       allowNull: false,
       comment: '角色名称',
     },
+    label: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      comment: '国际化名称',
+    },
+    status: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      comment: '状态',
+    },
+    order: {
+      type: DataTypes.INTEGER,
+      comment: '排序',
+    },
     description: {
       type: DataTypes.STRING,
       comment: '角色描述',
