@@ -377,129 +377,129 @@ const login = async (req, res) => {
                       }
                     ]
                   },
-                  {
-                    "id": "9406067785553476",
-                    "parentId": "",
-                    "label": "sys.menu.error.index",
-                    "name": "Error",
-                    "icon": "bxs:error-alt",
-                    "type": 0,
-                    "route": "error",
-                    "order": 6,
-                    "children": [
-                      {
-                        "id": "8557056851997154",
-                        "parentId": "9406067785553476",
-                        "label": "sys.menu.error.403",
-                        "name": "403",
-                        "type": 1,
-                        "route": "403",
-                        "component": "/sys/error/Page403.tsx"
-                      },
-                      {
-                        "id": "5095669208159005",
-                        "parentId": "9406067785553476",
-                        "label": "sys.menu.error.404",
-                        "name": "404",
-                        "type": 1,
-                        "route": "404",
-                        "component": "/sys/error/Page404.tsx"
-                      },
-                      {
-                        "id": "0225992135973772",
-                        "parentId": "9406067785553476",
-                        "label": "sys.menu.error.500",
-                        "name": "500",
-                        "type": 1,
-                        "route": "500",
-                        "component": "/sys/error/Page500.tsx"
-                      }
-                    ]
-                  },
-                  {
-                    "id": "3981225257359246",
-                    "parentId": "",
-                    "label": "sys.menu.calendar",
-                    "name": "Calendar",
-                    "icon": "solar:calendar-bold-duotone",
-                    "type": 1,
-                    "route": "calendar",
-                    "component": "/sys/others/calendar/index.tsx"
-                  },
-                  {
-                    "id": "3513985683886393",
-                    "parentId": "",
-                    "label": "sys.menu.kanban",
-                    "name": "kanban",
-                    "icon": "solar:clipboard-bold-duotone",
-                    "type": 1,
-                    "route": "kanban",
-                    "component": "/sys/others/kanban/index.tsx"
-                  },
-                  {
-                    "id": "5455837930804461",
-                    "parentId": "",
-                    "label": "sys.menu.disabled",
-                    "name": "Disabled",
-                    "icon": "ic_disabled",
-                    "type": 1,
-                    "route": "disabled",
-                    "status": 0,
-                    "component": "/sys/others/calendar/index.tsx"
-                  },
-                  {
-                    "id": "7728048658221587",
-                    "parentId": "",
-                    "label": "sys.menu.label",
-                    "name": "Label",
-                    "icon": "ic_label",
-                    "type": 1,
-                    "route": "label",
-                    "newFeature": true,
-                    "component": "/sys/others/blank.tsx"
-                  },
-                  {
-                    "id": "5733704222120995",
-                    "parentId": "",
-                    "label": "sys.menu.frame",
-                    "name": "Frame",
-                    "icon": "ic_external",
-                    "type": 0,
-                    "route": "frame",
-                    "children": [
-                      {
-                        "id": "9884486809510480",
-                        "parentId": "5733704222120995",
-                        "label": "sys.menu.external_link",
-                        "name": "External Link",
-                        "type": 1,
-                        "route": "external_link",
-                        "hideTab": true,
-                        "component": "/sys/others/iframe/external-link.tsx",
-                        "frameSrc": "https://ant.design/"
-                      },
-                      {
-                        "id": "9299640886731819",
-                        "parentId": "5733704222120995",
-                        "label": "sys.menu.iframe",
-                        "name": "Iframe",
-                        "type": 1,
-                        "route": "frame",
-                        "component": "/sys/others/iframe/index.tsx",
-                        "frameSrc": "https://ant.design/"
-                      }
-                    ]
-                  },
-                  {
-                    "id": "0941594969900756",
-                    "parentId": "",
-                    "label": "sys.menu.blank",
-                    "name": "Disabled",
-                    "icon": "ic_blank",
-                    "type": 1,
-                    "route": "blank",
-                    "component": "/sys/others/blank.tsx"
-                  }
+                  // {
+                  //   "id": "9406067785553476",
+                  //   "parentId": "",
+                  //   "label": "sys.menu.error.index",
+                  //   "name": "Error",
+                  //   "icon": "bxs:error-alt",
+                  //   "type": 0,
+                  //   "route": "error",
+                  //   "order": 6,
+                  //   "children": [
+                  //     {
+                  //       "id": "8557056851997154",
+                  //       "parentId": "9406067785553476",
+                  //       "label": "sys.menu.error.403",
+                  //       "name": "403",
+                  //       "type": 1,
+                  //       "route": "403",
+                  //       "component": "/sys/error/Page403.tsx"
+                  //     },
+                  //     {
+                  //       "id": "5095669208159005",
+                  //       "parentId": "9406067785553476",
+                  //       "label": "sys.menu.error.404",
+                  //       "name": "404",
+                  //       "type": 1,
+                  //       "route": "404",
+                  //       "component": "/sys/error/Page404.tsx"
+                  //     },
+                  //     {
+                  //       "id": "0225992135973772",
+                  //       "parentId": "9406067785553476",
+                  //       "label": "sys.menu.error.500",
+                  //       "name": "500",
+                  //       "type": 1,
+                  //       "route": "500",
+                  //       "component": "/sys/error/Page500.tsx"
+                  //     }
+                  //   ]
+                  // },
+                  // {
+                  //   "id": "3981225257359246",
+                  //   "parentId": "",
+                  //   "label": "sys.menu.calendar",
+                  //   "name": "Calendar",
+                  //   "icon": "solar:calendar-bold-duotone",
+                  //   "type": 1,
+                  //   "route": "calendar",
+                  //   "component": "/sys/others/calendar/index.tsx"
+                  // },
+                  // {
+                  //   "id": "3513985683886393",
+                  //   "parentId": "",
+                  //   "label": "sys.menu.kanban",
+                  //   "name": "kanban",
+                  //   "icon": "solar:clipboard-bold-duotone",
+                  //   "type": 1,
+                  //   "route": "kanban",
+                  //   "component": "/sys/others/kanban/index.tsx"
+                  // },
+                  // {
+                  //   "id": "5455837930804461",
+                  //   "parentId": "",
+                  //   "label": "sys.menu.disabled",
+                  //   "name": "Disabled",
+                  //   "icon": "ic_disabled",
+                  //   "type": 1,
+                  //   "route": "disabled",
+                  //   "status": 0,
+                  //   "component": "/sys/others/calendar/index.tsx"
+                  // },
+                  // {
+                  //   "id": "7728048658221587",
+                  //   "parentId": "",
+                  //   "label": "sys.menu.label",
+                  //   "name": "Label",
+                  //   "icon": "ic_label",
+                  //   "type": 1,
+                  //   "route": "label",
+                  //   "newFeature": true,
+                  //   "component": "/sys/others/blank.tsx"
+                  // },
+                  // {
+                  //   "id": "5733704222120995",
+                  //   "parentId": "",
+                  //   "label": "sys.menu.frame",
+                  //   "name": "Frame",
+                  //   "icon": "ic_external",
+                  //   "type": 0,
+                  //   "route": "frame",
+                  //   "children": [
+                  //     {
+                  //       "id": "9884486809510480",
+                  //       "parentId": "5733704222120995",
+                  //       "label": "sys.menu.external_link",
+                  //       "name": "External Link",
+                  //       "type": 1,
+                  //       "route": "external_link",
+                  //       "hideTab": true,
+                  //       "component": "/sys/others/iframe/external-link.tsx",
+                  //       "frameSrc": "https://ant.design/"
+                  //     },
+                  //     {
+                  //       "id": "9299640886731819",
+                  //       "parentId": "5733704222120995",
+                  //       "label": "sys.menu.iframe",
+                  //       "name": "Iframe",
+                  //       "type": 1,
+                  //       "route": "frame",
+                  //       "component": "/sys/others/iframe/index.tsx",
+                  //       "frameSrc": "https://ant.design/"
+                  //     }
+                  //   ]
+                  // },
+                  // {
+                  //   "id": "0941594969900756",
+                  //   "parentId": "",
+                  //   "label": "sys.menu.blank",
+                  //   "name": "Disabled",
+                  //   "icon": "ic_blank",
+                  //   "type": 1,
+                  //   "route": "blank",
+                  //   "component": "/sys/others/blank.tsx"
+                  // }
                 ]
               },
               "permissions": [
@@ -802,129 +802,129 @@ const login = async (req, res) => {
                     }
                   ]
                 },
-                {
-                  "id": "9406067785553476",
-                  "parentId": "",
-                  "label": "sys.menu.error.index",
-                  "name": "Error",
-                  "icon": "bxs:error-alt",
-                  "type": 0,
-                  "route": "error",
-                  "order": 6,
-                  "children": [
-                    {
-                      "id": "8557056851997154",
-                      "parentId": "9406067785553476",
-                      "label": "sys.menu.error.403",
-                      "name": "403",
-                      "type": 1,
-                      "route": "403",
-                      "component": "/sys/error/Page403.tsx"
-                    },
-                    {
-                      "id": "5095669208159005",
-                      "parentId": "9406067785553476",
-                      "label": "sys.menu.error.404",
-                      "name": "404",
-                      "type": 1,
-                      "route": "404",
-                      "component": "/sys/error/Page404.tsx"
-                    },
-                    {
-                      "id": "0225992135973772",
-                      "parentId": "9406067785553476",
-                      "label": "sys.menu.error.500",
-                      "name": "500",
-                      "type": 1,
-                      "route": "500",
-                      "component": "/sys/error/Page500.tsx"
-                    }
-                  ]
-                },
-                {
-                  "id": "3981225257359246",
-                  "parentId": "",
-                  "label": "sys.menu.calendar",
-                  "name": "Calendar",
-                  "icon": "solar:calendar-bold-duotone",
-                  "type": 1,
-                  "route": "calendar",
-                  "component": "/sys/others/calendar/index.tsx"
-                },
-                {
-                  "id": "3513985683886393",
-                  "parentId": "",
-                  "label": "sys.menu.kanban",
-                  "name": "kanban",
-                  "icon": "solar:clipboard-bold-duotone",
-                  "type": 1,
-                  "route": "kanban",
-                  "component": "/sys/others/kanban/index.tsx"
-                },
-                {
-                  "id": "5455837930804461",
-                  "parentId": "",
-                  "label": "sys.menu.disabled",
-                  "name": "Disabled",
-                  "icon": "ic_disabled",
-                  "type": 1,
-                  "route": "disabled",
-                  "status": 0,
-                  "component": "/sys/others/calendar/index.tsx"
-                },
-                {
-                  "id": "7728048658221587",
-                  "parentId": "",
-                  "label": "sys.menu.label",
-                  "name": "Label",
-                  "icon": "ic_label",
-                  "type": 1,
-                  "route": "label",
-                  "newFeature": true,
-                  "component": "/sys/others/blank.tsx"
-                },
-                {
-                  "id": "5733704222120995",
-                  "parentId": "",
-                  "label": "sys.menu.frame",
-                  "name": "Frame",
-                  "icon": "ic_external",
-                  "type": 0,
-                  "route": "frame",
-                  "children": [
-                    {
-                      "id": "9884486809510480",
-                      "parentId": "5733704222120995",
-                      "label": "sys.menu.external_link",
-                      "name": "External Link",
-                      "type": 1,
-                      "route": "external_link",
-                      "hideTab": true,
-                      "component": "/sys/others/iframe/external-link.tsx",
-                      "frameSrc": "https://ant.design/"
-                    },
-                    {
-                      "id": "9299640886731819",
-                      "parentId": "5733704222120995",
-                      "label": "sys.menu.iframe",
-                      "name": "Iframe",
-                      "type": 1,
-                      "route": "frame",
-                      "component": "/sys/others/iframe/index.tsx",
-                      "frameSrc": "https://ant.design/"
-                    }
-                  ]
-                },
-                {
-                  "id": "0941594969900756",
-                  "parentId": "",
-                  "label": "sys.menu.blank",
-                  "name": "Disabled",
-                  "icon": "ic_blank",
-                  "type": 1,
-                  "route": "blank",
-                  "component": "/sys/others/blank.tsx"
-                }
+                // {
+                //   "id": "9406067785553476",
+                //   "parentId": "",
+                //   "label": "sys.menu.error.index",
+                //   "name": "Error",
+                //   "icon": "bxs:error-alt",
+                //   "type": 0,
+                //   "route": "error",
+                //   "order": 6,
+                //   "children": [
+                //     {
+                //       "id": "8557056851997154",
+                //       "parentId": "9406067785553476",
+                //       "label": "sys.menu.error.403",
+                //       "name": "403",
+                //       "type": 1,
+                //       "route": "403",
+                //       "component": "/sys/error/Page403.tsx"
+                //     },
+                //     {
+                //       "id": "5095669208159005",
+                //       "parentId": "9406067785553476",
+                //       "label": "sys.menu.error.404",
+                //       "name": "404",
+                //       "type": 1,
+                //       "route": "404",
+                //       "component": "/sys/error/Page404.tsx"
+                //     },
+                //     {
+                //       "id": "0225992135973772",
+                //       "parentId": "9406067785553476",
+                //       "label": "sys.menu.error.500",
+                //       "name": "500",
+                //       "type": 1,
+                //       "route": "500",
+                //       "component": "/sys/error/Page500.tsx"
+                //     }
+                //   ]
+                // },
+                // {
+                //   "id": "3981225257359246",
+                //   "parentId": "",
+                //   "label": "sys.menu.calendar",
+                //   "name": "Calendar",
+                //   "icon": "solar:calendar-bold-duotone",
+                //   "type": 1,
+                //   "route": "calendar",
+                //   "component": "/sys/others/calendar/index.tsx"
+                // },
+                // {
+                //   "id": "3513985683886393",
+                //   "parentId": "",
+                //   "label": "sys.menu.kanban",
+                //   "name": "kanban",
+                //   "icon": "solar:clipboard-bold-duotone",
+                //   "type": 1,
+                //   "route": "kanban",
+                //   "component": "/sys/others/kanban/index.tsx"
+                // },
+                // {
+                //   "id": "5455837930804461",
+                //   "parentId": "",
+                //   "label": "sys.menu.disabled",
+                //   "name": "Disabled",
+                //   "icon": "ic_disabled",
+                //   "type": 1,
+                //   "route": "disabled",
+                //   "status": 0,
+                //   "component": "/sys/others/calendar/index.tsx"
+                // },
+                // {
+                //   "id": "7728048658221587",
+                //   "parentId": "",
+                //   "label": "sys.menu.label",
+                //   "name": "Label",
+                //   "icon": "ic_label",
+                //   "type": 1,
+                //   "route": "label",
+                //   "newFeature": true,
+                //   "component": "/sys/others/blank.tsx"
+                // },
+                // {
+                //   "id": "5733704222120995",
+                //   "parentId": "",
+                //   "label": "sys.menu.frame",
+                //   "name": "Frame",
+                //   "icon": "ic_external",
+                //   "type": 0,
+                //   "route": "frame",
+                //   "children": [
+                //     {
+                //       "id": "9884486809510480",
+                //       "parentId": "5733704222120995",
+                //       "label": "sys.menu.external_link",
+                //       "name": "External Link",
+                //       "type": 1,
+                //       "route": "external_link",
+                //       "hideTab": true,
+                //       "component": "/sys/others/iframe/external-link.tsx",
+                //       "frameSrc": "https://ant.design/"
+                //     },
+                //     {
+                //       "id": "9299640886731819",
+                //       "parentId": "5733704222120995",
+                //       "label": "sys.menu.iframe",
+                //       "name": "Iframe",
+                //       "type": 1,
+                //       "route": "frame",
+                //       "component": "/sys/others/iframe/index.tsx",
+                //       "frameSrc": "https://ant.design/"
+                //     }
+                //   ]
+                // },
+                // {
+                //   "id": "0941594969900756",
+                //   "parentId": "",
+                //   "label": "sys.menu.blank",
+                //   "name": "Disabled",
+                //   "icon": "ic_blank",
+                //   "type": 1,
+                //   "route": "blank",
+                //   "component": "/sys/others/blank.tsx"
+                // }
               ]
             }
           },
