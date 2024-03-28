@@ -7,8 +7,11 @@ module.exports = (sequelize) => {
   const Role = sequelize.define('Role', {
     id: {
       type: DataTypes.INTEGER,
+      comment: 'id',
+    },
+    roleId: {
+      type: DataTypes.INTEGER,
       primaryKey: true,
-      autoIncrement: true,
       comment: '角色ID',
     },
     creatorId: {
@@ -17,7 +20,7 @@ module.exports = (sequelize) => {
     },
     roleMenuId: {
       type: DataTypes.STRING,
-      comment: '菜单列表id',
+      comment: '中间关联外键',
     },
     name: {
       type: DataTypes.STRING,

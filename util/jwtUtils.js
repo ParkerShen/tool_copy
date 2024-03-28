@@ -15,7 +15,6 @@ const generateToken = async (username) => {
       },
       include: [{
         model: Role,
-        as: 'userRole'
       }],
       raw: true,
       nest: true

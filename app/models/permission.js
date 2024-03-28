@@ -7,9 +7,12 @@ module.exports = (sequelize) => {
   const Permission = sequelize.define('Permission', {
     id: {
       type: DataTypes.INTEGER,
+      comment: 'id',
+    },
+    permissionId: {
+      type: DataTypes.INTEGER,
       primaryKey: true,
-      autoIncrement: true,
-      comment: '权限ID',
+      comment: '权限id',
     },
     pid: {
       type: DataTypes.INTEGER,
