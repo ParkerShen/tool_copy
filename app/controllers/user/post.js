@@ -80,8 +80,6 @@ const login = async (req, res) => {
             }
           ]
         })
-        // console.log('userinfo', userinfo)
-         console.log('component',transformArray(userinfo,0))
         // 将 token 返回给客户端
         res.status(200).json({
           code: 1,
@@ -130,7 +128,6 @@ function transformArray(arr, parentId) {
   arr.forEach(item => {
       if (item['Roles.Permissions.parentId'] === parentId) {
           const children = transformArray(arr, item['Roles.Permissions.id']);
-          console.log('xxxx', item['Roles.Permissions.component'])
           const newItem = {
               id: item['Roles.Permissions.id'],
               parentId: item['Roles.Permissions.parentId'],

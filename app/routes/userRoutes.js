@@ -9,7 +9,7 @@ const {
 } = require('../controllers/user/post');
 const {
   getUsers,
-  getPermissions
+  getAllUserroles
 } = require('../controllers/user/get');
 const {
   authenticateToken
@@ -25,11 +25,14 @@ router.post('/logout', logout);
 router.post('/create', createUser);
 
 // 定义需要拦截的接口
-// router.use(authenticateToken);
+router.use(authenticateToken);
 
 
 // // 获取所有用户
 router.get('/getUsers', getUsers);
+
+// 添加用户获取所有角色
+router.get('/getAllUserroles', getAllUserroles);
 
 
 // 更新用户信息

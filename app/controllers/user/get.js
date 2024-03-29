@@ -70,7 +70,31 @@ const getUsers = async (req, res) => {
   }
 };
 
+// 获取添加用户所有角色列表
+const getAllUserroles = async (req, res) => {
+
+  try {
+    const userRoleList = await Role.findAll({
+      where: {
+        deleted: 0,
+        status:1
+      },
+      attributes: ['id', 'name','label','status']
+    })
+
+    res.status(200).json({
+      code: 1,
+      message: '获取成功',
+      data: userRoleList
+    });
+  } catch (error) {
+    console.log('error', error)
+
+  }
+};
+
 
 module.exports = {
-  getUsers
+  getUsers,
+  getAllUserroles
 };
