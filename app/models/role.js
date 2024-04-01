@@ -18,10 +18,10 @@ module.exports = (sequelize) => {
       type: DataTypes.INTEGER,
       comment: '创建人id',
     },
-    roleMenuId: {
-      type: DataTypes.STRING,
-      comment: '中间关联外键',
-    },
+    // roleMenuId: {
+    //   type: DataTypes.STRING,
+    //   comment: '中间关联外键',
+    // },
     name: {
       type: DataTypes.STRING,
       allowNull: false,
