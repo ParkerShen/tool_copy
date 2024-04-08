@@ -4,6 +4,9 @@ const {
 } = require('../models');
 // 验证 Token 中间件
 const authenticateToken = async (req, res, next) => {
+
+
+  try {
   const token = req.headers.authorization;
 
   // 检查 Token 是否存在于 BlacklistToken 表中
@@ -20,7 +23,7 @@ const authenticateToken = async (req, res, next) => {
     });
   }
 
-  try {
+ 
     // 验证 token 的合法性
     const decoded = jwt.verify(token, 'shenserver');
     req.user = decoded;

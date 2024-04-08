@@ -7,15 +7,17 @@ module.exports = (sequelize) => {
   const User = sequelize.define('User', {
     id: {
       type: DataTypes.STRING,
+      allowNull: false,
     },
     userId: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
-    // roleId: {
-    //   type: DataTypes.INTEGER,
-    // },
+    status: {
+      type: DataTypes.INTEGER,
+      Comment:'账号状态，1 启用 0 禁用'
+    },
     username: {
       type: DataTypes.STRING,
       allowNull: false,

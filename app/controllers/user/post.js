@@ -1,13 +1,15 @@
 const {
   User,
+  UserRole,
   Usercontactinfo,
   BlackToken,
   Role,
   Permission,
-  RolePermission
+  sequelize
 } = require('../../models');
 
 const bcrypt = require('bcrypt');
+const moment = require('moment')
 
 function generateRandomString(length) {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -24,6 +26,10 @@ function generateRandomString(length) {
 const {
   generateToken
 } = require('../../../util/jwtUtils');
+
+const {
+  generateRandom20String
+} = require('../../../util/common');
 const { Model } = require('sequelize');
 
 // 登录接口
@@ -72,7 +78,7 @@ const login = async (req, res) => {
               },  
               include: {
                 model: Permission,
-                attributes: ['id',['pid','parentId'],'label','name','icon','type','route','order', 'component','hide','status'], 
+                attributes: ['id','permissionId',['pid','parentId'],'label','name','icon','type','route','order', 'component','hide','status'], 
                 through: {
                   attributes: []  
                 },
@@ -127,9 +133,9 @@ function transformArray(arr, parentId) {
 
   arr.forEach(item => {
       if (item['Roles.Permissions.parentId'] === parentId) {
-          const children = transformArray(arr, item['Roles.Permissions.id']);
+          const children = transformArray(arr, +item['Roles.Permissions.permissionId']);
           const newItem = {
-              id: item['Roles.Permissions.id'],
+              id: item['Roles.Permissions.permissionId'],
               parentId: item['Roles.Permissions.parentId'],
               label: item['Roles.Permissions.label'],
               name: item['Roles.Permissions.name'],
@@ -171,77 +177,131 @@ const logout = async (req, res) => {
 // 创建新用户
 const createUser = async (req, res) => {
 
+
   try {
 
-    const {
-      username,
-      email = '',
-      phone = '',
-      isAdmin,
-      ins = '',
-      fb = '',
-      weibo = '',
-      zhihu = '',
-      truename = ''
-    } = req.body;
-    let {
-      password = ''
-    } = req.body
-    // 创建新的用户
+    await sequelize.transaction(async (t) => {
 
-    const user = await User.findOne({
-      where: {
-        deleted: 0,
-        username
+      const {
+        username,
+        email,
+        phone,
+        isAdmin,
+        roles,
+        status,
+        avatar
+      } = req.body;
+      let {
+        password = ''
+      } = req.body
+      // 创建新的用户
+  
+      const user = await User.findOne({
+        where: {
+          deleted: 0,
+          username
+        },
+        transaction: t
+      })
+      if (user) {
+        res.status(200).json({
+          code: 0,
+          message: '账号已存在，请修改',
+        });
+        return
       }
-    })
-    if (user) {
-      res.status(200).json({
-        status: 2,
-        message: '账号已存在，请修改',
+      if(phone){
+        const user = await User.findOne({
+          where: {
+            deleted: 0,
+            phone
+          },
+          transaction: t
+        })
+        if (user) {
+          res.status(200).json({
+            code: 0,
+            message: '手机号码已存在，请修改',
+          });
+          return
+        }
+      }
+      if(email){
+        const user = await User.findOne({
+          where: {
+            deleted: 0,
+            email
+          },
+          transaction: t
+        })
+        if (user) {
+          res.status(200).json({
+            code: 0,
+            message: '邮箱已存在，请修改',
+          });
+          return
+        }
+      }
+
+      const salt = generateRandomString(4)
+      // 定义盐的轮数
+      const saltRounds = 10;
+      // 默认密码为123456
+      if (password !== '') {
+        console.log('有设置密码')
+        // 使用 bcrypt 生成哈希密码
+        password = bcrypt.hashSync(password + salt, saltRounds);
+      } else {
+        console.log('没有设置密码')
+        password = bcrypt.hashSync('123456' + salt, saltRounds);
+      }
+  
+      const newUser = await User.create({
+        id:generateRandom20String(),
+        userId: moment().unix(),
+        username,
+        password,
+        isAdmin,
+        salt,
+        email,
+        phone,
+        status,
+        avatar
+      },{
+          transaction: t
       });
-      return
-    }
 
-    const salt = generateRandomString(4)
-    // 定义盐的轮数
-    const saltRounds = 10;
-    // 默认密码为123456
-    if (password !== '') {
-      console.log('有设置密码')
-      // 使用 bcrypt 生成哈希密码
-      password = bcrypt.hashSync(password + salt, saltRounds);
-    } else {
-      console.log('没有设置密码')
-      password = bcrypt.hashSync('123456' + salt, saltRounds);
-    }
+      
+      console.log('newUser',newUser.userId)
 
-    const newUser = await User.create({
-      roleId: 1,
-      username,
-      password,
-      isAdmin,
-      salt,
-      truename,
-      email,
-      phone
-    });
-    // 创建用户联系信息
-    const newContactInfo = await Usercontactinfo.create({
-      uid: newUser.id,
-      ins,
-      fb,
-      weibo,
-      zhihu
-    });
+      console.log('roles',roles)
 
-    // 返回成功响应
-    res.status(200).json({
-      status: 1,
-      message: '创建成功',
-      // newUser,
-      // newContactInfo
-    });
+      // roles.map(async(item) =>{
+
+      //   const newroles = await UserRole.create({
+      //     id:generateRandom20String(),
+      //     userId: newUser.userId,
+      //     roleId:item,
+  
+      //   },{
+      //     transaction: t
+      // })
+
+      // })
+      await Promise.all(roles.map(async (item) => {
+        await UserRole.create({
+              // id:moment().unix(),
+              userId: newUser.userId,
+              roleId:item,
+           }, { transaction: t });
+      }));
+
+      // 返回成功响应
+      res.status(200).json({
+        code: 1,
+        message: '创建成功',
+      });
+    })
 
   } catch (error) {
     // 处理错误情况

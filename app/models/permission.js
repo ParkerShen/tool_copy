@@ -6,7 +6,7 @@ const modelConfig = require('./modelConfig');
 module.exports = (sequelize) => {
   const Permission = sequelize.define('Permission', {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       comment: 'id',
     },
     permissionId: {

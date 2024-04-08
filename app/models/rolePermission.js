@@ -6,16 +6,17 @@ const modelConfig = require('./modelConfig');
 module.exports = (sequelize) => {
   const RolePermission = sequelize.define('RolePermission', {
     id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
+      type: DataTypes.STRING,
+      allowNull: false,
+      // primaryKey: true,
+      // autoIncrement: true,
       comment: '主键',
     },
     roleId: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       allowNull: false,
       comment: '关联Role表外键',
-      // primaryKey: true,
+      primaryKey: true,
     },
     permissionId: {
       type: DataTypes.INTEGER,

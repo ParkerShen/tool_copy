@@ -6,7 +6,8 @@ const modelConfig = require('./modelConfig');
 module.exports = (sequelize) => {
   const UserRole = sequelize.define('UserRole', {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
+      allowNull: false,
       primaryKey: true,
       autoIncrement: true,
       comment: '主键',
@@ -15,7 +16,7 @@ module.exports = (sequelize) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       comment: '关联user表外键',
-      // primaryKey: true,
+       primaryKey: true,
     },
     roleId: {
       type: DataTypes.INTEGER,

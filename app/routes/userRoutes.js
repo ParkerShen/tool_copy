@@ -21,11 +21,14 @@ router.post('/login', login);
 // 登出
 router.post('/logout', logout);
 
+// 定义需要拦截的接口
+router.use(authenticateToken);
+
+
 // 创建新用户
 router.post('/create', createUser);
 
-// 定义需要拦截的接口
-router.use(authenticateToken);
+
 
 
 // // 获取所有用户

@@ -6,7 +6,8 @@ const modelConfig = require('./modelConfig');
 module.exports = (sequelize) => {
   const Role = sequelize.define('Role', {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
+      allowNull: false,
       comment: 'id',
     },
     roleId: {
