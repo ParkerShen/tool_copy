@@ -10,6 +10,7 @@ const {
 
 const bcrypt = require('bcrypt');
 const moment = require('moment')
+const { Op,Sequelize  } = require('sequelize');
 
 function generateRandomString(length) {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -30,7 +31,7 @@ const {
 const {
   generateRandom20String
 } = require('../../../util/common');
-const { Model } = require('sequelize');
+// const { Model } = require('sequelize');
 
 // 登录接口
 const login = async (req, res) => {
@@ -49,7 +50,7 @@ const login = async (req, res) => {
       },
       raw: true
     });
-  
+
     // const saltRounds = 10; // 盐的轮数，用于增加哈希复杂度
     // // 密码加密方式  ,注册有用到
     // const hashedPassword = bcrypt.hashSync('123456a123', saltRounds);
@@ -65,22 +66,22 @@ const login = async (req, res) => {
 
         const userinfo = await User.findAll({
           where: {
-            id:user.id
+            id: user.id
           },
-           raw: true,
-          attributes: ['id','username','email','avatar'],
+          raw: true,
+          attributes: ['id', 'username', 'email', 'avatar'],
           include: [
             {
               model: Role,
               attributes: [],
-              through: {  
-                attributes: []  
-              },  
+              through: {
+                attributes: []
+              },
               include: {
                 model: Permission,
-                attributes: ['id','permissionId',['pid','parentId'],'label','name','icon','type','route','order', 'component','hide','status'], 
+                attributes: ['id', 'permissionId', ['pid', 'parentId'], 'label', 'name', 'icon', 'type', 'route', 'order', 'component', 'hide', 'status'],
                 through: {
-                  attributes: []  
+                  attributes: []
                 },
               }
             }
@@ -97,7 +98,7 @@ const login = async (req, res) => {
               username: userinfo[0].username,
               email: userinfo[0].email,
               avatar: userinfo[0].avatar,
-              "permissions": transformArray(userinfo,0)
+              "permissions": transformArray(userinfo, 0)
             }
           },
           message: '登录成功'
@@ -132,25 +133,25 @@ function transformArray(arr, parentId) {
   const result = [];
 
   arr.forEach(item => {
-      if (item['Roles.Permissions.parentId'] === parentId) {
-          const children = transformArray(arr, +item['Roles.Permissions.permissionId']);
-          const newItem = {
-              id: item['Roles.Permissions.permissionId'],
-              parentId: item['Roles.Permissions.parentId'],
-              label: item['Roles.Permissions.label'],
-              name: item['Roles.Permissions.name'],
-              icon: item['Roles.Permissions.icon'],
-              type: item['Roles.Permissions.type'],
-              route: item['Roles.Permissions.route'],
-              order: item['Roles.Permissions.order'],
-              hide: item['Roles.Permissions.hide'],
-            status: item['Roles.Permissions.status'],
-            component:item['Roles.Permissions.component'] ? item['Roles.Permissions.component'] : null,
-              children: children.length ? children : null
-          };
+    if (item['Roles.Permissions.parentId'] === parentId) {
+      const children = transformArray(arr, +item['Roles.Permissions.permissionId']);
+      const newItem = {
+        id: item['Roles.Permissions.permissionId'],
+        parentId: item['Roles.Permissions.parentId'],
+        label: item['Roles.Permissions.label'],
+        name: item['Roles.Permissions.name'],
+        icon: item['Roles.Permissions.icon'],
+        type: item['Roles.Permissions.type'],
+        route: item['Roles.Permissions.route'],
+        order: item['Roles.Permissions.order'],
+        hide: item['Roles.Permissions.hide'],
+        status: item['Roles.Permissions.status'],
+        component: item['Roles.Permissions.component'] ? item['Roles.Permissions.component'] : null,
+        children: children.length ? children : null
+      };
 
-          result.push(newItem);
-      }
+      result.push(newItem);
+    }
   });
 
   return result;
@@ -195,7 +196,7 @@ const createUser = async (req, res) => {
         password = ''
       } = req.body
       // 创建新的用户
-  
+
       const user = await User.findOne({
         where: {
           deleted: 0,
@@ -210,7 +211,7 @@ const createUser = async (req, res) => {
         });
         return
       }
-      if(phone){
+      if (phone) {
         const user = await User.findOne({
           where: {
             deleted: 0,
@@ -226,7 +227,7 @@ const createUser = async (req, res) => {
           return
         }
       }
-      if(email){
+      if (email) {
         const user = await User.findOne({
           where: {
             deleted: 0,
@@ -255,9 +256,9 @@ const createUser = async (req, res) => {
         console.log('没有设置密码')
         password = bcrypt.hashSync('123456' + salt, saltRounds);
       }
-  
+
       const newUser = await User.create({
-        id:generateRandom20String(),
+        id: generateRandom20String(),
         userId: moment().unix(),
         username,
         password,
@@ -267,33 +268,15 @@ const createUser = async (req, res) => {
         phone,
         status,
         avatar
-      },{
-          transaction: t
+      }, {
+        transaction: t
       });
 
-      
-      console.log('newUser',newUser.userId)
-
-      console.log('roles',roles)
-
-      // roles.map(async(item) =>{
-
-      //   const newroles = await UserRole.create({
-      //     id:generateRandom20String(),
-      //     userId: newUser.userId,
-      //     roleId:item,
-  
-      //   },{
-      //     transaction: t
-      // })
-
-      // })
       await Promise.all(roles.map(async (item) => {
         await UserRole.create({
-              // id:moment().unix(),
-              userId: newUser.userId,
-              roleId:item,
-           }, { transaction: t });
+          userId: newUser.userId,
+          roleId: item,
+        }, { transaction: t });
       }));
 
       // 返回成功响应
@@ -315,23 +298,23 @@ const createUser = async (req, res) => {
 
 // 删除用户
 const deleteUser = async (req, res) => {
-  const userId = req.body.id;
+  const userId = req.body.userId;
   try {
     // 更新 User 表
-    const user = await User.findByPk(userId);
-    user.deleted = 1;
-    user.dTime = new Date();
-    await user.save();
-
-    // 更新 UserContactInfo 表
-    const contactInfo = await Usercontactinfo.findOne({
-      where: {
-        uid: userId
+    // 1. 更新 User 表中 deleted 字段为 1
+    await User.update(
+      { deleted: 1 },
+      {
+        where: { userId }, // 根据条件选择需要更新的记录
       }
+    );
+
+    // 2. 删除 UserRole 表中 userId 等于之前更新的 User 表中 userId 的记录
+    await UserRole.destroy({
+      where: {
+        userId
+      },
     });
-    contactInfo.deleted = 1;
-    contactInfo.dTime = new Date();
-    await contactInfo.save();
 
     res.status(200).json({
       code: 1,

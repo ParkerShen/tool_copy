@@ -2,7 +2,8 @@ const {
   User,
   Usercontactinfo,
   Role,
-  Permission
+  Permission,
+  UserRole
 } = require('../../models');
 const {
   Op
@@ -12,8 +13,8 @@ const {
 const getUsers = async (req, res) => {
   try {
     const {
-      page,
-      pageSize,
+      page = 1,
+      pageSize = 10,
       username,
       phone,
       email
@@ -41,18 +42,38 @@ const getUsers = async (req, res) => {
       };
     }
 
-    const {
-      count,
-      rows: users
-    } = await User.findAndCountAll({
+    // const {
+    //   count,
+    //   rows: users
+    // } = await User.findAndCountAll({
+    //   where: whereClause,
+    //   include: {
+    //     model: Usercontactinfo,
+    //     as: 'userC',
+    //     attributes: ['fb', 'weibo', 'zhihu', 'ins']
+    //   },
+    //   offset: (+page - 1) * +pageSize,
+    //   limit: +pageSize,
+    // });
+
+    const {count,rows: users} = await User.findAndCountAll({
       where: whereClause,
-      include: {
-        model: Usercontactinfo,
-        as: 'userC',
-        attributes: ['fb', 'weibo', 'zhihu', 'ins']
-      },
+      attributes: ['userId', 'username','email','phone','isAdmin','avatar','status'], // 选择 User 表中需要的字段
       offset: (+page - 1) * +pageSize,
       limit: +pageSize,
+      include: [
+        {
+          model: Role,
+          attributes: [['name','roleName'],'roleId'], // 选择 Role 表中需要的字段
+          through: {
+            model: UserRole,
+            attributes: [] // 不需要显示 UserRole 表中的字段，因为它只是关联表
+          },
+          required: false, // 使用 required: false 来确保即使关联表中没有匹配的记录，也能查询到 User 记录
+          duplicating: false, // 设置 duplicating: false 来确保关联表中的重复记录不会影响计数
+        }
+      ],
+      distinct: true, // 使用 distinct 来确保只计算唯一的 User 记录
     });
 
     const totalCount = count;
@@ -92,7 +113,6 @@ const getAllUserroles = async (req, res) => {
 
   }
 };
-
 
 module.exports = {
   getUsers,

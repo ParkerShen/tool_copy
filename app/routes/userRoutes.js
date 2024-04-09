@@ -41,7 +41,7 @@ router.get('/getAllUserroles', getAllUserroles);
 // 更新用户信息
 router.post('/update', updateUser);
 
-// 更新用户信息
+// 删除用户信息
 router.post('/delete', deleteUser);
 
 
