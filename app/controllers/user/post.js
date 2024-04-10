@@ -51,7 +51,7 @@ const login = async (req, res) => {
       raw: true
     });
 
-    // const saltRounds = 10; // 盐的轮数，用于增加哈希复杂度
+     const saltRounds = 10; // 盐的轮数，用于增加哈希复杂度
     // // 密码加密方式  ,注册有用到
     // const hashedPassword = bcrypt.hashSync('123456a123', saltRounds);
     // console.log('hashedPassword', hashedPassword)
@@ -330,26 +330,29 @@ const deleteUser = async (req, res) => {
 
 // 修改用户
 const updateUser = async (req, res) => {
-  const userId = req.body.id;
+  const userId = req.body.userId;
   const {
     username,
     password,
     email,
     phone,
-    fb,
-    ins,
-    weibo,
-    zhihu,
-    isAdmin
+    status,
+    avatar,
+    isAdmin,
+    roles
   } = req.body;
 
   try {
     // 更新 User 表
     const user = await User.findByPk(userId);
     user.username = username;
-    // user.password = password;
+    if(password){
+      user.password = password;
+    }
     user.email = email;
     user.phone = phone;
+    user.status = status;
+    user.avatar = avatar;
     user.uTime = new Date(); // 设置 uTime 字段为当前时间
     user.isAdmin = isAdmin
 
@@ -358,25 +361,22 @@ const updateUser = async (req, res) => {
       // 定义盐的轮数
       const saltRounds = 10;
       // 使用 bcrypt 生成哈希密码
-      const hashedPassword = bcrypt.hashSync(password + req.user.salt, saltRounds);
+      const hashedPassword = bcrypt.hashSync(password + user.salt,saltRounds);
       user.password = hashedPassword
     }
     await user.save();
 
-    // 更新 UserContactInfo 表
-    const contactInfo = await Usercontactinfo.findOne({
+    await UserRole.destroy({
       where: {
-        uid: userId
-      }
+        userId
+      },
     });
-    if (contactInfo) {
-      contactInfo.ins = ins;
-      contactInfo.fb = fb;
-      contactInfo.weibo = weibo;
-      contactInfo.zhihu = zhihu;
-      contactInfo.uTime = new Date();
-      await contactInfo.save();
-    }
+    await Promise.all(roles.map(async (item) => {
+      await UserRole.create({
+        userId,
+        roleId: item,
+      });
+    }));
 
     res.status(200).json({
       code: 1,

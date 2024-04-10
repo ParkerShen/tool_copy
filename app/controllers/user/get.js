@@ -16,8 +16,9 @@ const getUsers = async (req, res) => {
       page = 1,
       pageSize = 10,
       username,
-      phone,
-      email
+      status,
+      isAdmin,
+      roles
     } = req.query
 
     // 初始查询条件
@@ -31,34 +32,17 @@ const getUsers = async (req, res) => {
         [Op.like]: `%${username}%`,
       };
     }
-    if (phone) {
-      whereClause.phone = {
-        [Op.like]: `%${phone}%`,
-      };
+    if(status){
+      whereClause.status = status
     }
-    if (email) {
-      whereClause.email = {
-        [Op.like]: `%${email}%`,
-      };
+    if(isAdmin){
+      whereClause.isAdmin = isAdmin
     }
 
-    // const {
-    //   count,
-    //   rows: users
-    // } = await User.findAndCountAll({
-    //   where: whereClause,
-    //   include: {
-    //     model: Usercontactinfo,
-    //     as: 'userC',
-    //     attributes: ['fb', 'weibo', 'zhihu', 'ins']
-    //   },
-    //   offset: (+page - 1) * +pageSize,
-    //   limit: +pageSize,
-    // });
 
     const {count,rows: users} = await User.findAndCountAll({
       where: whereClause,
-      attributes: ['userId', 'username','email','phone','isAdmin','avatar','status'], // 选择 User 表中需要的字段
+      attributes: ['userId', 'username','email','phone','isAdmin','avatar','status','cTime'], // 选择 User 表中需要的字段
       offset: (+page - 1) * +pageSize,
       limit: +pageSize,
       include: [
@@ -67,7 +51,8 @@ const getUsers = async (req, res) => {
           attributes: [['name','roleName'],'roleId'], // 选择 Role 表中需要的字段
           through: {
             model: UserRole,
-            attributes: [] // 不需要显示 UserRole 表中的字段，因为它只是关联表
+            attributes: [], // 不需要显示 UserRole 表中的字段，因为它只是关联表
+            // where:{roleId: 1}
           },
           required: false, // 使用 required: false 来确保即使关联表中没有匹配的记录，也能查询到 User 记录
           duplicating: false, // 设置 duplicating: false 来确保关联表中的重复记录不会影响计数
@@ -100,7 +85,7 @@ const getAllUserroles = async (req, res) => {
         deleted: 0,
         status:1
       },
-      attributes: ['id', 'name','label','status']
+      attributes: ['id', 'name','roleId']
     })
 
     res.status(200).json({
