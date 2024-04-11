@@ -18,8 +18,8 @@ const getUsers = async (req, res) => {
       username,
       status,
       isAdmin,
-      roles
-    } = req.query
+      roles // 传入的角色 ID 数组
+    } = req.query;
 
     // 初始查询条件
     const whereClause = {
@@ -32,36 +32,43 @@ const getUsers = async (req, res) => {
         [Op.like]: `%${username}%`,
       };
     }
-    if(status){
-      whereClause.status = status
+    if (status) {
+      whereClause.status = status;
     }
-    if(isAdmin){
-      whereClause.isAdmin = isAdmin
+    if (isAdmin) {
+      whereClause.isAdmin = isAdmin;
     }
 
 
-    const {count,rows: users} = await User.findAndCountAll({
+    let { count, rows: users } = await User.findAndCountAll({
       where: whereClause,
-      attributes: ['userId', 'username','email','phone','isAdmin','avatar','status','cTime'], // 选择 User 表中需要的字段
+      attributes: ['userId', 'username', 'email', 'phone', 'isAdmin', 'avatar', 'status', 'cTime'],
       offset: (+page - 1) * +pageSize,
       limit: +pageSize,
       include: [
         {
           model: Role,
-          attributes: [['name','roleName'],'roleId'], // 选择 Role 表中需要的字段
+          attributes: [['name', 'roleName'], 'roleId'],
           through: {
             model: UserRole,
-            attributes: [], // 不需要显示 UserRole 表中的字段，因为它只是关联表
-            // where:{roleId: 1}
+            attributes: [],
           },
-          required: false, // 使用 required: false 来确保即使关联表中没有匹配的记录，也能查询到 User 记录
-          duplicating: false, // 设置 duplicating: false 来确保关联表中的重复记录不会影响计数
-        }
+          required: false, // 只有当有角色 ID 时才设置为 true
+          duplicating: false,
+        },
       ],
-      distinct: true, // 使用 distinct 来确保只计算唯一的 User 记录
+      distinct: true,
     });
+    
 
-    const totalCount = count;
+    let totalCount = count;
+
+    if(roles){
+      users = filterUsersByRoleId(users, +roles)
+      totalCount = users.length
+    }
+
+
     res.status(200).json({
       count: totalCount,
       code: 1,
@@ -71,9 +78,16 @@ const getUsers = async (req, res) => {
   } catch (error) {
     console.error('Error retrieving users with contact info:', error);
     res.status(500).json({
-      error: '获取用户及联系信息时发生错误'
+      error: '获取用户及联系信息时发生错误',
     });
   }
+};
+
+// 处理角色查询
+const filterUsersByRoleId = (users, roleId) => {
+  return users.filter(user => {
+    return user.Roles.some(role => role.roleId === roleId);
+  });
 };
 
 // 获取添加用户所有角色列表

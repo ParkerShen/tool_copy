@@ -35,98 +35,83 @@ const {
 
 // 登录接口
 const login = async (req, res) => {
-
   try {
-    // 处理登录逻辑，验证用户名和密码等
-    const {
-      username,
-      password
-    } = req.body
-
+    const { username, password } = req.body;
     const user = await User.findOne({
-      where: {
-        username,
-        deleted: 0
-      },
+      where: { username, deleted: 0 },
       raw: true
     });
 
-     const saltRounds = 10; // 盐的轮数，用于增加哈希复杂度
-    // // 密码加密方式  ,注册有用到
-    // const hashedPassword = bcrypt.hashSync('123456a123', saltRounds);
-    // console.log('hashedPassword', hashedPassword)
-
-    // 判断用户是否存在
-    if (user) {
-      //判断密码是否准确
-      if (bcrypt.compareSync(password + user.salt, user.password)) {
-        // console.log('密码验证通过');
-        // 登录成功，生成 token
-        const token = await generateToken(username);
-
-        const userinfo = await User.findAll({
-          where: {
-            id: user.id
-          },
-          raw: true,
-          attributes: ['id', 'username', 'email', 'avatar'],
-          include: [
-            {
-              model: Role,
-              attributes: [],
-              through: {
-                attributes: []
-              },
-              include: {
-                model: Permission,
-                attributes: ['id', 'permissionId', ['pid', 'parentId'], 'label', 'name', 'icon', 'type', 'route', 'order', 'component', 'hide', 'status'],
-                through: {
-                  attributes: []
-                },
-              }
-            }
-          ]
-        })
-        // 将 token 返回给客户端
-        res.status(200).json({
-          code: 1,
-          data: {
-            accessToken: token,
-            refreshToken: token,
-            user: {
-              id: userinfo[0].id,
-              username: userinfo[0].username,
-              email: userinfo[0].email,
-              avatar: userinfo[0].avatar,
-              "permissions": transformArray(userinfo, 0)
-            }
-          },
-          message: '登录成功'
-        });
-      } else {
-        // console.log('密码验证失败');
-        res.status(200).json({
-          code: 0,
-          message: '密码错误，请重新输入'
-        });
-      }
-
-
-    } else {
-      res.status(200).json({
+    if (!user) {
+      return res.status(200).json({
         code: 0,
         message: '用户不存在，请重新输入'
       });
-
     }
+
+    if (user.status === 0) {
+      return res.status(200).json({
+        code: 0,
+        message: '当前账号已禁用，请联系管理员'
+      });
+    }
+
+    if (user.isAdmin === 0) {
+      return res.status(200).json({
+        code: 0,
+        message: '当前账号为前台账号，无法登录'
+      });
+    }
+
+    if (!bcrypt.compareSync(password + user.salt, user.password)) {
+      return res.status(200).json({
+        code: 0,
+        message: '密码错误，请重新输入'
+      });
+    }
+
+    const token = await generateToken(username);
+
+    const userinfo = await User.findAll({
+      where: { id: user.id },
+      raw: true,
+      attributes: ['id', 'username', 'email', 'avatar'],
+      include: [
+        {
+          model: Role,
+          attributes: [],
+          through: { attributes: [] },
+          include: {
+            model: Permission,
+            attributes: ['id', 'permissionId', ['pid', 'parentId'], 'label', 'name', 'icon', 'type', 'route', 'order', 'component', 'hide', 'status'],
+            through: { attributes: [] },
+          }
+        }
+      ]
+    });
+
+    return res.status(200).json({
+      code: 1,
+      data: {
+        accessToken: token,
+        refreshToken: token,
+        user: {
+          id: userinfo[0].id,
+          username: userinfo[0].username,
+          email: userinfo[0].email,
+          avatar: userinfo[0].avatar,
+          permissions: transformArray(userinfo, 0)
+        }
+      },
+      message: '登录成功'
+    });
 
   } catch (error) {
     console.log('error', error)
-    res.status(500).json({
+    return res.status(500).json({
       message: '错误'
     });
   }
-
 };
 
 function transformArray(arr, parentId) {
