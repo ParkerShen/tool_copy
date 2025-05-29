@@ -89,16 +89,15 @@
   "eslint.alwaysShowStatus": true, //  Always in  VSCode  Show  ESLint  The state of
   "eslint.quiet": true, //  Ignore  warning  Error of
   "editor.codeActionsOnSave": {
-    "source.fixAll": "explicit",
-    "source.fixAll.eslint": "explicit"
+    //  Save with  ESLint  Fix repairable errors
+    "source.fixAll": true,
+    "source.fixAll.eslint": true
   },
   "[vue]": {
     "editor.codeActionsOnSave": {
-      "source.fixAll.eslint": "explicit"
+      "source.fixAll.eslint": true
     }
   },
-  "i18n-ally.localesPaths": [
-    "src/locales"
-  ],
-  "i18n-ally.keystyle": "nested",
+  "i18n-ally.localesPaths": ["src/locales"],
+  "i18n-ally.keystyle": "nested"
 }
