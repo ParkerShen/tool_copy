@@ -6,7 +6,7 @@ const modelConfig = require('./modelConfig');
 module.exports = (sequelize) => {
   const User = sequelize.define('User', {
     id: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
     userId: {

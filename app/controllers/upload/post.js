@@ -1,34 +1,30 @@
-// const {
-//   User,
-//   Usercontactinfo,
-//   BlackToken,
-//   Role,
-//   Permission,
-//   RolePermission
-// } = require('../../models');
+const moment = require('moment');
 
 
 // 上传图片接口
 const uploadImage = async (req, res) => {
+  
+  if (!req.file) {
+    return res.status(400).json({ message: '请上传图片' });
+  }
+  
   try {
-    console.log('req.file',req.file)
-    const imageUrl = `http://localhost:3001/${req.file.path}`; // 构建图片链接
-    // 将 Windows 文件路径转换为 Unix 风格路径
-const unixStylePath = imageUrl.replace(/\\/g, '/');
-// 截取 '/images' 之后的部分
-const imagePath = unixStylePath.split('/images')[1];
-    res.status(200).json({
-      code: 1,
-      data:{
-        url:'/images'+imagePath,
-      },
-      message: '上传成功'
+    // 获取分类和日期信息
+    const category = req.body.category || 'default';
+    const dateDir = moment().format('YYYYMMDD');
+    
+    // 构建可访问的图片URL
+    const imageUrl = `/images/${category}/${dateDir}/${req.file.filename}`;
+    
+    res.status(200).json({ 
+      code:1,
+      success: true,
+      message: '图片上传成功',
+      imageUrl
     });
   } catch (error) {
-    console.error('Error updating user:', error);
-    res.status(500).json({
-      error: '上传发生错误'
-    });
+    console.error('处理上传图片失败:', error);
+    res.status(500).json({ message: '服务器内部错误' });
   }
 };
 
