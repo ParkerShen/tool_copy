@@ -7,6 +7,7 @@ const authenticateToken = async (req, res, next) => {
 
 
   try {
+    if (req.path === '/captcha') return next();
   const token = req.headers.authorization;
 
   // 检查 Token 是否存在于 BlacklistToken 表中

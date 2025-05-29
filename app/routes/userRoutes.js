@@ -9,7 +9,8 @@ const {
 } = require('../controllers/user/post');
 const {
   getUsers,
-  getAllUserroles
+  getAllUserroles,
+  captcha
 } = require('../controllers/user/get');
 const {
   authenticateToken
@@ -18,12 +19,15 @@ const {
 // 登录
 router.post('/login', login);
 
+// 获取验证码
+router.get('/captcha', captcha);
+
+
 // 登出
 router.post('/logout', logout);
 
 // 定义需要拦截的接口
 router.use(authenticateToken);
-
 
 // 创建新用户
 router.post('/create', createUser);

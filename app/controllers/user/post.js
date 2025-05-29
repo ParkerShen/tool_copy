@@ -33,11 +33,27 @@ const { generateRandom20String } = require("../../../util/common");
 // 登录接口
 const login = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, verifyCode } = req.body;
     const user = await User.findOne({
       where: { username, deleted: 0 },
       raw: true,
     });
+     // 1. 检查验证码是否存在
+     if (!req.session.captcha) {
+      return res.status(200).json({
+        code: 0,
+        message: "验证码已过期，请重新获取"
+      });
+    }
+    const inputCode = verifyCode.toLowerCase();
+    const sessionCode = req.session.captcha.toLowerCase();
+    if (inputCode !== sessionCode) {
+      return res.status(200).json({
+        code: 0,
+        message: "验证码错误，请重新输入",
+      });
+    }
+
 
     if (!user) {
       return res.status(200).json({

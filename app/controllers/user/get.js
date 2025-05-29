@@ -8,6 +8,7 @@ const {
 const {
   Op
 } = require('sequelize');
+const svgCaptcha = require('svg-captcha');
 
 // 获取所有用户
 const getUsers = async (req, res) => {
@@ -113,7 +114,37 @@ const getAllUserroles = async (req, res) => {
   }
 };
 
+// 获取验证码
+const captcha = async (req, res) => {
+  console.log('x');
+
+  try {
+   
+    const captcha = svgCaptcha.create({
+      size: 4, // 验证码长度
+      noise: 3, // 干扰线数量
+      color: true, // 是否有颜色
+      background: '#f0f0f0', // 背景颜色
+      fontSize: 50, // 字体大小
+    });
+
+    // 将验证码存储在 session 中
+    req.session.captcha = captcha.text;
+
+    res.status(200).json({
+      code: 1,
+      message: '获取验证码成功',
+      data: {img:captcha.data},
+    });
+    
+  } catch (error) {
+    console.log('error', error)
+
+  }
+};
+
 module.exports = {
   getUsers,
-  getAllUserroles
+  getAllUserroles,
+  captcha
 };

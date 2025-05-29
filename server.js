@@ -1,4 +1,5 @@
 const express = require('express');
+const session = require('express-session');
 const app = express();
 const db = require('./app/models');
 const routeLogger = require('./routeLogger');
@@ -9,6 +10,17 @@ app.use(routeLogger);
 // 解析请求体中的JSON数据
 app.use(express.json());
 app.use(cors());
+
+// 配置 Session 中间件
+app.use(session({
+  secret: 'secure_random_string_here', // 使用环境变量存储
+  resave: false,
+  saveUninitialized: true,
+  cookie: { 
+    secure: false, // 开发环境设为 false
+    maxAge: 1000 * 60 * 15 // 15分钟过期
+  }
+}));
 
 
 // 使用路由管理器
