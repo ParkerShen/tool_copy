@@ -116,7 +116,6 @@ const getAllUserroles = async (req, res) => {
 
 // 获取验证码
 const captcha = async (req, res) => {
-  console.log('x');
 
   try {
    

@@ -5,11 +5,20 @@ const db = require('./app/models');
 const routeLogger = require('./routeLogger');
 const cors = require('cors');
 const path = require('path');
+require('dotenv').config();
+const connectMongo = require('./db/mongo'); // MongoDB 连接
+const logger = require('./util/logger');    // 日志模块
 // 将 routeLogger 中间件应用于所有路由
 app.use(routeLogger);
 // 解析请求体中的JSON数据
 app.use(express.json());
 app.use(cors());
+
+// 连接 MongoDB
+connectMongo();
+
+// 使用请求日志中间件
+app.use(logger.logRequest);
 
 // 配置 Session 中间件
 app.use(session({
@@ -26,6 +35,9 @@ app.use(session({
 // 使用路由管理器
 const routes = require('./app/routes');
 app.use('/api', routes);
+
+// 在路由之后添加错误日志中间件
+app.use(logger.logError);
 
 // 设置静态文件目录，以便可以通过浏览器访问上传的图片
 const imagesDir = path.join(__dirname, '..', 'images');
