@@ -7,6 +7,6 @@ const router = express.Router();
 
 router.use('/users', userRoutes);
 router.use('/roles', roleRoutes);
-router.use('/uploads', uploadRoutes);
+router.use('/uploads', uploadRoutes); 
 
 export default router;

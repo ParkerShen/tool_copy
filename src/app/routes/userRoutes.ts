@@ -15,13 +15,15 @@ import { authenticateToken } from './authMiddleware';
 
 const router = express.Router();
 
-router.post('/login', login);
+router.post('/login', (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  login(req, res).catch(next); 
+});
 router.get('/captcha', captcha);
 router.post('/logout', logout);
 router.use(authenticateToken);
-router.post('/create', createUser);
+router.post('/create', createUser); 
 router.get('/getUsers', getUsers);
-router.get('/getAllUserroles', getAllUserroles);
+router.get('/getAllUserroles', getAllUserroles); 
 router.post('/update', updateUser);
 router.post('/delete', deleteUser);
 

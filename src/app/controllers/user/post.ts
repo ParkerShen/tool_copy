@@ -8,27 +8,28 @@ import { generateToken } from '../../../util/jwtUtils';
 import { generateRandom20String } from '../../../util/common';
 
 // 登录接口
-export const login = async (req: any, res: Response,next: any) => {
+export const login = async (req: any, res: Response) => {
   try {
     const { username, password, verifyCode } = req.body;
     
     // 验证码检查
-    if (!req.session?.captcha) {
-       res.status(200).json({
-        code: 0,
-        message: "验证码已过期，请重新获取"
-      });
-    }
+    // 这里的代码不能删除
+    // if (!req.session?.captcha) {
+    //   return res.status(200).json({
+    //     code: 0,
+    //     message: "验证码已过期，请重新获取"
+    //   });
+    // }
     
-    const inputCode = verifyCode.toLowerCase();
-    const sessionCode = (req.session as any).captcha.toLowerCase();
+    // const inputCode = verifyCode.toLowerCase();
+    // const sessionCode = (req.session as any).captcha.toLowerCase();
     
-    if (inputCode !== sessionCode) {
-       res.status(200).json({
-        code: 0,
-        message: "验证码错误，请重新输入",
-      });
-    }
+    // if (inputCode !== sessionCode) {
+    //   return res.status(200).json({
+    //     code: 0,
+    //     message: "验证码错误，请重新输入",
+    //   });
+    // }
 
     const user = await User.findOne({
       where: { username, deleted: 0 } as any,
@@ -36,21 +37,21 @@ export const login = async (req: any, res: Response,next: any) => {
     }) as any;
 
     if (!user) {
-       res.status(200).json({
+      return res.status(200).json({
         code: 0,
         message: "用户不存在，请重新输入",
       });
     }
 
     if (user.status === 0) {
-       res.status(200).json({
+      return res.status(200).json({
         code: 0,
         message: "当前账号已禁用，请联系管理员",
       });
     }
 
     if (!bcrypt.compareSync(password + user.salt, user.password)) {
-       res.status(200).json({
+      return res.status(200).json({
         code: 0,
         message: "密码错误，请重新输入",
       });
@@ -87,7 +88,7 @@ export const login = async (req: any, res: Response,next: any) => {
       nest: true
     }) as any;
 
-     res.status(200).json({
+    return res.status(200).json({
       code: 1,
       data: {
         accessToken: token,
@@ -104,7 +105,7 @@ export const login = async (req: any, res: Response,next: any) => {
     });
   } catch (error: any) {
     console.error("登录错误:", error);
-    res.status(500).json({
+    return res.status(500).json({
       code: 0,
       message: "服务器错误，请稍后重试",
       details: error.message

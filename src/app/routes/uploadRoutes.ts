@@ -6,7 +6,7 @@ import moment from 'moment';
 import { uploadImage } from '../controllers/upload/post';
 import { authenticateToken } from './authMiddleware';
 
-const router = express.Router();
+const router = express.Router(); 
 
 const createStorage = () => {
   return multer.diskStorage({
