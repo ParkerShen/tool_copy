@@ -57,36 +57,35 @@ export const login = async (req: any, res: Response) => {
       });
     }
 
+    const getClientIp = () => {
+      const forwardedFor = req.headers['x-forwarded-for'];
+      if (typeof forwardedFor === 'string') {
+        return forwardedFor.split(',')[0].trim();
+      }
+      return req.socket.remoteAddress || '';
+    };
+    const clientIp = getClientIp();
+
     const token = await generateToken(username);
 
     const userinfo = await User.findAll({
       where: { userId: user.id },
-      include: [
-        {
-          model: Role,
-          through: { attributes: [] },
-          include: [{
-            model: Permission,
-            attributes: [
-              "id",
-              "permissionId",
-              ["pid", "parentId"],
-              "label",
-              "name",
-              "icon",
-              "type",
-              "route",
-              "order",
-              "component",
-              "hide",
-              "status",
-            ],
-            through: { attributes: [] },
-          }]
-        }
-      ],
+      raw:true,
       nest: true
     }) as any;
+
+    try {
+      // 更新登录信息
+      await User.update({
+        loginip: clientIp,
+        loginCount: Sequelize.literal('login_count + 1'), // 使用原生的SQL递增
+        lastLoginAt: new Date()
+      }, {
+        where: { userId: user.userId }
+      });
+    } catch (updateError) {
+      console.error('更新登录信息失败:', updateError);
+    }
 
     return res.status(200).json({
       code: 1,

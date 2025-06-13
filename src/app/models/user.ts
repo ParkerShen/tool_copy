@@ -5,6 +5,7 @@ import modelConfig from './modelConfig';
 interface UserAttributes {
   id: number;
   userId: number;
+  departmentId: number;
   status: number;
   username: string;
   password: string;
@@ -13,10 +14,11 @@ interface UserAttributes {
   phone?: string;
   avatar?: string;
   isAdmin: number;
-  truename?: string;
+  name?: string;
+  nickName?: string;
   loginip?: string;
-  logins?: number;
-  logintime?: Date;
+  loginCount?: number;
+  lastLoginAt?: Date;
 }
 
 export default (sequelize: Sequelize) => {
@@ -28,6 +30,7 @@ export default (sequelize: Sequelize) => {
     public password!: string;
     public salt!: string;
     public isAdmin!: number;
+    public departmentId!: number;
 
     static associate(models: any) {
       User.belongsToMany(models.Role, { through: models.UserRole, foreignKey: 'userId' });
@@ -36,7 +39,8 @@ export default (sequelize: Sequelize) => {
 
   User.init({
     id: { type: DataTypes.INTEGER, allowNull: false },
-    userId: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    userId: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true, comment: '主键/用户id' },
+    departmentId: { type: DataTypes.INTEGER, allowNull: false, comment: '部门id' },
     status: { type: DataTypes.INTEGER, comment: '账号状态，1 启用 0 禁用' },
     username: { type: DataTypes.STRING, allowNull: false },
     password: { type: DataTypes.STRING, allowNull: false },
@@ -45,10 +49,11 @@ export default (sequelize: Sequelize) => {
     phone: { type: DataTypes.STRING },
     avatar: { type: DataTypes.STRING, comment: '头像' },
     isAdmin: { type: DataTypes.TINYINT },
-    truename: { type: DataTypes.STRING },
-    loginip: { type: DataTypes.STRING },
-    logins: { type: DataTypes.INTEGER, comment: '登录次数' },
-    logintime: { type: DataTypes.DATE, allowNull: true, comment: '最新登录时间' },
+    name: { type: DataTypes.STRING, comment: '正式姓名' },
+    nickName: { type: DataTypes.STRING, comment: '正式姓名' },
+    loginip: { type: DataTypes.STRING, comment: '登录ip' },
+    loginCount: { type: DataTypes.INTEGER, comment: '登录次数',defaultValue: 0 },
+    lastLoginAt: { type: DataTypes.DATE, allowNull: true, comment: '最新登录时间' },
     ...timestamps
   }, {
     sequelize,
