@@ -52,7 +52,8 @@ export default (sequelize: Sequelize) => {
     ...timestamps
   }, {
     sequelize,
-    ...modelConfig
+    ...modelConfig,
+    tableName: 'platform_permission'
   });
 
   return Permission;

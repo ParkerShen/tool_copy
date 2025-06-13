@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import moment from 'moment';
 import { Op, Sequelize, Transaction } from 'sequelize';
-import db from '../../models';
+import db from '../../models/platform';
 const { User,  UserRole, Role, BlackToken, Permission } = db;
 import { generateToken } from '../../../util/jwtUtils';
 import { generateRandom20String } from '../../../util/common';

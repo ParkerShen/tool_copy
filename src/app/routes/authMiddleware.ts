@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
-import db from '../models';
+import db from '../models/platform';
 const { BlackToken } = db;
 
 interface DecodedToken {

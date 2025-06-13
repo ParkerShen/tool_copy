@@ -39,7 +39,8 @@ export default (sequelize: Sequelize) => {
     ...timestamps
   }, {
     sequelize,
-    ...modelConfig
+    ...modelConfig,
+    tableName: 'platform_role'
   });
 
   return Role;

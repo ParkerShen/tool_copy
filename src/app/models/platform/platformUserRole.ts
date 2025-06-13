@@ -41,7 +41,7 @@ export default (sequelize: Sequelize) => {
   }, {
     sequelize,
     ...modelConfig,
-    tableName: 'user_role'
+    tableName: 'platform_user_role'
   });
 
   return UserRole;

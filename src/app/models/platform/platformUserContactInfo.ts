@@ -31,7 +31,8 @@ export default (sequelize: Sequelize) => {
     ...timestamps
   }, {
     sequelize,
-    ...modelConfig
+    ...modelConfig,
+    tableName: 'platform_user_contact_info'
   });
 
   return Usercontactinfo;

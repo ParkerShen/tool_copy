@@ -7,7 +7,7 @@ import connectMongo from './db/mongo'; // MongoDB 连接
 import logger from './util/logger'; // 日志模块
 import routeLogger from './middleware/routeLogger';
 import routes from './app/routes';
-import db from './app/models';
+import db from './app/models/platform';
 
 dotenv.config();
 

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import db from '../../models';
+import db from '../../models/platform';
 
 const {Role, Permission} = db;
 

@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import db from '../app/models';
+import db from '../app/models/platform';
 const { User, Role } = db;
 
 interface TokenPayload {

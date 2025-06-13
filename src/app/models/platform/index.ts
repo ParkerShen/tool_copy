@@ -1,12 +1,12 @@
 import { Sequelize, Model, DataTypes } from 'sequelize';
-import dbConfig from '../config/db.config';
-import UserModel from './user';
-import RoleModel from './role';
-import PermissionModel from './permission';
-import RolePermissionModel from './rolePermission';
-import BlackTokenModel from './blackToken';
-import UserRoleModel from './userRole';
-import UserContactInfoModel from './usercontactinfo';
+import dbConfig from '../../config/db.config';
+import UserModel from './platformUser';
+import RoleModel from './platformRole';
+import PermissionModel from './platformPermission';
+import RolePermissionModel from './platformRolePermission';
+import BlackTokenModel from './platformBlackToken';
+import UserRoleModel from './platformUserRole';
+import UserContactInfoModel from './platformUserContactInfo';
 
 const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   host: dbConfig.HOST,

@@ -21,7 +21,7 @@ export default (sequelize: Sequelize) => {
   }, {
     sequelize,
     ...modelConfig,
-    tableName: 'black_token'
+    tableName: 'platform_black_token'
   });
 
   return BlackToken;

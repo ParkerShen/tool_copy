@@ -27,7 +27,7 @@ export default (sequelize: Sequelize) => {
   }, {
     sequelize,
     ...modelConfig,
-    tableName: 'role_permission'
+    tableName: 'platform_role_permission'
   });
 
   return RolePermission;
