@@ -3,51 +3,21 @@
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "node",
-    "strict": true,
-    "noLib": false,
-    "forceConsistentCasingInFileNames": true,
-    "allowSyntheticDefaultImports": true,
-    "strictFunctionTypes": false,
+    "importHelpers": true,
     "jsx": "preserve",
-    "baseUrl": ".",
-    "allowJs": true,
-    "sourceMap": true,
     "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "experimentalDecorators": true,
-    "lib": [
-      "dom",
-      "esnext"
-    ],
-    "noImplicitAny": false,
+    "sourceMap": true,
+    "baseUrl": "./",
     "skipLibCheck": true,
-    "removeComments": true,
-    "typeRoots": [
-      "./node_modules/@types/",
-      "./types",
-    ],
+    "experimentalDecorators": true,
+    "strict": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
     "paths": {
-      "@/*": [
-        "src/*"
-      ]
-    },
+      "@/*": ["./src/*"],
+      "@@/*": ["./src/.umi/*"],
+      "@@test/*": ["./src/.umi-test/*"]
+    }
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.d.ts",
-    "src/**/*.tsx",
-    "types/**/*.d.ts",
-    "types/**/*.ts",
-    "types/**/*.ts",
-    "types/**/*.d.ts",
-    "mock/**/*.ts",
-    "vite.config.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.js"
-  ]
+  "include": ["./**/*.d.ts", "./**/*.ts", "./**/*.tsx"]
 }

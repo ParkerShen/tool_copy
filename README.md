@@ -1,17 +1,136 @@
-### REACT ANTD ADMIN
+Language : 🇺🇸 | [🇨🇳](./README.zh-CN.md) | [🇷🇺](./README.ru-RU.md) | [🇹🇷](./README.tr-TR.md) | [🇯🇵](./README.ja-JP.md) | [🇫🇷](./README.fr-FR.md) | [🇵🇹](./README.pt-BR.md) | [🇸🇦](./README.ar-DZ.md) | [🇪🇸](./README.es-ES.md)
 
-## 技术栈
+<h1 align="center">Ant Design Pro</h1>
 
-- 编程语言：[TypeScript 4.x](https://www.typescriptlang.org/zh/) + [JavaScript](https://www.javascript.com/)
-- 构建工具：[Vite 2.x](https://www.webpackjs.com/)
-- 前端框架：[React 18.2.0](https://reactjs.org/)
-- 路由工具：[React-router-dom 6.x](https://github.com/remix-run/react-router#readme)
-- 状态管理：[Redux/toolkit 1.8.5](https://github.com/ReduxKit/ReduxKit/)
-- PC 端 UI 框架：[Ant Design](https://ant.design/components/overview-cn/)
-- CSS 预编译：[Stylus](https://stylus-lang.com/) / [Sass](https://sass.bootcss.com/documentation) / [Less](http://lesscss.cn/)
-- HTTP 工具：[Axios](https://axios-http.com/)
-- Git Hook 工具：[husky](https://typicode.github.io/husky/#/) + [lint-staged](https://github.com/okonet/lint-staged)
-- 代码规范：[EditorConfig](http://editorconfig.org) + [Prettier](https://prettier.io/) + [ESLint](https://eslint.org/) + [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript#translation)
-- 提交规范：[Commitizen](http://commitizen.github.io/cz-cli/) + [Commitlint](https://commitlint.js.org/#/)
-- 单元测试：-
-- 自动部署：[GitHub Actions](https://docs.github.com/cn/actions/learn-github-actions)
+<div align="center">
+
+An out-of-box UI solution for enterprise applications as a React boilerplate.
+
+[![Node CI](https://github.com/ant-design/ant-design-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/ant-design/ant-design-pro/actions/workflows/ci.yml) [![Preview Deploy](https://github.com/ant-design/ant-design-pro/actions/workflows/preview-deploy.yml/badge.svg)](https://github.com/ant-design/ant-design-pro/actions/workflows/preview-deploy.yml) [![Build With Umi](https://img.shields.io/badge/build%20with-umi-028fe4.svg?style=flat-square)](http://umijs.org/) ![](https://badgen.net/badge/icon/Ant%20Design?icon=https://gw.alipayobjects.com/zos/antfincdn/Pp4WPgVDB3/KDpgvguMpGfqaHPjicRK.svg&label)
+
+![](https://github.com/user-attachments/assets/fde29061-3d9a-4397-8ac2-397b0e033ef5)
+
+</div>
+
+- Preview: http://preview.pro.ant.design
+- Home Page: http://pro.ant.design
+- Documentation: http://pro.ant.design/docs/getting-started
+- ChangeLog: http://pro.ant.design/docs/changelog
+- FAQ: http://pro.ant.design/docs/faq
+
+## 5.0 is out! 🎉🎉🎉
+
+[Ant Design Pro 5.0.0](https://github.com/ant-design/ant-design-pro/issues/8656)
+
+## Translation Recruitment :loudspeaker:
+
+We need your help: https://github.com/ant-design/ant-design-pro/issues/120
+
+## Features
+
+- :bulb: **TypeScript**: A language for application-scale JavaScript
+- :scroll: **Blocks**: Build page with block template
+- :gem: **Neat Design**: Follow [Ant Design specification](http://ant.design/)
+- :triangular_ruler: **Common Templates**: Typical templates for enterprise applications
+- :rocket: **State of The Art Development**: Newest development stack of React/umi/dva/antd
+- :iphone: **Responsive**: Designed for variable screen sizes
+- :art: **Theming**: Customizable theme with simple config
+- :globe_with_meridians: **International**: Built-in i18n solution
+- :gear: **Best Practices**: Solid workflow to make your code healthy
+- :1234: **Mock development**: Easy to use mock development solution
+- :white_check_mark: **UI Test**: Fly safely with unit and e2e tests
+
+## Templates
+
+```
+- Dashboard
+  - Analytic
+  - Monitor
+  - Workspace
+- Form
+  - Basic Form
+  - Step Form
+  - Advanced From
+- List
+  - Standard Table
+  - Standard List
+  - Card List
+  - Search List (Project/Applications/Article)
+- Profile
+  - Simple Profile
+  - Advanced Profile
+- Account
+  - Account Center
+  - Account Settings
+- Result
+  - Success
+  - Failed
+- Exception
+  - 403
+  - 404
+  - 500
+- User
+  - Login
+  - Register
+  - Register Result
+```
+
+## Usage
+
+### Use bash
+
+We provide pro-cli to quickly initialize scaffolding.
+
+```bash
+# use npm
+npm i @ant-design/pro-cli -g
+pro create myapp
+```
+
+select umi version
+
+```shell
+🐂 Use umi@4 or umi@3 ? (Use arrow keys)
+❯ umi@4
+  umi@3
+```
+
+> If the umi@4 version is selected, full blocks are not yet supported.
+
+If you choose umi@3, you can also choose the pro template. Pro is the basic template, which only provides the basic content of the framework operation. Complete contains all blocks, which is not suitable for secondary development as a basic template.
+
+```shell
+? 🚀 Full or a simple scaffold? (Use arrow keys)
+❯ simple
+  complete
+```
+
+Initialized Git repository:
+
+```shell
+$ git init myapp
+```
+
+Install dependencies:
+
+```shell
+$ cd myapp && tyarn
+// or
+$ cd myapp && npm install
+```
+
+## Browsers support
+
+Modern browsers.
+
+| [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/edge/edge_48x48.png" alt="Edge" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Edge | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/firefox/firefox_48x48.png" alt="Firefox" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Firefox | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png" alt="Chrome" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Chrome | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/safari/safari_48x48.png" alt="Safari" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Safari | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/opera/opera_48x48.png" alt="Opera" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Opera |
+| --- | --- | --- | --- | --- |
+| Edge | last 2 versions | last 2 versions | last 2 versions | last 2 versions |
+
+## Contributing
+
+Any type of contribution is welcome, here are some examples of how you may contribute to this project:
+
+- Use Ant Design Pro in your daily work.
+- Submit [issues](http://github.com/ant-design/ant-design-pro/issues) to report bugs or ask questions.
+- Propose [pull requests](http://github.com/ant-design/ant-design-pro/pulls) to improve our code.
