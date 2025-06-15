@@ -32,7 +32,8 @@ export default (sequelize: Sequelize) => {
   }, {
     sequelize,
     ...modelConfig,
-    tableName: 'platform_user_contact_info'
+    tableName: 'platform_user_contact_info',
+    comment: '用户联系详细信息表'
   });
 
   return Usercontactinfo;

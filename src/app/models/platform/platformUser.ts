@@ -58,7 +58,8 @@ export default (sequelize: Sequelize) => {
   }, {
     sequelize,
     ...modelConfig,
-    tableName: 'platform_user'
+    tableName: 'platform_user',
+    comment: '用户表'
   });
 
   return User;

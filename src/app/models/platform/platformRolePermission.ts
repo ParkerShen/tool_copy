@@ -21,13 +21,14 @@ export default (sequelize: Sequelize) => {
 
   RolePermission.init({
     id: { type: DataTypes.STRING, allowNull: false, comment: '主键' },
-    roleId: { type: DataTypes.INTEGER, allowNull: false, comment: '关联Role表外键', primaryKey: true },
-    permissionId: { type: DataTypes.INTEGER, allowNull: false, comment: '关联permission表外键' },
+    roleId: { type: DataTypes.INTEGER, allowNull: false, comment: '角色ID', primaryKey: true },
+    permissionId: { type: DataTypes.INTEGER, allowNull: false, comment: '菜单id', },
     ...timestamps
   }, {
     sequelize,
     ...modelConfig,
-    tableName: 'platform_role_permission'
+    tableName: 'platform_role_permission',
+    comment: '角色权限中间表',
   });
 
   return RolePermission;

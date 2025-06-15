@@ -6,30 +6,34 @@ import db from '../../models/platform';
 const { User,  UserRole, Role, BlackToken, Permission } = db;
 import { generateToken } from '../../../util/jwtUtils';
 import { generateRandom20String } from '../../../util/common';
+import { 
+  UserErrorCode, 
+  ShowType 
+} from '../../config/enums';
 
 // 登录接口
 export const login = async (req: any, res: Response) => {
   try {
-    const { username, password, verifyCode } = req.body;
+    const { username, password, verifyCode,type } = req.body;
     
     // 验证码检查
     // 这里的代码不能删除
     // if (!req.session?.captcha) {
-    //   return res.status(200).json({
-    //     code: 0,
-    //     message: "验证码已过期，请重新获取"
-    //   });
+    //   return res.status(200).json({success:false, errorCode:1004, errorMessage:"验证码已过期", showType:ShowType.WARN_MESSAGE});
     // }
     
     // const inputCode = verifyCode.toLowerCase();
     // const sessionCode = (req.session as any).captcha.toLowerCase();
     
     // if (inputCode !== sessionCode) {
-    //   return res.status(200).json({
-    //     code: 0,
-    //     message: "验证码错误，请重新输入",
-    //   });
+    //   return res.status(200).json({success:false, errorCode:1005, errorMessage:"验证码输入错误", showType:ShowType.WARN_MESSAGE});
     // }
+
+  //   SILENT = 0,       // 静默处理，不提示用户
+  // WARN_MESSAGE = 1, // 警告提示（黄色提示）
+  // ERROR_MESSAGE = 2,// 错误提示（红色提示）
+  // NOTIFICATION = 3, // 右上角通知提醒
+  // REDIRECT = 9      // 重定向页面（如登录页）
 
     const user = await User.findOne({
       where: { username, deleted: 0 } as any,
@@ -37,24 +41,15 @@ export const login = async (req: any, res: Response) => {
     }) as any;
 
     if (!user) {
-      return res.status(200).json({
-        code: 0,
-        message: "用户不存在，请重新输入",
-      });
+      return res.status(200).json({success:false, errorCode:1001, errorMessage:"用户名不存在", showType:ShowType.WARN_MESSAGE});
     }
 
     if (user.status === 0) {
-      return res.status(200).json({
-        code: 0,
-        message: "当前账号已禁用，请联系管理员",
-      });
+      return res.status(200).json({success:false, errorCode:1003, errorMessage:"账户已锁定30分钟", showType:ShowType.ERROR_MESSAGE});
     }
 
     if (!bcrypt.compareSync(password + user.salt, user.password)) {
-      return res.status(200).json({
-        code: 0,
-        message: "密码错误，请重新输入",
-      });
+      return res.status(200).json({success:false, errorCode:1002, errorMessage:"密码错误", showType:1, data:{retryCount:ShowType.ERROR_MESSAGE}});
     }
 
     const getClientIp = () => {
@@ -88,27 +83,18 @@ export const login = async (req: any, res: Response) => {
     }
 
     return res.status(200).json({
-      code: 1,
-      data: {
-        accessToken: token,
-        refreshToken: token,
-        user: {
-          id: userinfo[0].id,
-          username: userinfo[0].username,
-          email: userinfo[0].email,
-          avatar: userinfo[0].avatar,
-          permissions: transformArray(userinfo as any, 0),
-        },
-      },
-      message: "登录成功",
+      "success": true,
+        "data": {
+        "status": "ok",
+        "type": req.type,
+        "currentAuthority": req.username,
+        "token": `Bearer ey ${token}`,
+        "userid": userinfo[0].userId,
+  }
     });
   } catch (error: any) {
     console.error("登录错误:", error);
-    return res.status(500).json({
-      code: 0,
-      message: "服务器错误，请稍后重试",
-      details: error.message
-    });
+    return res.status(500).json({success:false, errorCode:5000, errorMessage:"系统繁忙，请稍后重试", showType:0});
   }
 };
 

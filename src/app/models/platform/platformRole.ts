@@ -40,7 +40,11 @@ export default (sequelize: Sequelize) => {
   }, {
     sequelize,
     ...modelConfig,
-    tableName: 'platform_role'
+    tableName: 'platform_role',
+    comment: '角色表',
+    indexes: [
+      { unique: true, fields: ['name'] } // 角色名唯一索引
+    ]
   });
 
   return Role;
