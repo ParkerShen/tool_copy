@@ -10,7 +10,7 @@
  * @param icon 配置路由的图标，取值参考 https://ant.design/components/icon-cn， 注意去除风格后缀和大小写，如想要配置图标为 <StepBackwardOutlined /> 则取值应为 stepBackward 或 StepBackward，如想要配置图标为 <UserOutlined /> 则取值应为 user 或者 User
  * @doc https://umijs.org/docs/guides/routes
  */
-export default [
+ const staticRoutes = [
   {
     path: '/user',
     layout: false,
@@ -28,38 +28,39 @@ export default [
     icon: 'smile',
     component: './Welcome',
   },
-  {
-    path: '/admin',
-    name: 'admin',
-    icon: 'crown',
+  // {
+  //   path: '/admin',
+  //   name: 'admin',
+  //   icon: 'crown',
 
-    access: 'admin',
-    routes: [
-      {
-        path: '/admin',
-        redirect: '/admin/sub-page',
-      },
-      {
-        path: '/admin/sub-page',
-        name: 'sub-page',
-        component: './Admin',
-        access: 'admin:sub-page:view',
-      },
-      {
-        path: '/admin/new-page',
-        name: 'new-page',
-        access: 'admin:new-page:view',
-        component: './NewPage',
-      },
-    ],
-  },
-  {
-    name: 'list.table-list',
-    icon: 'table',
-    path: '/list',
-    access: 'list',
-    component: './TableList',
-  },
+  //   access: 'admin',
+  //   routes: [
+  //     {
+  //       path: '/admin',
+  //       redirect: '/admin/sub-page',
+  //     },
+  //     {
+  //       path: '/admin/sub-page',
+  //       name: 'sub-page',
+  //       component: './Admin',
+  //       access: 'admin:sub-page:view',
+  //     },
+  //     {
+  //       path: '/admin/new-page',
+  //       name: 'new-page',
+  //       access: 'admin:new-page:view',
+  //       component: './NewPage',
+  //     },
+  //   ],
+  // },
+  // {
+  //   name: 'list.table-list',
+  //   icon: 'table',
+  //   path: '/list',
+  //   access: 'list',
+  //   component: './TableList',
+  // },
+
   {
     path: '/',
     redirect: '/welcome',
@@ -70,3 +71,5 @@ export default [
     component: './404',
   },
 ];
+
+export default staticRoutes

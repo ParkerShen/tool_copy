@@ -1,6 +1,6 @@
 import { AvatarDropdown, AvatarName, Footer, Question, SelectLang } from '@/components';
 import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
-import { LinkOutlined } from '@ant-design/icons';
+import { LinkOutlined, CrownOutlined } from '@ant-design/icons';
 import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import { SettingDrawer } from '@ant-design/pro-components';
 import type { RunTimeLayoutConfig } from '@umijs/max';
@@ -9,6 +9,7 @@ import React from 'react';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
 import '@ant-design/v5-patch-for-react-19';
+import staticRoutes from '../config/routes';
 
 const isDev = process.env.NODE_ENV === 'development';
 const loginPath = '/user/login';
@@ -52,6 +53,55 @@ export async function getInitialState(): Promise<{
 // ProLayout 支持的api https://procomponents.ant.design/components/layout
 export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) => {
   return {
+
+    menu: {
+      // 每当 initialState?.currentUser?.userid 发生修改时重新执行 request
+      params: {
+        userId: initialState?.currentUser?.userid,
+      },
+      request: async (params, defaultMenuData) => {
+        // initialState.currentUser 中包含了所有用户信息
+
+
+        const menuData = Promise.resolve([
+          {
+            path: '/admin',
+            name: 'admin',
+            icon: <CrownOutlined />,
+
+            access: 'admin',
+            routes: [
+              {
+                path: '/admin',
+                redirect: '/admin/sub-page',
+              },
+              {
+                path: '/admin/sub-page',
+                name: 'sub-page',
+                component: './Admin',
+                access: 'admin:sub-page:view',
+              },
+              {
+                path: '/admin/new-page',
+                name: 'new-page',
+                access: 'admin:new-page:view',
+                component: './NewPage',
+              },
+            ],
+          },
+          {
+            name: 'list.table-list',
+            icon: 'table',
+            path: '/list',
+            access: 'list',
+            component: './TableList',
+          },
+
+        ]);
+        const resolvedMenuData = await menuData;
+        return [...staticRoutes, ...resolvedMenuData];
+      },
+    },
     actionsRender: () => [<Question key="doc" />, <SelectLang key="SelectLang" />],
     avatarProps: {
       src: initialState?.currentUser?.avatar,
@@ -93,11 +143,11 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
     ],
     links: isDev
       ? [
-          <Link key="openapi" to="/umi/plugin/openapi" target="_blank">
-            <LinkOutlined />
-            <span>OpenAPI 文档</span>
-          </Link>,
-        ]
+        <Link key="openapi" to="/umi/plugin/openapi" target="_blank">
+          <LinkOutlined />
+          <span>OpenAPI 文档</span>
+        </Link>,
+      ]
       : [],
     menuHeaderRender: undefined,
     // 自定义 403 页面
