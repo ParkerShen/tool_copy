@@ -1,11 +1,13 @@
+import { useAccess } from '@umijs/max';
 import { HeartTwoTone, SmileTwoTone } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
-import { Alert, Card, Typography } from 'antd';
+import { Alert, Card, Typography, Button } from 'antd';
 import React from 'react';
 
 const Admin: React.FC = () => {
   const intl = useIntl();
+  const access = useAccess(); // 获取权限对象
   return (
     <PageContainer
       content={intl.formatMessage({
@@ -28,8 +30,51 @@ const Admin: React.FC = () => {
           }}
         />
         <Typography.Title level={2} style={{ textAlign: 'center' }}>
-          <SmileTwoTone /> Ant Design Pro <HeartTwoTone twoToneColor="#eb2f96" /> You
+          <SmileTwoTone /> xxx <HeartTwoTone twoToneColor="#eb2f96" /> You
         </Typography.Title>
+         {/* 添加带权限控制的按钮 */}
+         <div style={{ textAlign: 'center', margin: '20px 0' }}>
+           {/* 管理按钮 - 需要 user:edit 权限 */}
+           {access.hasPermission('admin:sub-page:add') && (
+            <Button 
+              type="primary" 
+              style={{ marginRight: '10px' }}
+              onClick={() => alert('用户新增操作')}
+            >
+             新增用户
+            </Button>
+          )}
+          {/* 管理按钮 - 需要 user:edit 权限 */}
+          {access.hasPermission('user:edit') && (
+            <Button 
+              type="primary" 
+              style={{ marginRight: '10px' }}
+              onClick={() => alert('用户编辑操作')}
+            >
+              编辑用户
+            </Button>
+          )}
+          
+          {/* 查看按钮 - 需要 order:view 权限 */}
+          {access.hasPermission('order:view') && (
+            <Button 
+              style={{ marginRight: '10px' }}
+              onClick={() => alert('订单查看操作')}
+            >
+              查看订单
+            </Button>
+          )}
+          
+          {/* 高级管理按钮 - 需要 admin:access 权限 */}
+          {access.hasPermission('admin:access') && (
+            <Button 
+              danger
+              onClick={() => alert('管理员高级操作')}
+            >
+              管理员功能
+            </Button>
+          )}
+        </div>
       </Card>
       <p style={{ textAlign: 'center', marginTop: 24 }}>
         Want to add more pages? Please refer to{' '}

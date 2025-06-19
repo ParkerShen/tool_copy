@@ -21,6 +21,7 @@ import { createStyles } from 'antd-style';
 import React, { useState } from 'react';
 import { flushSync } from 'react-dom';
 import Settings from '../../../../config/defaultSettings';
+import { fetchUserPermission } from '@/services/ant-design-pro/api';
 
 const useStyles = createStyles(({ token }) => {
   return {
@@ -103,10 +104,14 @@ const Login: React.FC = () => {
   const intl = useIntl();
 
   const fetchUserInfo = async () => {
+
+    console.log('logininitialState',initialState)
+    
     const userInfo = await initialState?.fetchUserInfo?.();
+    
     if (userInfo) {
       flushSync(() => {
-        setInitialState((s) => ({
+        setInitialState((s: any) => ({
           ...s,
           currentUser: userInfo,
         }));
@@ -114,17 +119,22 @@ const Login: React.FC = () => {
     }
   };
 
+
   const handleSubmit = async (values: API.LoginParams) => {
     try {
       // 登录
       const msg = await login({ ...values, type });
+     
       if (msg.status === 'ok') {
         const defaultLoginSuccessMessage = intl.formatMessage({
           id: 'pages.login.success',
           defaultMessage: '登录成功！',
         });
+        localStorage.setItem('token', msg.token);
+        
         message.success(defaultLoginSuccessMessage);
         await fetchUserInfo();
+      
         const urlParams = new URL(window.location.href).searchParams;
         history.push(urlParams.get('redirect') || '/');
         return;
@@ -180,7 +190,7 @@ const Login: React.FC = () => {
             />,
             <ActionIcons key="icons" />,
           ]}
-          onFinish={async (values) => {
+          onFinish={async (values: any) => {
             await handleSubmit(values as API.LoginParams);
           }}
         >
@@ -218,13 +228,14 @@ const Login: React.FC = () => {
             <>
               <ProFormText
                 name="username"
+                initialValue="admin"
                 fieldProps={{
                   size: 'large',
                   prefix: <UserOutlined />,
                 }}
                 placeholder={intl.formatMessage({
                   id: 'pages.login.username.placeholder',
-                  defaultMessage: '用户名: admin or user',
+                  defaultMessage: '用户名: admin',
                 })}
                 rules={[
                   {
@@ -240,13 +251,14 @@ const Login: React.FC = () => {
               />
               <ProFormText.Password
                 name="password"
+                initialValue="123456"
                 fieldProps={{
                   size: 'large',
                   prefix: <LockOutlined />,
                 }}
                 placeholder={intl.formatMessage({
                   id: 'pages.login.password.placeholder',
-                  defaultMessage: '密码: ant.design',
+                  defaultMessage: '密码: 123456',
                 })}
                 rules={[
                   {

@@ -6,7 +6,17 @@ import { request } from '@umijs/max';
 export async function currentUser(options?: { [key: string]: any }) {
   return request<{
     data: API.CurrentUser;
-  }>('/api/currentUser', {
+  }>('/api/users/currentUser', {
+    method: 'GET',
+    ...(options || {}),
+  });
+}
+
+// 当前用户权限
+export async function fetchUserPermission(options?: { [key: string]: any }) {
+  return request<{
+    data: API.CurrentUser;
+  }>('/api/users/currentPermission', {
     method: 'GET',
     ...(options || {}),
   });
@@ -22,7 +32,7 @@ export async function outLogin(options?: { [key: string]: any }) {
 
 /** 登录接口 POST /api/login/account */
 export async function login(body: API.LoginParams, options?: { [key: string]: any }) {
-  return request<API.LoginResult>('/api/login/account', {
+  return request<API.LoginResult>('/api/users/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

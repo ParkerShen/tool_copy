@@ -40,4 +40,11 @@ export default {
       pathRewrite: { '^': '' },
     },
   },
+  dev: {
+    '/api/': {
+      target: 'http://localhost:3001', // 您的后端地址
+      changeOrigin: true,
+      pathRewrite: { '^': '' }, // 保持路径不变
+    },
+  },
 };

@@ -32,7 +32,8 @@ export default [
     path: '/admin',
     name: 'admin',
     icon: 'crown',
-    access: 'canAdmin',
+
+    access: 'admin',
     routes: [
       {
         path: '/admin',
@@ -42,6 +43,13 @@ export default [
         path: '/admin/sub-page',
         name: 'sub-page',
         component: './Admin',
+        access: 'admin:sub-page:view',
+      },
+      {
+        path: '/admin/new-page',
+        name: 'new-page',
+        access: 'admin:new-page:view',
+        component: './NewPage',
       },
     ],
   },
@@ -49,6 +57,7 @@ export default [
     name: 'list.table-list',
     icon: 'table',
     path: '/list',
+    access: 'list',
     component: './TableList',
   },
   {
