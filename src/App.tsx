@@ -54,54 +54,54 @@ export async function getInitialState(): Promise<{
 export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) => {
   return {
 
-    menu: {
-      // 每当 initialState?.currentUser?.userid 发生修改时重新执行 request
-      params: {
-        userId: initialState?.currentUser?.userid,
-      },
-      request: async (params, defaultMenuData) => {
-        // initialState.currentUser 中包含了所有用户信息
+    // menu: {
+    //   // 每当 initialState?.currentUser?.userid 发生修改时重新执行 request
+    //   params: {
+    //     userId: initialState?.currentUser?.userid,
+    //   },
+    //   request: async (params, defaultMenuData) => {
+    //     // initialState.currentUser 中包含了所有用户信息
 
 
-        const menuData = Promise.resolve([
-          {
-            path: '/admin',
-            name: 'admin',
-            icon: <CrownOutlined />,
+    //     const menuData = Promise.resolve([
+    //       {
+    //         path: '/admin',
+    //         name: 'admin',
+    //         icon: <CrownOutlined />,
 
-            access: 'admin',
-            routes: [
-              {
-                path: '/admin',
-                redirect: '/admin/sub-page',
-              },
-              {
-                path: '/admin/sub-page',
-                name: 'sub-page',
-                component: './Admin',
-                access: 'admin:sub-page:view',
-              },
-              {
-                path: '/admin/new-page',
-                name: 'new-page',
-                access: 'admin:new-page:view',
-                component: './NewPage',
-              },
-            ],
-          },
-          {
-            name: 'list.table-list',
-            icon: 'table',
-            path: '/list',
-            access: 'list',
-            component: './TableList',
-          },
+    //         access: 'admin',
+    //         routes: [
+    //           {
+    //             path: '/admin',
+    //             redirect: '/admin/sub-page',
+    //           },
+    //           {
+    //             path: '/admin/sub-page',
+    //             name: 'sub-page',
+    //             component: './Admin',
+    //             access: 'admin:sub-page:view',
+    //           },
+    //           {
+    //             path: '/admin/new-page',
+    //             name: 'new-page',
+    //             access: 'admin:new-page:view',
+    //             component: './NewPage',
+    //           },
+    //         ],
+    //       },
+    //       {
+    //         name: 'list.table-list',
+    //         icon: 'table',
+    //         path: '/list',
+    //         access: 'list',
+    //         component: './TableList',
+    //       },
 
-        ]);
-        const resolvedMenuData = await menuData;
-        return [...staticRoutes, ...resolvedMenuData];
-      },
-    },
+    //     ]);
+    //     const resolvedMenuData = await menuData;
+    //     return [...staticRoutes, ...resolvedMenuData];
+    //   },
+    // },
     actionsRender: () => [<Question key="doc" />, <SelectLang key="SelectLang" />],
     avatarProps: {
       src: initialState?.currentUser?.avatar,

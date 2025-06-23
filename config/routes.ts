@@ -28,38 +28,44 @@
     icon: 'smile',
     component: './Welcome',
   },
-  // {
-  //   path: '/admin',
-  //   name: 'admin',
-  //   icon: 'crown',
+  {
+    path: '/admin',
+    name: 'admin',
+    icon: 'crown',
 
-  //   access: 'admin',
-  //   routes: [
-  //     {
-  //       path: '/admin',
-  //       redirect: '/admin/sub-page',
-  //     },
-  //     {
-  //       path: '/admin/sub-page',
-  //       name: 'sub-page',
-  //       component: './Admin',
-  //       access: 'admin:sub-page:view',
-  //     },
-  //     {
-  //       path: '/admin/new-page',
-  //       name: 'new-page',
-  //       access: 'admin:new-page:view',
-  //       component: './NewPage',
-  //     },
-  //   ],
-  // },
-  // {
-  //   name: 'list.table-list',
-  //   icon: 'table',
-  //   path: '/list',
-  //   access: 'list',
-  //   component: './TableList',
-  // },
+    access: 'admin',
+    routes: [
+      {
+        path: '/admin',
+        redirect: '/admin/user-page',
+      },
+      // {
+      //   path: '/admin/sub-page',
+      //   name: 'sub-page',
+      //   component: './Admin',
+      //   access: 'admin:sub-page:view',
+      // },
+      // {
+      //   path: '/admin/new-page',
+      //   name: 'new-page',
+      //   access: 'admin:new-page:view',
+      //   component: './NewPage',
+      // },
+      {
+        path: '/admin/user-page',
+        name: 'user-page',
+        access: 'admin:user-page:view',
+        component: './user/UserManagement',
+      },
+    ],
+  },
+  {
+    name: 'list.table-list',
+    icon: 'table',
+    path: '/list',
+    access: 'list',
+    component: './TableList',
+  },
 
   {
     path: '/',
