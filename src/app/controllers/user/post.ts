@@ -83,15 +83,13 @@ export const login = async (req: any, res: Response) => {
     }
 
     return res.status(200).json({
-      "success": true,
-        "data": {
         "status": "ok",
         "type": req.type,
         "currentAuthority": req.username,
-        "token": `Bearer ey ${token}`,
+        "token": `${token}`,
         "userid": userinfo[0].userId,
-  }
-    });
+
+      });
   } catch (error: any) {
     console.error("登录错误:", error);
     return res.status(500).json({success:false, errorCode:5000, errorMessage:"系统繁忙，请稍后重试", showType:0});
@@ -138,7 +136,7 @@ const transformArray = (arr: any[], parentId: number): any[] => {
 export const logout = async (req: Request, res: Response) => {
   try {
     const { token } = req.body;
-    await BlackToken.create({ token });
+    await BlackToken.create({ token:token});
     res.status(200).json({
       code: 1,
       message: "登出成功",

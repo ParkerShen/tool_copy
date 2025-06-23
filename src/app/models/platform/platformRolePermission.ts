@@ -20,7 +20,7 @@ export default (sequelize: Sequelize) => {
   }
 
   RolePermission.init({
-    id: { type: DataTypes.STRING, allowNull: false, comment: '主键' },
+    id: { type: DataTypes.STRING, allowNull: false,autoIncrement: true, comment: '主键' },
     roleId: { type: DataTypes.INTEGER, allowNull: false, comment: '角色ID', primaryKey: true },
     permissionId: { type: DataTypes.INTEGER, allowNull: false, comment: '菜单id', },
     ...timestamps

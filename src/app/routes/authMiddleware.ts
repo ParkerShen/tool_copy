@@ -12,7 +12,7 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
   try {
     if (req.path === '/captcha') return next();
 
-    const token = req.headers.authorization;
+    const token =  req.headers.authorization;
     if (!token) {
       res.status(401).json({ message: '未提供Token' });
       return;
@@ -28,6 +28,7 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
     (req as any).user = decoded;
     next();
   } catch (error) {
+    console.error('Token验证失败:', error);
     res.status(200).json({ code: 401, message: 'Token过期，重新登陆' });
   }
 };

@@ -155,20 +155,24 @@ const logger = winston.createLogger({
     new winston.transports.DailyRotateFile({
       filename: 'logs/application-%DATE%.log',
       datePattern: 'YYYY-MM-DD',
+      zippedArchive: true, // 启用压缩归档
       maxSize: '20m',
       maxFiles: '30d',
+      createSymlink: true, // 创建当前日志的符号链接
+      symlinkName: 'application-current.log', // 当前日志文件
       format: format.json(),
-      level: 'info' // 记录所有级别到文件
+      level: 'info'
     }),
     
-    // 错误专用日志文件
     new winston.transports.DailyRotateFile({
       filename: 'logs/error-%DATE%.log',
       datePattern: 'YYYY-MM-DD',
-      maxSize: '20m',
-      maxFiles: '30d',
+      zippedArchive: true,
+      maxSize: '10m', // 错误日志文件较小
+      maxFiles: '90d', // 错误日志保留更久
+      symlinkName: 'error-current.log',
       format: format.json(),
-      level: 'error' // 仅记录错误级别
+      level: 'error'
     })
   ],
   
