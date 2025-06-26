@@ -1,3 +1,12 @@
+/*
+ * @Author: parker 960822987@qq.com
+ * @Date: 2025-06-09 14:58:18
+ * @LastEditors: parker 960822987@qq.com
+ * @LastEditTime: 2025-06-23 22:58:46
+ * @FilePath: \serveradmin\src\app\controllers\role\get.ts
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
+
 import { Request, Response } from 'express';
 import db from '../../models/platform';
 
@@ -18,7 +27,7 @@ export const getAllroles = async (req: Request, res: Response) => {
       attributes: ['id', 'name', 'label', 'status']
     });
 
-    res.status(200).json({ code: 1, message: '获取成功', data: userRoleList });
+    res.status(200).json({ success: true, message: '获取成功', data: userRoleList });
   } catch (error) {
     console.error('Error getting roles:', error);
     res.status(500).json({ message: '获取角色失败' });
@@ -46,7 +55,7 @@ export const getAllmenus = async (req: Request, res: Response) => {
     };
 
     const Tree = buildTree(menu as any, 0);
-    res.status(200).json({ code: 1, message: '获取成功', data: Tree });
+    res.status(200).json({ success: true, message: '获取成功', data: Tree });
   } catch (error) {
     console.error('Error getting menus:', error);
     res.status(500).json({ message: '获取菜单失败' });

@@ -1,9 +1,17 @@
+/*
+ * @Author: parker 960822987@qq.com
+ * @Date: 2025-06-09 14:58:18
+ * @LastEditors: parker 960822987@qq.com
+ * @LastEditTime: 2025-06-24 15:39:45
+ * @FilePath: \serveradmin\src\app\models\platform\platformUser.ts
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 import { DataTypes, Model, Sequelize } from 'sequelize';
 import timestamps from './timestamps';
 import modelConfig from './modelConfig';
 
 interface UserAttributes {
-  id: number;
+ 
   userId: number;
   departmentId: number;
   status: number;
@@ -23,7 +31,7 @@ interface UserAttributes {
 
 export default (sequelize: Sequelize) => {
   class User extends Model<UserAttributes> implements UserAttributes {
-    public id!: number;
+  
     public userId!: number;
     public status!: number;
     public username!: string;
@@ -38,9 +46,9 @@ export default (sequelize: Sequelize) => {
   }
 
   User.init({
-    id: { type: DataTypes.INTEGER, allowNull: false },
+   
     userId: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true, comment: '主键/用户id' },
-    departmentId: { type: DataTypes.INTEGER, allowNull: false, comment: '部门id' },
+    departmentId: { type: DataTypes.INTEGER, allowNull: true, comment: '部门id' },
     status: { type: DataTypes.INTEGER, comment: '账号状态，1 启用 0 禁用' },
     username: { type: DataTypes.STRING, allowNull: false },
     password: { type: DataTypes.STRING, allowNull: false },

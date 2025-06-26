@@ -8,7 +8,7 @@ import logger from './util/logger'; // 日志模块
 import routeLogger from './middleware/routeLogger';
 import routes from './app/routes';
 import db from './app/models/platform';
-
+import fs from 'fs';
 dotenv.config();
 
 const app: Application = express();
@@ -45,9 +45,54 @@ app.use('/api', routes);
 // 在路由之后添加错误日志中间件
 app.use(logger.logError);
 
-// 设置静态文件目录，以便可以通过浏览器访问上传的图片
-const imagesDir = path.join(__dirname, '..', 'images');
+// ============ 静态文件访问配置 ============
+// 1. 设置根目录静态访问 - 默认访问 public 目录
+const publicDir = path.join(__dirname, '..', 'public');
+app.use(express.static(publicDir));
+
+// 2. 创建静态图片目录并确保其存在
+const imagesDir = path.join(__dirname, '..', 'public', 'images');
+
+// 如果目录不存在则创建
+if (!fs.existsSync(imagesDir)) {
+  fs.mkdirSync(imagesDir, { recursive: true });
+  console.log(`📁 已创建图片目录: ${imagesDir}`);
+}
+
+// 设置图片访问路由
 app.use('/images', express.static(imagesDir));
+console.log(`🌐 静态图片服务已启动: http://localhost:${process.env.PORT || 3001}/images/`);
+
+// 自定义静态文件访问路由
+app.get('/static/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(imagesDir, filename);
+  
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    res.status(404).json({
+      success: false,
+      message: '图片不存在',
+      path: filePath
+    });
+  }
+});
+
+// 3. 允许从根目录直接访问 public 下的文件
+app.get('/*', (req, res, next) => {
+  if (!req.url.startsWith('/api')) {
+    const filePath = path.join(publicDir, req.url);
+    
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      res.sendFile(filePath);
+    } else {
+      next(); // 交给后续中间件处理
+    }
+  } else {
+    next();
+  }
+})
 
 // 启动服务器
 const port = process.env.PORT || 3001;

@@ -20,43 +20,53 @@ interface SessionWithCaptcha {
 export const getUsers = async (req: Request<{}, {}, {}, UserQueryParams>, res: Response) => {
   try {
     const { page = '1', pageSize = '10', username, status, isAdmin, roles } = req.query;
+    const pageNum = parseInt(page);
+    const size = parseInt(pageSize);
+    const offset = (pageNum - 1) * size;
 
+    // 基础查询条件
     const whereClause: any = { deleted: 0 };
     if (username) whereClause.username = { [Op.like]: `%${username}%` };
     if (status) whereClause.status = parseInt(status);
     if (isAdmin) whereClause.isAdmin = parseInt(isAdmin);
 
-    const { count, rows: users } = await User.findAndCountAll({
-      where: whereClause,
-      attributes: ['userId', 'username', 'email', 'phone', 'isAdmin', 'avatar', 'status', 'cTime'],
-      offset: (parseInt(page) - 1) * parseInt(pageSize),
-      limit: parseInt(pageSize),
-      include: [{
-        model: Role,
-        attributes: [['name', 'roleName'], 'roleId'],
-        through: { attributes: [] },
-        required: false
-      }],
-      distinct: true
-    }) as any;
+    // 处理角色过滤条件 - 【修改开始】
+    const includeOptions: any = [{
+      model: Role,
+      attributes: [['name', 'roleName'], 'roleId'],
+      through: { attributes: [] },
+      required: false  // 默认不强制关联
+    }];
 
-    let filteredUsers = users;
+    // 当有角色过滤时，启用强制关联
     if (roles) {
       const roleId = parseInt(roles);
-      filteredUsers = users.filter((user: any) =>
-        user.Roles.some((role: any) => role.roleId === roleId)
-      );
+      includeOptions[0].required = true;  // 强制内连接
+      includeOptions[0].where = { roleId };  // 添加角色过滤条件
     }
+    // 【修改结束】
+
+    // 获取数据 - 【修改：直接使用查询结果，移除内存过滤】
+    const { count: totalCount, rows: users } = await User.findAndCountAll({
+      where: whereClause,
+      attributes: ['userId', 'username', 'isAdmin', 'avatar', 'status', 'cTime', 'loginCount', 'lastLoginAt'],
+      offset,
+      limit: size,
+      include: includeOptions,
+      distinct: true  // 确保正确计数
+    });
 
     res.status(200).json({
-      count: filteredUsers.length,
-      code: 1,
+      count: totalCount,
+      current:+page,
+      pageSize:+pageSize,
+      success: true,
       message: '获取成功',
-      data: filteredUsers
+      data: users
     });
   } catch (error) {
     console.error('Error getting users:', error);
-    res.status(500).json({ error: '发生错误' });
+    res.status(500).json({ success: false, error: '获取用户列表失败' });
   }
 };
 

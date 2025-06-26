@@ -4,7 +4,7 @@ import 'winston-daily-rotate-file';
 import dotenv from 'dotenv';
 import { Request, Response, NextFunction } from 'express';
 
-// 扩展 Logger 接口
+// 扩展 Winston 的 Logger 接口
 declare module 'winston' {
   interface Logger {
     logRequest: (req: Request, res: Response, next: NextFunction) => void;
@@ -65,7 +65,13 @@ export interface RequestWithUser extends Request {
 }
 
 // 创建带详细元数据支持的日志器
-const logger = winston.createLogger({
+const logger: winston.Logger & {
+  logRequest: (req: Request, res: Response, next: NextFunction) => void;
+  logError: (error: Error, req: Request, res: Response, next: NextFunction) => void;
+  logCaptchaFailure: (req: Request, error: string) => void;
+  logLoginAttempt: (username: string, success: boolean, reason?: string) => void;
+  logRouteError: (module: string, error: Error, meta?: Record<string, any>) => void;
+} = winston.createLogger({
   format: combine(
     timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     errors({ stack: true }),
@@ -76,7 +82,7 @@ const logger = winston.createLogger({
     new winston.transports.Console({
       format: combine(
         format.colorize(),
-        format.printf((info: any) => {
+        format.printf((info) => {
           const metadata = info.metadata || {};
           let message = `${info.timestamp} [${info.level}]`;
           
@@ -146,6 +152,7 @@ const logger = winston.createLogger({
     new winston.transports.MongoDB({
       db: process.env.MONGO_LOG_URI!,
       collection: 'app_logs',
+      options: { useUnifiedTopology: true },
       metaKey: 'metadata',
       decolorize: true,
       level: 'warn' // 只记录警告及以上级别
@@ -191,7 +198,7 @@ const logger = winston.createLogger({
       level: 'error'
     })
   ]
-});
+}) as any; // 使用类型断言避免初始类型错误
 
 // 请求日志中间件 - 增强版
 logger.logRequest = (req: Request, res: Response, next: NextFunction) => {
@@ -355,5 +362,10 @@ logger.logRouteError = (module: string, error: Error, meta: Record<string, any> 
   
   logger.error(`ROUTE_ERROR: ${error.message}`, { metadata });
 };
+
+// 添加日志传输错误处理
+logger.on('error', (error) => {
+  console.error('Logger transport error:', error);
+});
 
 export default logger;

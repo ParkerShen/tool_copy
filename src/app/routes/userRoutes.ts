@@ -2,7 +2,7 @@
  * @Author: parker 960822987@qq.com
  * @Date: 2025-06-09 14:58:18
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-06-23 17:41:02
+ * @LastEditTime: 2025-06-26 14:24:12
  * @FilePath: \serveradmin\src\app\routes\userRoutes.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -33,11 +33,11 @@ router.post('/login', (req: express.Request, res: express.Response, next: expres
 router.get('/captcha', captcha);
 router.post('/logout', logout);
 router.use(authenticateToken);
-router.post('/create', createUser); 
+router.post('/', createUser); 
 router.get('/getUsers', getUsers);
 router.get('/getAllUserroles', getAllUserroles); 
-router.post('/update', updateUser);
-router.post('/delete', deleteUser);
+router.put('/:id', updateUser);
+router.delete('/:id', deleteUser);
 // 获取当前用户权限
 // router.get('/currentPermission', currentPermission);
 router.get('/currentPermission', (req: express.Request<{ userId: number }>, res: express.Response, next: express.NextFunction) => {

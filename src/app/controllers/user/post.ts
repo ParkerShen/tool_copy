@@ -39,6 +39,7 @@ export const login = async (req: any, res: Response) => {
       where: { username, deleted: 0 } as any,
       raw: true,
     }) as any;
+    
 
     if (!user) {
       return res.status(200).json({success:false, errorCode:1001, errorMessage:"用户名不存在", showType:ShowType.WARN_MESSAGE});
@@ -64,10 +65,11 @@ export const login = async (req: any, res: Response) => {
     const token = await generateToken(username);
 
     const userinfo = await User.findAll({
-      where: { userId: user.id },
+      where: { userId: user.userId },
       raw:true,
       nest: true
     }) as any;
+    
 
     try {
       // 更新登录信息
@@ -135,15 +137,16 @@ const transformArray = (arr: any[], parentId: number): any[] => {
 // 登出接口
 export const logout = async (req: Request, res: Response) => {
   try {
-    const { token } = req.body;
-    await BlackToken.create({ token:token});
+    const token = req.headers['authorization'] || '';
+    await BlackToken.create({ token });
     res.status(200).json({
-      code: 1,
+      success: true,
+      data: {},
       message: "登出成功",
     });
   } catch (error: any) {
     res.status(500).json({
-      code: 0,
+      success: false,
       message: "登出失败",
       details: error.message
     });
@@ -155,13 +158,13 @@ export const createUser = async (req: Request, res: Response) => {
   const t = await db.sequelize.transaction();
    
   try {
-    const { username, email, phone, isAdmin, roles = [], status, avatar } = req.body;
+    const { username, email, phone, isAdmin = 1, roles = [], status, avatar } = req.body;
     let { password = "" } = req.body;
 
     // 参数验证
     if (!username) {
-       res.status(200).json({
-        code: 0,
+      return res.status(200).json({
+        // success: false,
         message: "用户名不能为空",
       });
     }
@@ -174,43 +177,43 @@ export const createUser = async (req: Request, res: Response) => {
 
     if (existingUser) {
       await t.rollback();
-       res.status(200).json({
-        code: 0,
+      return res.status(200).json({
+        // success: false,
         message: "账号已存在，请修改",
       });
     }
 
     // 检查手机号唯一性
-    if (phone) {
-      const phoneUser = await User.findOne({
-        where: { phone, deleted: 0 } as  any,
-        transaction: t
-      });
+    // if (phone) {
+    //   const phoneUser = await User.findOne({
+    //     where: { phone, deleted: 0 } as  any,
+    //     transaction: t
+    //   });
 
-      if (phoneUser) {
-        await t.rollback();
-         res.status(200).json({
-          code: 0,
-          message: "手机号码已存在，请修改",
-        });
-      }
-    }
+    //   if (phoneUser) {
+    //     await t.rollback();
+    //      res.status(200).json({
+    //       code: 0,
+    //       message: "手机号码已存在，请修改",
+    //     });
+    //   }
+    // }
 
     // 检查邮箱唯一性
-    if (email) {
-      const emailUser = await User.findOne({
-        where: { email, deleted: 0 } as any,
-        transaction: t
-      });
+    // if (email) {
+    //   const emailUser = await User.findOne({
+    //     where: { email, deleted: 0 } as any,
+    //     transaction: t
+    //   });
 
-      if (emailUser) {
-        await t.rollback();
-         res.status(200).json({
-          code: 0,
-          message: "邮箱已存在，请修改",
-        });
-      }
-    }
+    //   if (emailUser) {
+    //     await t.rollback();
+    //      res.status(200).json({
+    //       code: 0,
+    //       message: "邮箱已存在，请修改",
+    //     });
+    //   }
+    // }
 
     // 密码处理
     const salt = generateRandom20String();
@@ -224,6 +227,21 @@ export const createUser = async (req: Request, res: Response) => {
 
     // 创建用户
     const id = generateRandom20String();
+    console.log({
+      userId: moment().unix(),
+      username,
+      password,
+      
+      salt,
+      email: email || null,
+      phone: phone || null,
+      status: status || 1,
+      avatar: avatar || null,
+      cTime: new Date(),
+      uTime: new Date(),
+      deleted: 0,
+      logins: 0
+    });
     const newUser = await User.create({
       userId: moment().unix(),
       username,
@@ -253,13 +271,14 @@ export const createUser = async (req: Request, res: Response) => {
     await t.commit();
     
     res.status(200).json({
-      code: 1,
+      success: true,
+      data:{},
       message: "创建成功",
     });
   } catch (error: any) {
     await t.rollback();
     res.status(500).json({
-      code: 0,
+      success: false,
       message: "创建用户失败",
       details: error.message
     });
@@ -269,19 +288,19 @@ export const createUser = async (req: Request, res: Response) => {
 // 删除用户
 export const deleteUser = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.body;
+    const  userId  = req.params.id;
     await User.update(
       { deleted: 1 }  as any,
       { where: { userId } }
     );
 
     res.status(200).json({
-      code: 1,
+      success: true,
       message: "删除成功",
     });
   } catch (error: any) {
     res.status(500).json({
-      code: 0,
+      success: false,
       message: "删除用户失败",
       details: error.message
     });
@@ -291,9 +310,10 @@ export const deleteUser = async (req: Request, res: Response) => {
 // 修改用户
 export const updateUser = async (req: Request, res: Response) => {
   try {
-    const { userId, username, password, email, phone, status, avatar, isAdmin, roles = [] } = req.body;
-
-    const user = await User.findByPk(userId) as any;
+    
+    const {  username, password, email, phone, status, avatar, isAdmin, roles = [],id } = req.body;
+   const userId = req.params.id
+    const user = await User.findByPk(req.params.id) as any;
     if (!user) {
        res.status(200).json({
         code: 0,
@@ -303,12 +323,12 @@ export const updateUser = async (req: Request, res: Response) => {
 
     // 更新基本信息
     user.username = username;
-    user.email = email || user.email;
-    user.phone = phone || user.phone;
+    // user.email = email || user.email;
+    // user.phone = phone || user.phone;
     user.status = status !== undefined ? status : user.status;
     user.avatar = avatar || user.avatar;
     user.uTime = new Date();
-    user.isAdmin = isAdmin;
+    // user.isAdmin = isAdmin;
 
     // 密码更新
     if (password) {
@@ -330,12 +350,12 @@ export const updateUser = async (req: Request, res: Response) => {
     }));
 
     res.status(200).json({
-      code: 1,
+      success:true,
       message: "更新成功",
     });
   } catch (error: any) {
     res.status(500).json({
-      code: 0,
+      success: false,
       message: "更新用户失败",
       details: error.message
     });
