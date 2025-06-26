@@ -12,11 +12,16 @@ const UserManagement: React.FC = () => {
     modalVisible,
     modalMode,
     currentItem,
-    loadData,
+    
     openModal,
     closeModal,
     handleSubmit,
-    handleDelete
+    handleDelete,
+    loadData,
+    handlePageChange,
+    handleSearch,
+    resetData,
+    pagination
   } = useModel('userManagement');
 
   useEffect(() => {
@@ -30,6 +35,10 @@ const UserManagement: React.FC = () => {
         onEdit={(record: UserItem) => openModal('edit', record)}
         onDelete={handleDelete}
         onCreate={() => openModal('create')}
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        onSearch={handleSearch}
+        onReset={resetData}
       />
       
       {modalVisible && (
@@ -39,6 +48,7 @@ const UserManagement: React.FC = () => {
           initialValues={currentItem || undefined}
           onSubmit={(values) => handleSubmit(modalMode, values)}
           onCancel={closeModal}
+          
         />
       )}
     </PageContainer>

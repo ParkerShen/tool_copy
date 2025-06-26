@@ -25,8 +25,8 @@
     "preview": "npm run build && max preview --port 8000",
     "record": "cross-env NODE_ENV=development REACT_APP_ENV=test max record --scene=login",
     "serve": "umi-serve",
-    "start": "cross-env UMI_ENV=dev max dev",
-    "start:dev": "cross-env REACT_APP_ENV=dev MOCK=none UMI_ENV=dev max dev",
+    "start": "cross-env UMI_ENV=development max dev",
+    "start:dev": "cross-env REACT_APP_ENV=dev MOCK=none UMI_ENV=development max dev",
     "start:no-mock": "cross-env MOCK=none UMI_ENV=dev max dev",
     "start:pre": "cross-env REACT_APP_ENV=pre UMI_ENV=dev max dev",
     "start:test": "cross-env REACT_APP_ENV=test MOCK=none UMI_ENV=dev max dev",
@@ -63,6 +63,7 @@
     "@types/react-helmet": "^6.1.11",
     "@umijs/lint": "^4.3.24",
     "@umijs/max": "^4.4.11",
+    "@vitejs/plugin-react": "^4.6.0",
     "cross-env": "^7.0.3",
     "eslint": "^8.57.1",
     "express": "^4.21.1",
@@ -76,7 +77,8 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3",
     "umi-presets-pro": "^2.0.3",
-    "umi-serve": "^1.9.11"
+    "umi-serve": "^1.9.11",
+    "vite": "^4.5.2"
   },
   "engines": {
     "node": ">=12.0.0"

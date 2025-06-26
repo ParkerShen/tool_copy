@@ -99,4 +99,17 @@ declare namespace API {
     description?: string;
     type?: NoticeIconItemType;
   };
+
+   // 角色类型
+   type RoleItem = {
+    roleId: number;
+    name: string;
+    label: string;
+  };
+
+  type Response<T> = {
+    success: boolean;
+    data?: T;
+    message?: string;
+  };
 }

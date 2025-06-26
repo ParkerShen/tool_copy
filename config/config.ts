@@ -5,8 +5,9 @@ import defaultSettings from './defaultSettings';
 import proxy from './proxy';
 import routes from './routes';
 
-const { REACT_APP_ENV = 'dev' } = process.env;
 
+
+const { REACT_APP_ENV = 'dev' } = process.env;
 /**
  * @name 使用公共路径
  * @description 部署时的路径，如果部署在非根目录下，需要配置这个变量
@@ -15,6 +16,12 @@ const { REACT_APP_ENV = 'dev' } = process.env;
 const PUBLIC_PATH: string = '/';
 
 export default defineConfig({
+  define: {
+    'process.env': {
+      ...process.env, // 包含所有环境变量
+      UMI_APP_IMAGE_API_BASE_URL: process.env.UMI_APP_IMAGE_API_BASE_URL,
+    },
+  },
   /**
    * @name 开启 hash 模式
    * @description 让 build 之后的产物包含 hash 后缀。通常用于增量发布和避免浏览器加载缓存。
@@ -23,7 +30,6 @@ export default defineConfig({
   hash: true,
 
   publicPath: PUBLIC_PATH,
-
   /**
    * @name 兼容性设置
    * @description 设置 ie11 不一定完美兼容，需要检查自己使用的所有依赖
@@ -68,6 +74,11 @@ export default defineConfig({
    * @name 快速热更新配置
    * @description 一个不错的热更新组件，更新时可以保留 state
    */
+  vite: {}, // 开启 Vite 模式（支持热更新）
+  jsMinifier: 'esbuild', // 使用更快的压缩器
+  mfsu: {
+    strategy: 'normal',
+  },
   fastRefresh: true,
   //============== 以下都是max的插件配置 ===============
   /**
