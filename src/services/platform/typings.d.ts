@@ -21,7 +21,7 @@ declare namespace API {
     };
     address?: string;
     phone?: string;
-    permissions: string[]
+    permissions: string[];
   };
 
   type LoginResult = {
@@ -100,8 +100,8 @@ declare namespace API {
     type?: NoticeIconItemType;
   };
 
-   // 角色类型
-   type RoleItem = {
+  // 角色类型
+  type RoleItem = {
     roleId: number;
     name: string;
     label: string;

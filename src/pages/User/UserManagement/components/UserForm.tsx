@@ -2,11 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Form, Input, Select, Switch, Upload, Spin, message } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
-import { UserFormProps } from '../userTypes';
-import { getRoleList, uploadsImage } from '@/services/ant-design-pro/api';
+import { UserFormProps } from '../usertypes';
+import { getRoleList, uploadsImage } from '@/services/platform/api';
 
 const { Option } = Select;
-
 
 const UserForm: React.FC<UserFormProps> = ({
   visible,
@@ -14,11 +13,11 @@ const UserForm: React.FC<UserFormProps> = ({
   initialValues,
   onSubmit,
   onCancel,
-  loading
+  loading,
 }) => {
   const [form] = Form.useForm();
 
-  const [roleOptions, setRoleOptions] = useState<any[]>([]);
+  const [roleOptions, setRoleOptions] = useState<any>([]);
   const [fetchingRoles, setFetchingRoles] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -39,18 +38,16 @@ const UserForm: React.FC<UserFormProps> = ({
     }
   };
 
-
   useEffect(() => {
     form.resetFields();
     if (initialValues) {
       const formValues = {
         ...initialValues,
         // 将 Roles 数组转换为角色 ID 数组
-        roles: initialValues.Roles?.map(role => role.roleId) || [],
-        
+        roles: initialValues.Roles?.map((role) => role.roleId) || [],
       };
-      console.log("🚀 ~ useEffect ~ formValues:", formValues)
-      
+      console.log('🚀 ~ useEffect ~ formValues:', formValues);
+
       form.setFieldsValue(formValues);
       setImageUrl(initialValues.avatar || null);
     } else {
@@ -67,7 +64,6 @@ const UserForm: React.FC<UserFormProps> = ({
   const handleFinish = async () => {
     try {
       const values = await form.validateFields();
-      
 
       values.avatar = imageUrl || values.avatar; // 确保头像字段有值
       onSubmit(values);
@@ -98,7 +94,6 @@ const UserForm: React.FC<UserFormProps> = ({
         onError(new Error(response.message || '上传失败'), file);
         message.error(response.message || '上传失败');
       }
-
     } catch (error: any) {
       onError(error, file);
       message.error(`上传失败: ${error.message || '服务器错误'}`);
@@ -139,7 +134,7 @@ const UserForm: React.FC<UserFormProps> = ({
           initialValues={{
             status: 1,
             isAdmin: 0,
-            roles: []
+            roles: [],
           }}
         >
           {mode === 'edit' && (
@@ -150,10 +145,12 @@ const UserForm: React.FC<UserFormProps> = ({
           <Form.Item
             name="username"
             label="用户名"
-            rules={[{
-              required: true,
-              message: '请输入用户名'
-            }]}
+            rules={[
+              {
+                required: true,
+                message: '请输入用户名',
+              },
+            ]}
           >
             <Input placeholder="请输入用户名" disabled={mode === 'edit'} />
           </Form.Item>
@@ -165,7 +162,7 @@ const UserForm: React.FC<UserFormProps> = ({
                 validator(_, value) {
                   if (!value) return Promise.resolve();
 
-                  // 正则解释: 
+                  // 正则解释:
                   // ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$
                   // - 至少1个小写字母: (?=.*[a-z])
                   // - 至少1个大写字母: (?=.*[A-Z])
@@ -176,7 +173,7 @@ const UserForm: React.FC<UserFormProps> = ({
 
                   if (!passwordRegex.test(value)) {
                     return Promise.reject(
-                      new Error("密码需8位以上，包含大小写字母和数字，不能有特殊字符")
+                      new Error('密码需8位以上，包含大小写字母和数字，不能有特殊字符'),
                     );
                   }
 
@@ -185,9 +182,7 @@ const UserForm: React.FC<UserFormProps> = ({
               }),
             ]}
           >
-            <Input.Password
-              placeholder="请输入密码，不填则默认123456"
-            />
+            <Input.Password placeholder="请输入密码，不填则默认123456" />
           </Form.Item>
 
           {/* <Form.Item
@@ -211,13 +206,9 @@ const UserForm: React.FC<UserFormProps> = ({
           <Input placeholder="请输入手机号" />
         </Form.Item> */}
 
-          <Form.Item
-            name="roles"
-            label="角色"
-            rules={[{ required: true, message: '请选择角色' }]}
-          >
+          <Form.Item name="roles" label="角色" rules={[{ required: true, message: '请选择角色' }]}>
             <Select mode="multiple" placeholder="请选择角色">
-              {roleOptions.map(role => (
+              {roleOptions.map((role: any) => (
                 <Option key={role.id} value={role.id}>
                   {role.name}
                 </Option>
@@ -225,20 +216,10 @@ const UserForm: React.FC<UserFormProps> = ({
             </Select>
           </Form.Item>
 
-          <Form.Item
-            name="status"
-            label="状态"
-            valuePropName="checked"
-          >
-            <Switch
-              checkedChildren="启用"
-              unCheckedChildren="禁用"
-            />
+          <Form.Item name="status" label="状态" valuePropName="checked">
+            <Switch checkedChildren="启用" unCheckedChildren="禁用" />
           </Form.Item>
-          <Form.Item
-            label="头像"
-            name="avatar"
-          >
+          <Form.Item label="头像" name="avatar">
             <Upload
               name="file"
               listType="picture-card"
@@ -254,15 +235,17 @@ const UserForm: React.FC<UserFormProps> = ({
                     alt="avatar"
                     style={{ width: '100%', maxHeight: '100px' }}
                   />
-                  <div style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    right: 0,
-                    background: 'rgba(0,0,0,0.5)',
-                    color: 'white',
-                    padding: '2px 5px',
-                    fontSize: '12px'
-                  }}>
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      right: 0,
+                      background: 'rgba(0,0,0,0.5)',
+                      color: 'white',
+                      padding: '2px 5px',
+                      fontSize: '12px',
+                    }}
+                  >
                     点击更换
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 import { Footer } from '@/components';
-import { login } from '@/services/ant-design-pro/api';
-import { getFakeCaptcha } from '@/services/ant-design-pro/login';
+import { login } from '@/services/platform/api';
+import { getFakeCaptcha } from '@/services/platform/login';
 import {
   AlipayCircleOutlined,
   LockOutlined,
@@ -21,7 +21,6 @@ import { createStyles } from 'antd-style';
 import React, { useState } from 'react';
 import { flushSync } from 'react-dom';
 import Settings from '../../../../config/defaultSettings';
-import { fetchUserPermission } from '@/services/ant-design-pro/api';
 
 const useStyles = createStyles(({ token }) => {
   return {
@@ -104,11 +103,10 @@ const Login: React.FC = () => {
   const intl = useIntl();
 
   const fetchUserInfo = async () => {
+    console.log('logininitialState', initialState);
 
-    console.log('logininitialState',initialState)
-    
     const userInfo = await initialState?.fetchUserInfo?.();
-    
+
     if (userInfo) {
       flushSync(() => {
         setInitialState((s: any) => ({
@@ -119,22 +117,21 @@ const Login: React.FC = () => {
     }
   };
 
-
   const handleSubmit = async (values: API.LoginParams) => {
     try {
       // 登录
-      const msg = await login({ ...values, type });
-     
+      const msg = (await login({ ...values, type })) as any;
+
       if (msg.status === 'ok') {
         const defaultLoginSuccessMessage = intl.formatMessage({
           id: 'pages.login.success',
           defaultMessage: '登录成功！',
         });
         localStorage.setItem('token', msg.token);
-        
+
         message.success(defaultLoginSuccessMessage);
         await fetchUserInfo();
-      
+
         const urlParams = new URL(window.location.href).searchParams;
         history.push(urlParams.get('redirect') || '/');
         return;

@@ -1,15 +1,15 @@
 // src/models/userManagement.ts
 import { useState } from 'react';
 import { message } from 'antd';
-import { 
-  getUsers, 
-  createUser, 
-  updateUser, 
+import {
+  getUsers,
+  createUser,
+  updateUser,
   deleteUser,
   UserItem,
   CreateUserParams,
-  UpdateUserParams
-} from '@/services/ant-design-pro/api';
+  UpdateUserParams,
+} from '@/services/platform/api';
 interface QueryParams {
   username?: string;
   status?: string | number;
@@ -17,7 +17,7 @@ interface QueryParams {
   pageSize?: number;
 }
 export default () => {
-  const [queryParams, setQueryParams] = useState<QueryParams>();
+  // const [queryParams, setQueryParams] = useState<QueryParams>();
   const [tableData, setTableData] = useState<UserItem[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
@@ -26,24 +26,28 @@ export default () => {
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
-    total: 0
+    total: 0,
   });
 
   const loadData = async (params?: QueryParams) => {
     setLoading(true);
     try {
       // 传递查询参数到后端
-      const res = await getUsers(params);
+      const res = await getUsers(
+        params
+          ? { ...params, status: params.status ? Number(params.status) : undefined }
+          : undefined,
+      );
       if (res.success && res.data) {
         setTableData(res.data);
-       
+
         // 更新分页信息
         setPagination({
-          current:res.current || 1,
+          current: res.current || 1,
           pageSize: res.pageSize || 10, // 如果后端没有返回 pageSize，默认设置为 10
-          total: res.count // 使用后端返回的总数
+          total: res.count, // 使用后端返回的总数
         });
-        console.log('pagination', pagination)
+        console.log('pagination', pagination);
       } else {
         message.error(res.message || '获取用户列表失败');
       }
@@ -57,18 +61,15 @@ export default () => {
   const resetData = async () => {
     setLoading(true);
     try {
-    
-      const res = await getUsers({page:1,pageSize:10});
+      const res = await getUsers({ page: 1, pageSize: 10 });
       if (res.success && res.data) {
         setTableData(res.data);
-      
-      
+
         setPagination({
-          current:res.current || 1,
-          pageSize: res.pageSize || 10, 
-          total: res.count
+          current: res.current || 1,
+          pageSize: res.pageSize || 10,
+          total: res.count,
         });
-       
       } else {
         message.error(res.message || '获取用户列表失败');
       }
@@ -79,17 +80,16 @@ export default () => {
     }
   };
 
-    // 添加分页和搜索处理函数
-    const handlePageChange = (page: number, pageSize?: number) => {
-      
-      loadData({ page, pageSize });
-    };
-  
-    const handleSearch = (values: Partial<QueryParams>) => {
-      console.log(values);
-      
-      loadData({ ...values, page: 1,pageSize:10 });
-    };
+  // 添加分页和搜索处理函数
+  const handlePageChange = (page: number, pageSize?: number) => {
+    loadData({ page, pageSize });
+  };
+
+  const handleSearch = (values: Partial<QueryParams>) => {
+    console.log(values);
+
+    loadData({ ...values, page: 1, pageSize: 10 });
+  };
 
   const openModal = (mode: 'create' | 'edit', record: UserItem | null = null) => {
     setModalMode(mode);
@@ -101,16 +101,15 @@ export default () => {
 
   const handleSubmit = async (mode: 'create' | 'edit', values: any) => {
     setLoading(true);
-    
+
     try {
       if (mode === 'create') {
-        
         const params: CreateUserParams = {
           username: values.username,
           password: values.password,
           roles: values.roles,
           status: values.status,
-          avatar: values.avatar
+          avatar: values.avatar,
         };
         const res = await createUser(params);
         if (res.success) {
@@ -123,12 +122,12 @@ export default () => {
       } else {
         console.log('values', values);
         const params: UpdateUserParams = {
-          id:values.userId,
+          id: values.userId,
           username: values.username,
           password: values.password || '',
           roles: values.roles,
           status: values.status,
-          avatar: values.avatar
+          avatar: values.avatar,
         };
         const res = await updateUser(params);
         if (res.success) {
