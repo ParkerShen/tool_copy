@@ -83,7 +83,7 @@ const logger: winston.Logger & {
       format: combine(
         format.colorize(),
         format.printf((info) => {
-          const metadata = info.metadata || {};
+          const metadata: Record<string, any> = info.metadata || {};
           let message = `${info.timestamp} [${info.level}]`;
           
           // 显示模块信息（如果存在）

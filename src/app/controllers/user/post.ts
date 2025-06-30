@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
 import moment from 'moment';
 import { Op, Sequelize, Transaction } from 'sequelize';
@@ -12,10 +12,10 @@ import {
 } from '../../config/enums';
 
 // 登录接口
-export const login = async (req: any, res: Response) => {
+export const login = async (req: any, res: Response, next: NextFunction) => {
   try {
     const { username, password, verifyCode,type } = req.body;
-    
+
     // 验证码检查
     // 这里的代码不能删除
     // if (!req.session?.captcha) {
@@ -42,15 +42,18 @@ export const login = async (req: any, res: Response) => {
     
 
     if (!user) {
-      return res.status(200).json({success:false, errorCode:1001, errorMessage:"用户名不存在", showType:ShowType.WARN_MESSAGE});
+       res.status(200).json({success:false, errorCode:1001, errorMessage:"用户名不存在", showType:ShowType.WARN_MESSAGE});
+       return
     }
 
     if (user.status === 0) {
-      return res.status(200).json({success:false, errorCode:1003, errorMessage:"账户已锁定30分钟", showType:ShowType.ERROR_MESSAGE});
+       res.status(200).json({success:false, errorCode:1003, errorMessage:"账户已锁定30分钟", showType:ShowType.ERROR_MESSAGE});
+       return
     }
 
     if (!bcrypt.compareSync(password + user.salt, user.password)) {
-      return res.status(200).json({success:false, errorCode:1002, errorMessage:"密码错误", showType:1, data:{retryCount:ShowType.ERROR_MESSAGE}});
+       res.status(200).json({success:false, errorCode:1002, errorMessage:"密码错误", showType:1, data:{retryCount:ShowType.ERROR_MESSAGE}});
+       return
     }
 
     const getClientIp = () => {
@@ -84,7 +87,7 @@ export const login = async (req: any, res: Response) => {
       console.error('更新登录信息失败:', updateError);
     }
 
-    return res.status(200).json({
+     res.status(200).json({
         "status": "ok",
         "type": req.type,
         "currentAuthority": req.username,
@@ -94,7 +97,8 @@ export const login = async (req: any, res: Response) => {
       });
   } catch (error: any) {
     console.error("登录错误:", error);
-    return res.status(500).json({success:false, errorCode:5000, errorMessage:"系统繁忙，请稍后重试", showType:0});
+    res.status(500).json({success:false, errorCode:5000, errorMessage:"系统繁忙，请稍后重试", showType:0});
+    next(error)
   }
 };
 
@@ -154,7 +158,7 @@ export const logout = async (req: Request, res: Response) => {
 };
 
 // 创建新用户
-export const createUser = async (req: Request, res: Response) => {
+export const createUser = async (req: Request, res: Response,next: NextFunction) => {
   const t = await db.sequelize.transaction();
    
   try {
@@ -163,10 +167,11 @@ export const createUser = async (req: Request, res: Response) => {
 
     // 参数验证
     if (!username) {
-      return res.status(200).json({
-        // success: false,
+       res.status(200).json({
+        success: false,
         message: "用户名不能为空",
       });
+      return
     }
 
     // 检查用户名唯一性
@@ -177,10 +182,11 @@ export const createUser = async (req: Request, res: Response) => {
 
     if (existingUser) {
       await t.rollback();
-      return res.status(200).json({
+       res.status(200).json({
         // success: false,
         message: "账号已存在，请修改",
       });
+      return
     }
 
     // 检查手机号唯一性
@@ -282,6 +288,7 @@ export const createUser = async (req: Request, res: Response) => {
       message: "创建用户失败",
       details: error.message
     });
+    next(error)
   }
 };
 
@@ -308,7 +315,7 @@ export const deleteUser = async (req: Request, res: Response) => {
 };
 
 // 修改用户
-export const updateUser = async (req: Request, res: Response) => {
+export const updateUser = async (req: Request, res: Response,next: NextFunction) => {
   try {
     
     const {  username, password, email, phone, status, avatar, isAdmin, roles = [],id } = req.body;
@@ -359,5 +366,6 @@ export const updateUser = async (req: Request, res: Response) => {
       message: "更新用户失败",
       details: error.message
     });
+    next(error);
   }
 };

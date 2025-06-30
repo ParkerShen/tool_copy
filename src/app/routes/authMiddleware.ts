@@ -9,10 +9,12 @@ interface DecodedToken {
 }
 
 export const authenticateToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    if (req.path === '/captcha') return next();
+  // 设置免认证路径白名单
+  const ALLOWED_PATHS = ['/login', '/captcha', '/logout']; 
+  if (ALLOWED_PATHS.includes(req.path)) return next(); // 白名单直接放行
 
-    const token =  req.headers.authorization;
+  try {
+    const token = req.headers.authorization;
     if (!token) {
       res.status(401).json({ message: '未提供Token' });
       return;
@@ -20,7 +22,7 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
 
     const invalidatedToken = await BlackToken.findOne({ where: { token } });
     if (invalidatedToken) {
-      res.status(401).json({ message: 'Token 失效，请重新登录' });
+      res.status(401).json({ message: 'Token失效，请重新登录' });
       return;
     }
 
@@ -29,6 +31,7 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
     next();
   } catch (error) {
     console.error('Token验证失败:', error);
-    res.status(200).json({ code: 401, message: 'Token过期，重新登陆' });
+    res.status(401).json({ message: 'Token过期，请重新登录' });
+    next(error)
   }
 };

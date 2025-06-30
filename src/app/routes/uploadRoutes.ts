@@ -42,11 +42,11 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // === 关键修改：添加分类中间件 ===
-router.use(authenticateToken);
+// router.use(authenticateToken);
 router.post('/uploadimage', 
   getCategory, // 新增分类中间件
   upload.single('image'),
-  uploadImage
+  authenticateToken,uploadImage
 );
 
 export default router;

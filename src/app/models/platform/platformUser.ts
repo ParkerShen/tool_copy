@@ -2,7 +2,7 @@
  * @Author: parker 960822987@qq.com
  * @Date: 2025-06-09 14:58:18
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-06-24 15:39:45
+ * @LastEditTime: 2025-06-29 16:23:37
  * @FilePath: \serveradmin\src\app\models\platform\platformUser.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -27,6 +27,7 @@ interface UserAttributes {
   loginip?: string;
   loginCount?: number;
   lastLoginAt?: Date;
+  Roles?: number[];
 }
 
 export default (sequelize: Sequelize) => {
@@ -39,6 +40,8 @@ export default (sequelize: Sequelize) => {
     public salt!: string;
     public isAdmin!: number;
     public departmentId!: number;
+    public avatar?: string;
+    public Roles?: number[];
 
     static associate(models: any) {
       User.belongsToMany(models.Role, { through: models.UserRole, foreignKey: 'userId' });
