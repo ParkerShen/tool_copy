@@ -2,7 +2,7 @@
  * @Author: parker 960822987@qq.com
  * @Date: 2025-06-23 16:13:16
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-06-29 20:59:26
+ * @LastEditTime: 2025-06-30 15:47:23
  * @FilePath: \xin-admin\src\pages\User\UserManagement\components\UserTable.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -92,20 +92,19 @@ const UserTable: React.FC<UserTableProps> = ({
       title: '创建时间',
       dataIndex: 'cTimeRange',
       valueType: 'dateTimeRange',
-      hideInTable: true, // 不在表格中显示
+      hideInTable: true,
       search: {
         transform: (value) => {
-          // 将时间范围拆分为 startTime 和 endTime
+          // 直接返回时间戳或 ISO 字符串
           return {
-            startTime: dayjs(value[0]).startOf('day').format('YYYY-MM-DD HH:mm:ss'),
-            endTime: dayjs(value[1]).endOf('day').format('YYYY-MM-DD HH:mm:ss'),
+            startTime: value[0].valueOf(), // 时间戳（数字）
+            endTime: value[1].valueOf(),
           };
         },
       },
       fieldProps: {
         placeholder: ['开始时间', '结束时间'],
-        // 可选：禁用未来日期
-        disabledDate: (current: dayjs.Dayjs) => current && current > dayjs().endOf('day'),
+        disabledDate: (current: any) => current > dayjs().endOf('day'),
       },
     },
     {
@@ -160,19 +159,12 @@ const UserTable: React.FC<UserTableProps> = ({
           >
             {resetText}
           </Button>,
-          <Button key="export" disabled>
-            导出数据
-          </Button>,
+          // <Button key="export" disabled>
+          //   导出数据
+          // </Button>,
         ],
       }}
       onSubmit={onReset}
-      // 重置处理
-      // onReset={() => {
-      //   fetch({
-      //     current: 1,
-      //     pageSize: 10,
-      //   });
-      // }}
       columns={columns}
       dataSource={data}
       rowKey="userId"

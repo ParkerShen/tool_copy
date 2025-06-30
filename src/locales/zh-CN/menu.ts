@@ -2,7 +2,7 @@
  * @Author: parker 960822987@qq.com
  * @Date: 2025-06-19 15:55:49
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-06-23 15:52:05
+ * @LastEditTime: 2025-06-29 21:24:42
  * @FilePath: \xin-admin\src\locales\zh-CN\menu.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -14,6 +14,7 @@ export default {
   'menu.admin.sub-page': '二级管理页',
   'menu.admin.new-page': '新的管理页',
   'menu.admin.user-page': '用户管理',
+  'menu.admin.role-page': '角色管理',
   'menu.login': '登录',
   'menu.register': '注册',
   'menu.register-result': '注册结果',

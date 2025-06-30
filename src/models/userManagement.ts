@@ -47,7 +47,6 @@ export default () => {
           pageSize: res.pageSize || 10, // 如果后端没有返回 pageSize，默认设置为 10
           total: res.count, // 使用后端返回的总数
         });
-        console.log('pagination', pagination);
       } else {
         message.error(res.message || '获取用户列表失败');
       }
