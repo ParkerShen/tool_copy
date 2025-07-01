@@ -1,3 +1,9 @@
+/*
+ * @Date: 2025-06-29 15:59:39
+ * @LastEditors: parker 960822987@qq.com
+ * @LastEditTime: 2025-06-30 23:34:24
+ * @FilePath: \serveradmin\src\app\models\platform\index.ts
+ */
 import { Sequelize, Model, DataTypes } from 'sequelize';
 import dbConfig from '../../config/db.config';
 import UserModel from './platformUser';
@@ -27,22 +33,29 @@ const BlackToken = BlackTokenModel(sequelize);
 const Permission = PermissionModel(sequelize);
 const RolePermission = RolePermissionModel(sequelize);
 
+const models = {
+  User,
+  Role,
+  Permission,
+  RolePermission,
+  UserRole,
+  Usercontactinfo,
+  BlackToken
+};
+
 User.belongsToMany(Role, { through: UserRole, foreignKey: 'userId' });
 Role.belongsToMany(User, { through: UserRole, foreignKey: 'roleId' });
 
-Role.belongsToMany(Permission, { through: RolePermission, foreignKey: 'roleId' });
-Permission.belongsToMany(Role, { through: RolePermission, foreignKey: 'permissionId' });
+Object.values(models).forEach(model => {
+  if (typeof model.associate === 'function') {
+    model.associate(models);
+  }
+});
 
 const db = {
   Sequelize,
   sequelize,
-  User,
-  Role,
-  Usercontactinfo,
-  BlackToken,
-  Permission,
-  RolePermission,
-  UserRole
+  ...models
 };
 
 export default db;
