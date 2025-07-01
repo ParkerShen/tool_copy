@@ -2,6 +2,22 @@
 /* eslint-disable */
 
 declare namespace API {
+  // 通用 API 响应接口
+  interface ApiResponse<T> {
+    success: boolean; // 请求是否成功
+    message: string; // 消息描述
+    data: T; // 泛型数据
+  }
+
+  // 权限树节点接口
+  export interface PermissionTreeNode {
+    title: string; // 节点标题
+    key: string; // 节点唯一标识
+    children?: PermissionTreeNode[]; // 子节点（可选）
+  }
+
+  type PermissionTreeResponse = ApiResponse<PermissionTreeNode[]>;
+
   type CurrentUser = {
     name?: string;
     avatar?: string;
@@ -102,12 +118,42 @@ declare namespace API {
 
   // 角色类型
   type RoleItem = {
-    roleId: number;
-    name: string;
-    label: string;
+    /*
+    角色id
+    */
+    roleId?: number;
+    /*
+    角色名称
+    */
+    name?: string;
+    /*
+    启用状态 0 禁用  1 启用
+    */
+    status?: number;
+    /*
+    描述
+    */
+    description?: string;
+    /*
+    创建时间
+    */
+    cTime?: string;
+    /*
+    权限数组
+    */
+    permissions?: string[];
+    /*
+    权限数组
+    */
+    accesss?: string[];
   };
 
+  type RoleListeResponse = ApiResponse<RoleItem[]>;
+
   type Response<T> = {
+    current: number;
+    pageSize: number;
+    total: number;
     success: boolean;
     data?: T;
     message?: string;

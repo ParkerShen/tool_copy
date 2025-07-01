@@ -1,29 +1,35 @@
 /*
- * @Author: parker 960822987@qq.com
- * @Date: 2025-06-23 16:34:45
+ * @Date: 2025-06-29 21:14:55
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-06-26 14:28:14
- * @FilePath: \xin-admin\src\pages\User\UserManagement\userTypes.ts
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ * @LastEditTime: 2025-07-01 16:28:39
+ * @FilePath: \xin-admin\src\pages\User\RoleManagement\roletypes.ts
  */
-// src/pages/UserManagement/userTypes.ts
+
 // 用户数据类型定义
-export interface UserItem {
+export interface RoleItem {
   id?: number;
-  userId?: number;
-  username?: string;
-  email?: string;
-  phone?: string;
-  avatar?: string;
-  status: number;
-  isAdmin: number;
-  Roles: RolesItem[];
-  roleNames: string[];
-  createdAt?: string;
-}
-interface RolesItem {
-  roleId: number; // 角色ID
-  roleName: string; // 角色名称
+  /*
+  主键
+  */
+  roleId?: number;
+  /*
+  角色名
+  */
+  name?: string;
+  /*
+   描述
+  */
+  description?: string;
+  /*
+   创建时间
+  */
+  cTime?: string;
+  /*
+   status 0 禁用 1 启用
+  */
+  status?: number;
+
+  permissions?: string[] | undefined;
 }
 // 表单模式
 export type FormMode = 'create' | 'edit';
@@ -31,23 +37,33 @@ export type FormMode = 'create' | 'edit';
 // 表单提交参数
 export interface SubmitParams {
   mode: FormMode;
-  values: Partial<UserItem>;
+  values: Partial<RoleItem>;
+}
+
+//模糊提交组件
+export interface FuzzyRoleFormProps {
+  visible: boolean;
+  onCancel: () => void;
+  treeData: API.PermissionTreeNode | undefined;
+  onSubmit: (values: Partial<RoleItem>) => void;
+  mode: string;
+  initialValues: RoleItem | undefined;
 }
 
 // 表单组件Props
-export interface UserFormProps {
-  visible: boolean;
-  mode: FormMode;
-  initialValues?: Partial<UserItem>;
-  onSubmit: (values: Partial<UserItem>) => void;
-  onCancel: () => void;
-  loading?: boolean;
-}
+// export interface RoleTableProps {
+//   visible: boolean;
+//   mode: FormMode;
+//   initialValues?: Partial<RoleItem>;
+//   onSubmit: (values: Partial<RoleItem>) => void;
+//   onCancel: () => void;
+//   loading?: boolean;
+// }
 
 // 表格组件Props
-export interface UserTableProps {
-  data: UserItem[];
-  onEdit: (record: UserItem) => void;
+export interface RoleTableProps {
+  data: RoleItem[];
+  onEdit: (record: RoleItem) => void;
   onDelete: (id: number) => void;
   onCreate: () => void;
   loading?: boolean;

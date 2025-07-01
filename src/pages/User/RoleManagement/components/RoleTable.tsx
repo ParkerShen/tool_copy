@@ -1,16 +1,14 @@
 /*
- * @Author: parker 960822987@qq.com
- * @Date: 2025-06-23 16:13:16
+ * @Date: 2025-06-29 21:14:55
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-06-29 20:59:26
- * @FilePath: \xin-admin\src\pages\User\UserManagement\components\UserTable.tsx
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ * @LastEditTime: 2025-07-01 14:59:27
+ * @FilePath: \xin-admin\src\pages\User\RoleManagement\components\RoleTable.tsx
  */
-// src/pages/UserManagement/components/UserTable.tsx
+
 import React from 'react';
 import { Button, Space, Tag } from 'antd';
 import ProTable, { ProColumns } from '@ant-design/pro-table';
-import { UserItem, UserTableProps } from '@/pages/User/UserManagement/usertypes';
+import { RoleItem, RoleTableProps } from '@/pages/User/RoleManagement/roletypes';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -18,7 +16,7 @@ import timezone from 'dayjs/plugin/timezone';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const UserTable: React.FC<UserTableProps> = ({
+const UserTable: React.FC<RoleTableProps> = ({
   data,
   onEdit,
   onDelete,
@@ -29,20 +27,20 @@ const UserTable: React.FC<UserTableProps> = ({
   onSearch,
   onReset,
 }) => {
-  const columns: ProColumns<UserItem>[] = [
+  const columns: ProColumns<RoleItem>[] = [
     // {
     //   title: 'ID',
     //   dataIndex: 'id',
     //   hideInSearch: true,
     // },
     {
-      title: '用户名',
-      dataIndex: 'username',
+      title: '角色名称',
+      dataIndex: 'name',
     },
-    // {
-    //   title: '邮箱',
-    //   dataIndex: 'email',
-    // },
+    {
+      title: '描述',
+      dataIndex: 'description',
+    },
     {
       title: '状态',
       dataIndex: 'status',
@@ -55,32 +53,6 @@ const UserTable: React.FC<UserTableProps> = ({
           {record.status === 1 ? '启用' : '禁用'}
         </Tag>
       ),
-    },
-    {
-      title: '账号类型',
-      dataIndex: 'isAdmin',
-      valueEnum: {
-        0: { text: '用户', status: 'Error' },
-        1: { text: '平台', status: 'Success' },
-      },
-      render: (_, record) => (
-        <Tag color={record.isAdmin === 1 ? 'black' : 'yellow'}>
-          {record.isAdmin === 1 ? '平台' : '用户'}
-        </Tag>
-      ),
-    },
-    {
-      title: '角色',
-      dataIndex: 'Roles',
-      hideInSearch: true,
-      render: (_, record) => (
-        <Space>{record.Roles?.map((item) => <Tag key={item.roleName}>{item.roleName}</Tag>)}</Space>
-      ),
-    },
-    {
-      title: '登录次数',
-      dataIndex: 'loginCount',
-      hideInSearch: true,
     },
     {
       title: '创建时间',
@@ -109,19 +81,13 @@ const UserTable: React.FC<UserTableProps> = ({
       },
     },
     {
-      title: '最后上线时间',
-      dataIndex: 'lastLoginAt',
-      valueType: 'dateTime',
-      hideInSearch: true,
-    },
-    {
       title: '操作',
       valueType: 'option',
-      render: (_, record: UserItem) => (
+      render: (_, record: RoleItem) => (
         <Space>
           <Button onClick={() => onEdit(record)}>编辑</Button>
-          {record.username === 'admin' ? null : (
-            <Button danger onClick={() => record.userId !== undefined && onDelete(record.userId)}>
+          {record.name === '系统管理员' ? null : (
+            <Button danger onClick={() => record.roleId !== undefined && onDelete(record.roleId)}>
               删除
             </Button>
           )}
@@ -131,8 +97,7 @@ const UserTable: React.FC<UserTableProps> = ({
   ];
 
   return (
-    <ProTable<UserItem>
-      // onChange={handleTableChange}
+    <ProTable<RoleItem>
       pagination={{
         ...pagination,
         showSizeChanger: true,
@@ -160,26 +125,16 @@ const UserTable: React.FC<UserTableProps> = ({
           >
             {resetText}
           </Button>,
-          <Button key="export" disabled>
-            导出数据
-          </Button>,
         ],
       }}
       onSubmit={onReset}
-      // 重置处理
-      // onReset={() => {
-      //   fetch({
-      //     current: 1,
-      //     pageSize: 10,
-      //   });
-      // }}
       columns={columns}
       dataSource={data}
       rowKey="userId"
       loading={loading}
       toolBarRender={() => [
         <Button key="create" type="primary" onClick={onCreate}>
-          新增用户
+          新增角色
         </Button>,
       ]}
     />

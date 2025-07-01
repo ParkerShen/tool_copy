@@ -70,10 +70,16 @@ export interface CreateUserParams {
 }
 
 /** 获取角色列表 GET /api/role/list */
-export async function getRoleList(options?: { [key: string]: any }) {
-  return request<API.Response<{ data: API.RoleItem[] }>>('/api/roles/getAllroles', {
+export async function getRoleList(params?: {
+  name?: string;
+  status?: number;
+  desciption?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  return request<API.Response<API.RoleItem[]>>('/api/roles', {
     method: 'GET',
-    ...(options || {}),
+    params,
   });
 }
 
@@ -144,5 +150,35 @@ export async function deleteUser(id: number) {
 export async function getUserDetail(id: number) {
   return request<any>(`/api/users/${id}`, {
     method: 'GET',
+  });
+}
+
+// 获取所有角色tree
+export async function getAllTreeMenus() {
+  return request<API.PermissionTreeResponse>(`/api/roles/getAllmenus`, {
+    method: 'GET',
+  });
+}
+
+// 更新角色
+export async function updateRole(params: API.RoleItem) {
+  return request<any>(`/api/roles/${params.roleId}`, {
+    method: 'PUT',
+    data: params,
+  });
+}
+
+// 创建角色
+export async function createRole(params: API.RoleItem) {
+  return request<any>(`/api/roles`, {
+    method: 'POST',
+    data: params,
+  });
+}
+
+// 删除角色
+export async function deleteRole(role_id: number) {
+  return request<any>(`/api/roles/${role_id}`, {
+    method: 'DELETE',
   });
 }
