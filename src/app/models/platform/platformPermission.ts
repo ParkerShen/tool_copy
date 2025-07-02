@@ -1,7 +1,7 @@
 /*
  * @Date: 2025-06-29 15:59:39
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-06-30 23:35:32
+ * @LastEditTime: 2025-07-02 20:40:45
  * @FilePath: \serveradmin\src\app\models\platform\platformPermission.ts
  */
 import { DataTypes, Model, Sequelize } from 'sequelize';
@@ -9,8 +9,8 @@ import timestamps from './timestamps';
 import modelConfig from './modelConfig';
 
 interface PermissionAttributes {
-  id: string;
-  permissionId: number;
+  id?: string;
+  permissionId?: number;
   pid: number;
   creatorId: number;
   title: string;
@@ -23,6 +23,9 @@ interface PermissionAttributes {
   component?: string; 
   access: string; // 新增权限标识字段
   type: number;  // 0-目录 1-菜单 2-按钮
+  cTime?:Date;
+  dTime?:Date;
+  description?: string;
 }
 
 export default (sequelize: Sequelize) => {
@@ -38,6 +41,8 @@ export default (sequelize: Sequelize) => {
     public status!: number;
     public type!: number;
     public access!: string;
+    public cTime!:Date;
+    public dTime!:Date;
     static associate(models: any) {
       // 添加与 RolePermission 的关联
       Permission.hasMany(models.RolePermission, {
@@ -55,8 +60,8 @@ export default (sequelize: Sequelize) => {
   }
 
   Permission.init({
-    id: { type: DataTypes.INTEGER,  primaryKey: false, autoIncrement: false, },
-    permissionId: { type: DataTypes.INTEGER,  primaryKey: true, autoIncrement: true, },
+    id: { type: DataTypes.STRING,  primaryKey: false, allowNull: false },
+    permissionId: { type: DataTypes.INTEGER,  primaryKey: true, autoIncrement: true,allowNull: false, },
     pid: { type: DataTypes.INTEGER, allowNull: false, comment: '一级菜单为0,父id' },
     access: { 
       type: DataTypes.STRING(100), 
