@@ -182,3 +182,34 @@ export async function deleteRole(role_id: number) {
     method: 'DELETE',
   });
 }
+
+
+// 获取菜单设置 所有菜单树数据
+export async function getPermissionList() {
+  return request<API.Response<API.PermissionMenuTree>>('/api/menus/getAllPermissions', {
+    method: 'GET',
+  });
+}
+
+// 创建菜单
+export async function createPermission(params: API.PermissionMenu) {
+  return request<API.ApiResponse>(`/api/menus`, {
+    method: 'POST',
+    data: params,
+  });
+}
+
+// 更新菜单
+export async function updatePermission(params: API.PermissionMenu) {
+  return request<API.ApiResponse>(`/api/menus/${params.permissionId}`, {
+    method: 'PUT',
+    data: params,
+  });
+}
+
+// 删除菜单
+export async function deletePermission(permissionId?: number) {
+  return request<API.ApiResponse>(`/api/menus/${permissionId}`, {
+    method: 'DELETE',
+  });
+}

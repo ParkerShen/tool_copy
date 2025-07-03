@@ -3,7 +3,7 @@
 
 declare namespace API {
   // 通用 API 响应接口
-  interface ApiResponse<T> {
+  interface ApiResponse<T = any> {
     success: boolean; // 请求是否成功
     message: string; // 消息描述
     data: T; // 泛型数据
@@ -158,4 +158,67 @@ declare namespace API {
     data?: T;
     message?: string;
   };
+
+  // 菜单树
+  interface PermissionMenu {
+    id?: number;
+    /*
+    主键
+    */
+    permissionId?: number;
+    /*
+   父级
+   */
+    pid?: number;
+     /*
+   创建人id
+   */
+    creatorId?: number;
+     /*
+   菜单名字
+   */
+    title?: string;
+    /*
+   页面名 英文
+   */
+    name?: string;
+    icon?: string | null;
+     /*
+   排序
+   */
+    orderNum?: number;
+     /*
+   是否影藏 0 否 1 是
+   */
+    hide?: number;
+     /*
+   启用状态 1 启用 0 禁用
+   */
+    status?: number;
+     /*
+   浏览器路由 /admin/user-page
+   */
+    path?: string;
+     /*
+   浏览器路由 ./user/UserManagement
+   */
+    component?: string;
+     /*
+   权限标记 admin:user-page
+   */
+    access?: string;
+     /*
+   类型 0 目录 1菜单 2按钮
+   */
+    type?: number;
+     /*
+    子集
+   */
+    children?: PermissionMenu[];
+     /*
+    描述
+   */
+    description?: string;
+  }
+  type PermissionMenuTree = PermissionMenu[];
 }

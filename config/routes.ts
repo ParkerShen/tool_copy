@@ -1,12 +1,10 @@
 ﻿/*
- * @Author: parker 960822987@qq.com
- * @Date: 2025-06-29 21:06:44
+ * @Date: 2025-06-29 21:09:01
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-06-29 21:13:49
+ * @LastEditTime: 2025-07-02 15:17:47
  * @FilePath: \xin-admin\config\routes.ts
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
-/**
+/*
  * @name umi 的路由配置
  * @description 只支持 path,component,routes,redirect,wrappers,name,icon 的配置
  * @param path  path 只支持两种占位符配置，第一种是动态参数 :id 的形式，第二种是 * 通配符，通配符只能出现路由字符串的最后。
@@ -57,6 +55,12 @@ const staticRoutes = [
         name: 'role-page',
         access: 'admin:role-page:view',
         component: './user/RoleManagement',
+      },
+      {
+        path: '/admin/menu-page',
+        name: 'menu-page',
+        access: 'admin:menu-page:view',
+        component: './user/MenuManagement',
       },
     ],
   },
