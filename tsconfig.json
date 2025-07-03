@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "useDefineForClassFields": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "strict": true,
+    "noLib": false,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "lib": ["esnext", "dom"],
+    "baseUrl": ".",
+    "allowJs": true,
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "outDir": "dist",
+    "types": [
+      "@dcloudio/types",
+      "@types/wechat-miniprogram",
+      "@uni-helper/uni-ui-types",
+      "@ttou/uv-typings/shim",
+      "@ttou/uv-typings/v2"
+    ],
+    "skipLibCheck": true /* Skip type checking all .d.ts files. */,
+    "allowSyntheticDefaultImports": true /* 允许默认导入 */,
+    "forceConsistentCasingInFileNames": true /* Ensure that casing is correct in imports. */,
+
+    "jsx": "preserve",
+    "jsxFactory": "h",
+    "jsxFragmentFactory": "Fragment"
+  },
+  "vueCompilerOptions": {
+    "target": 3,
+    "nativeTags": ["block", "template", "component", "slot"]
+  },
+  "exclude": ["node_modules", ".pnpm", "dist", "**/*.js", "mock/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.vue", "src/typings/**/*.d.ts", "vite.config.ts"]
+}
