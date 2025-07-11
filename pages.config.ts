@@ -1,7 +1,7 @@
 /*
  * @Date: 2025-07-03 15:10:43
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-03 20:51:07
+ * @LastEditTime: 2025-07-11 16:41:54
  * @FilePath: \mobile\pages.config.ts
  */
 import { defineUniPages } from "@uni-helper/vite-plugin-uni-pages"
@@ -42,6 +42,24 @@ export default defineUniPages({
         selectedIconPath: "static/tabbar/coupon_active.png",
         pagePath: "pages/index/index",
         text: "优惠券领取专区",
+      },
+      {
+        iconPath: "static/tabbar/coupon.png",
+        selectedIconPath: "static/tabbar/coupon_active.png",
+        pagePath: "pages/BookKeeping/index",
+        text: "记账",
+      },
+      {
+        iconPath: "static/tabbar/coupon.png",
+        selectedIconPath: "static/tabbar/coupon_active.png",
+        pagePath: "pages/DayMaster/index",
+        text: "倒数日",
+      },
+      {
+        iconPath: "static/tabbar/coupon.png",
+        selectedIconPath: "static/tabbar/coupon_active.png",
+        pagePath: "ages/Diary/index",
+        text: "日记",
       },
       {
         iconPath: "static/tabbar/my.png",

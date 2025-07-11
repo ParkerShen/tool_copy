@@ -35,6 +35,24 @@
         "text": "优惠券领取专区"
       },
       {
+        "iconPath": "static/tabbar/coupon.png",
+        "selectedIconPath": "static/tabbar/coupon_active.png",
+        "pagePath": "pages/BookKeeping/index",
+        "text": "记账"
+      },
+      {
+        "iconPath": "static/tabbar/coupon.png",
+        "selectedIconPath": "static/tabbar/coupon_active.png",
+        "pagePath": "pages/DayMaster/index",
+        "text": "倒数日"
+      },
+      {
+        "iconPath": "static/tabbar/coupon.png",
+        "selectedIconPath": "static/tabbar/coupon_active.png",
+        "pagePath": "ages/Diary/index",
+        "text": "日记"
+      },
+      {
         "iconPath": "static/tabbar/my.png",
         "selectedIconPath": "static/tabbar/my_active.png",
         "pagePath": "pages/my/index",
