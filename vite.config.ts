@@ -60,6 +60,12 @@ export default (options: CommandOptions) => {
     baseUrl = mode === "development" ? env.VITE_BASE_OSS : env.VITE_BASE_OSS_API
   }
 
+  // 添加代理目标配置
+  const proxyTarget = process.env.VITE_APP_API_URL
+  const proxyPrefix = "/api" // 代理前缀，可自定义
+
+  console.log(`代理配置: ${proxyPrefix} -> ${proxyTarget}`)
+
   return defineConfig({
     envDir: "./env", // 自定义env目录
 
@@ -152,80 +158,25 @@ export default (options: CommandOptions) => {
       port: Number.parseInt(env.VITE_APP_PORT, 10),
 
       proxy: {
-        /** 代理前缀为 /passport 的请求  */
-        [env.VITE_APP_BASE_API_LOGIN]: {
-          // 允许跨域
-          changeOrigin: true,
-          // 接口地址
-          target: env.VITE_APP_API_URL_LOGIN,
-          rewrite: (path) => path.replace(new RegExp("^" + env.VITE_APP_BASE_API_LOGIN), ""),
+        // 代理所有以 /api 开头的请求
+        [proxyPrefix]: {
+          target: proxyTarget,
+          changeOrigin: true, // 支持跨域
+          rewrite: (path) => path.replace(new RegExp(`^${proxyPrefix}`), ""),
+
+          // 开发环境绕过证书验证（可选）
+          secure: false,
+
+          // 更多配置选项...
+          // ws: true, // 代理 websocket
+          // headers: { ... } // 自定义请求头
         },
-        /** 代理前缀为 /language 的请求  */
-        [env.VITE_APP_BASE_API_LANGUAGE]: {
-          changeOrigin: true,
-          target: env.VITE_APP_API_URL_LANGUAGE,
-          rewrite: (path) => path.replace(new RegExp("^" + env.VITE_APP_BASE_API_LANGUAGE), ""),
-        },
-        /** 代理前缀为 /log 的请求  */
-        [env.VITE_APP_BASE_API_LOG]: {
-          changeOrigin: true,
-          target: env.VITE_APP_API_URL_LOG,
-          rewrite: (path) => path.replace(new RegExp("^" + env.VITE_APP_BASE_API_LOG), ""),
-        },
-        /** 代理前缀为 /resource 的请求  */
-        [env.VITE_APP_BASE_API_RESOURCE]: {
-          changeOrigin: true,
-          target: env.VITE_APP_API_URL_RESOURCE,
-          rewrite: (path) => path.replace(new RegExp("^" + env.VITE_APP_BASE_API_RESOURCE), ""),
-        },
-        /** 代理前缀为 /download 的请求  */
-        [env.VITE_APP_BASE_API_DOWNLOAD]: {
-          changeOrigin: true,
-          target: env.VITE_APP_API_URL_DOWNLOAD,
-          rewrite: (path) => path.replace(new RegExp("^" + env.VITE_APP_BASE_API_DOWNLOAD), ""),
-        },
-        /** 代理前缀为 /push 的请求  */
-        [env.VITE_APP_BASE_API_PUSH]: {
-          changeOrigin: true,
-          target: env.VITE_APP_API_URL_PUSH,
-          rewrite: (path) => path.replace(new RegExp("^" + env.VITE_APP_BASE_API_PUSH), ""),
-        },
-        /** 代理前缀为 /user 的请求  */
-        [env.VITE_APP_BASE_API_USER]: {
-          changeOrigin: true,
-          target: env.VITE_APP_API_URL_USER,
-          rewrite: (path) => path.replace(new RegExp("^" + env.VITE_APP_BASE_API_USER), ""),
-        },
-        /** 代理前缀为 /coupon 的请求  */
-        [env.VITE_APP_BASE_API_COUPON]: {
-          changeOrigin: true,
-          target: env.VITE_APP_API_URL_COUPON,
-          rewrite: (path) => path.replace(new RegExp("^" + env.VITE_APP_BASE_API_COUPON), ""),
-        },
-        /** 代理前缀为 /config 的请求  */
-        [env.VITE_APP_BASE_API_CONFIG]: {
-          changeOrigin: true,
-          target: env.VITE_APP_API_URL_CONFIG,
-          rewrite: (path) => path.replace(new RegExp("^" + env.VITE_APP_BASE_API_CONFIG), ""),
-        },
-        /** 代理前缀为 /activity 的请求  */
-        [env.VITE_APP_BASE_API_ACTIVITY]: {
-          changeOrigin: true,
-          target: env.VITE_APP_API_URL_ACTIVITY,
-          rewrite: (path) => path.replace(new RegExp("^" + env.VITE_APP_BASE_API_ACTIVITY), ""),
-        },
-        /** 代理前缀为 /qrcode 的请求  */
-        [env.VITE_APP_BASE_API_QRCODE]: {
-          changeOrigin: true,
-          target: env.VITE_APP_API_URL_QRCODE,
-          rewrite: (path) => path.replace(new RegExp("^" + env.VITE_APP_BASE_API_QRCODE), ""),
-        },
-        /** 代理前缀为 /app_mobile 的请求  */
-        [env.VITE_APP_BASE_API_APPMOBILE]: {
-          changeOrigin: true,
-          target: env.VITE_APP_API_URL_APPMOBILE,
-          rewrite: (path) => path.replace(new RegExp("^" + env.VITE_APP_BASE_API_APPMOBILE), ""),
-        },
+
+        // 可添加多个代理规则
+        // "/another-api": {
+        //   target: "http://localhost:4000",
+        //   changeOrigin: true
+        // }
       },
     },
     build: {

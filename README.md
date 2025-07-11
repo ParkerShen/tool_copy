@@ -1,3 +1,10 @@
+<!--
+ * @Date: 2025-07-03 15:10:43
+ * @LastEditors: parker 960822987@qq.com
+ * @LastEditTime: 2025-07-03 15:43:47
+ * @FilePath: \mobile\README.md
+-->
+
 ## ⚙️ 环境
 
 - node>=18
@@ -33,5 +40,3 @@ git commit -m '跳过检查' --no-verify
 ## 📄 License
 
 [MIT](https://opensource.org/license/mit/)
-
-Copyright (c) 2024 影诺智能

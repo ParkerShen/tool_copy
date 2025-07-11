@@ -1,3 +1,9 @@
+/*
+ * @Date: 2025-07-03 15:10:43
+ * @LastEditors: parker 960822987@qq.com
+ * @LastEditTime: 2025-07-03 17:15:07
+ * @FilePath: \mobile\components.d.ts
+ */
 /* eslint-disable */
 /* prettier-ignore */
 // @ts-nocheck
@@ -12,6 +18,7 @@ declare module '@vue/runtime-core' {
     AppTest: typeof import('./src/components/AppTest.vue')['default']
     AppTest2: typeof import('./src/components/app-test-dir/AppTest2.vue')['default']
     FlyContent: typeof import('./src/components/fly-content/fly-content.vue')['default']
+    CustomTabbar: typeof import('./src/components/custom-tabbar/index.vue')['default']
     FlyHeader: typeof import('./src/components/fly-header/fly-header.vue')['default']
     FlyLogin: typeof import('./src/components/fly-login/fly-login.vue')['default']
     FlyNavbar: typeof import('./src/components/fly-navbar/fly-navbar.vue')['default']

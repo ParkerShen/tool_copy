@@ -80,10 +80,10 @@ onLaunch(() => {
   wxLogin()
   // #endif
   // #ifdef H5
-  getH5UserPosition()
+  // getH5UserPosition()
   // #endif
-  getLangList()
-  getCaptchaSettings()
+  // getLangList()
+  // getCaptchaSettings()
 })
 
 onShow(() => {

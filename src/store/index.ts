@@ -1,3 +1,9 @@
+/*
+ * @Date: 2025-07-03 15:10:43
+ * @LastEditors: parker 960822987@qq.com
+ * @LastEditTime: 2025-07-03 15:34:55
+ * @FilePath: \mobile\src\store\index.ts
+ */
 import { createPinia } from "pinia"
 import { createPersistedState } from "pinia-plugin-persistedstate" // 数据持久化
 

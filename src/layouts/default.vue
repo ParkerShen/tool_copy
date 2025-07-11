@@ -1,3 +1,9 @@
+<!--
+ * @Date: 2025-07-03 15:10:43
+ * @LastEditors: parker 960822987@qq.com
+ * @LastEditTime: 2025-07-03 21:01:32
+ * @FilePath: \mobile\src\layouts\default.vue
+-->
 <template>
   <view class="default-layout">
     <slot />
@@ -8,7 +14,7 @@
 .default-layout {
   // height: 100vh;
   /* #ifdef H5 */
-  padding-bottom: 88px;
+  // padding-bottom: 88px;
   overflow: auto;
   /* #endif */
 }

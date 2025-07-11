@@ -31,7 +31,7 @@
       {
         "iconPath": "static/tabbar/coupon.png",
         "selectedIconPath": "static/tabbar/coupon_active.png",
-        "pagePath": "pages/coupon/index",
+        "pagePath": "pages/index/index",
         "text": "优惠券领取专区"
       },
       {
@@ -44,26 +44,30 @@
   },
   "pages": [
     {
-      "path": "pages/coupon/index",
-      "type": "home",
+      "path": "pages/BookKeeping/index",
+      "type": "page",
+      "layout": "default",
       "style": {
-        "navigationBarTitleText": "",
-        "enablePullDownRefresh": true
+        "navigationBarTitleText": "记账",
+        "navigationBarBackgroundColor": "#FFFFFF"
       }
     },
     {
-      "path": "pages/activity/activity-detail",
+      "path": "pages/DayMaster/index",
       "type": "page",
+      "layout": "default",
       "style": {
-        "navigationBarTitleText": ""
+        "navigationBarTitleText": "倒数日",
+        "navigationBarBackgroundColor": "#FFFFFF"
       }
     },
     {
-      "path": "pages/activity/coupon-detail",
+      "path": "pages/Diary/index",
       "type": "page",
+      "layout": "default",
       "style": {
-        "navigationBarTitleText": "",
-        "enablePullDownRefresh": true
+        "navigationBarTitleText": "日记",
+        "navigationBarBackgroundColor": "#FFFFFF"
       }
     },
     {
@@ -137,69 +141,6 @@
     },
     {
       "path": "pages/my/language",
-      "type": "page",
-      "style": {
-        "navigationBarTitleText": ""
-      }
-    },
-    {
-      "path": "pages/person-info/email",
-      "type": "page",
-      "style": {
-        "navigationBarTitleText": ""
-      }
-    },
-    {
-      "path": "pages/person-info/index",
-      "type": "page",
-      "style": {
-        "navigationBarTitleText": ""
-      }
-    },
-    {
-      "path": "pages/person-info/nick-name",
-      "type": "page",
-      "style": {
-        "navigationBarTitleText": ""
-      }
-    },
-    {
-      "path": "pages/person-info/personal-profile",
-      "type": "page",
-      "style": {
-        "navigationBarTitleText": ""
-      }
-    },
-    {
-      "path": "pages/person-info/phone",
-      "type": "page",
-      "style": {
-        "navigationBarTitleText": ""
-      }
-    },
-    {
-      "path": "pages/sign-in/index",
-      "type": "page",
-      "style": {
-        "navigationBarTitleText": ""
-      }
-    },
-    {
-      "path": "pages/sign-in/privacy-protection",
-      "type": "page",
-      "style": {
-        "navigationBarTitleText": ""
-      }
-    },
-    {
-      "path": "pages/sign-in/user-agreement",
-      "type": "page",
-      "style": {
-        "navigationBarTitleText": ""
-      }
-    },
-    {
-      "path": "pages/sign-in/verify",
       "type": "page",
       "style": {
         "navigationBarTitleText": ""

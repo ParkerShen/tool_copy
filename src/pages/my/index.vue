@@ -4,130 +4,8 @@
 }
 </route>
 <template>
-  <view class="main-container">
-    <view class="flex-y-center w-full">
-      <!-- 未登录 -->
-      <!-- #ifdef H5 -->
-      <view class="title" v-if="!isLogin" @click="toLogin">
-        <view class="avator-box flex-y-center">
-          <wd-skeleton
-            :row-col="[{ size: '4rem', type: 'circle' }]"
-            theme="avatar"
-            :loading="showContent"
-          >
-            <image
-              class="w-16 h-16"
-              src="https://innoai-01.oss-cn-shenzhen.aliyuncs.com/home/my/no_login.png"
-            />
-          </wd-skeleton>
-
-          <wd-skeleton
-            :custom-style="{ width: '50%', marginLeft: '12px' }"
-            :row-col="[{ width: '100%', height: '1.5rem' }]"
-            :loading="showContent"
-          >
-            <view class="font-size-5 font-bold color-#333 ml-3.25">
-              {{ $t("app.home.plaseLogin") }}
-            </view>
-          </wd-skeleton>
-        </view>
-      </view>
-      <!-- #endif -->
-      <!-- #ifdef MP-WEIXIN -->
-      <button
-        class="title"
-        v-if="!isLogin"
-        open-type="getPhoneNumber"
-        @getphonenumber="getPhoneNumber"
-      >
-        <view class="avator-box flex-y-center">
-          <wd-skeleton
-            :row-col="[{ size: '4rem', type: 'circle' }]"
-            theme="avatar"
-            :loading="showContent"
-          >
-            <image
-              class="w-16 h-16"
-              src="https://innoai-01.oss-cn-shenzhen.aliyuncs.com/home/my/no_login.png"
-            />
-          </wd-skeleton>
-
-          <wd-skeleton
-            :custom-style="{ width: '50%', marginLeft: '12px' }"
-            :row-col="[{ width: '100%', height: '1.5rem' }]"
-            :loading="showContent"
-          >
-            <view class="flex flex-x-start font-size-5 font-bold color-#333 ml-3.25">
-              {{ $t("app.home.plaseLogin") }}
-            </view>
-          </wd-skeleton>
-        </view>
-      </button>
-      <!-- #endif -->
-      <!-- 已经登录 -->
-      <view class="title" v-if="isLogin">
-        <wd-skeleton
-          :row-col="[{ size: '4rem', type: 'circle' }]"
-          theme="avatar"
-          :loading="showContent"
-        >
-          <view class="avator-box">
-            <image
-              class="w-16 h-16"
-              :src="
-                userInfo.portrait
-                  ? userInfo.portrait
-                  : 'https://innoai-01.oss-cn-shenzhen.aliyuncs.com/home/my/avator.png'
-              "
-            />
-            <view class="ml-3">
-              <view class="w-40 font-size-5 font-bold color-#333 mt-1.75 ellipsis">
-                {{ userInfo.nick_name }}
-              </view>
-              <view class="introduction ellipsis-2">
-                {{ userInfo.introduction || $t("app.home.personalIntroduction") }}
-              </view>
-            </view>
-          </view>
-        </wd-skeleton>
-
-        <wd-skeleton
-          :custom-style="{ width: '50%', marginLeft: '12px' }"
-          :row-col="[{ width: '100%', height: '1.5rem' }]"
-          :loading="showContent"
-        >
-          <view class="font-size-3 color-#999 flex-y-center justify-end" @click="toEditData">
-            {{ $t("app.home.editData") }}
-            <wd-icon class="color-#999 font-size-4.5" name="chevron-right"></wd-icon>
-          </view>
-        </wd-skeleton>
-      </view>
-    </view>
-    <wd-skeleton
-      :custom-style="[{ width: '100%', marginTop: '1.25rem' }]"
-      :row-col="grid"
-      animation="flashed"
-      theme="paragraph"
-      :loading="showContent"
-    >
-      <view class="menu-list">
-        <template v-for="item in menuList" :key="item.name">
-          <view
-            v-if="!item.needLogin || item.needLogin === isLogin"
-            class="menu-item"
-            @click="navigatorTo(item.path)"
-          >
-            <view class="center">
-              <image class="w-7 h-7 mr-2" :src="item.icon" />
-              <text class="font-size-4 color-#333 font-bold">{{ $t(item.name) }}</text>
-            </view>
-            <wd-icon class="color-#999 font-size-5.5" name="chevron-right"></wd-icon>
-          </view>
-        </template>
-        <!-- <button open-type="getPhoneNumber" @getphonenumber="getPhoneNumber">{{ $t("app.home.getPhoneNumber") }}</button> -->
-      </view>
-    </wd-skeleton>
-  </view>
+  <view class="main-container">这是我的页面</view>
+  <!-- <custom-tabbar :activeIndex="activeTab" @tabChange="handleTabChange" /> -->
 </template>
 
 <script lang="ts" setup>
@@ -136,6 +14,12 @@ import i18n from "@/locale/index"
 import { loginWxOrRegApi } from "@/api/user"
 
 const { t } = i18n.global as any
+
+const activeTab = ref(1)
+const handleTabChange = (index) => {
+  console.log("🚀 ~ handleTabChange ~ index:", index)
+  activeTab.value = index
+}
 
 const userStore = useUserStore()
 
@@ -261,7 +145,7 @@ watch(
 <style>
 page {
   height: 100%;
-  background: #f7f7f7;
+  background: #ffffff;
 }
 </style>
 

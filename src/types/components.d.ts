@@ -11,6 +11,7 @@ declare module '@vue/runtime-core' {
   export interface GlobalComponents {
     AppTest: typeof import('./../components/AppTest.vue')['default']
     AppTest2: typeof import('./../components/app-test-dir/AppTest2.vue')['default']
+    CustomTabbar: typeof import('./../components/custom-tabbar/index.vue')['default']
     FlyContent: typeof import('./../components/fly-content/fly-content.vue')['default']
     FlyHeader: typeof import('./../components/fly-header/fly-header.vue')['default']
     FlyNavbar: typeof import('./../components/fly-navbar/fly-navbar.vue')['default']

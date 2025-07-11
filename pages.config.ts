@@ -1,3 +1,9 @@
+/*
+ * @Date: 2025-07-03 15:10:43
+ * @LastEditors: parker 960822987@qq.com
+ * @LastEditTime: 2025-07-03 20:51:07
+ * @FilePath: \mobile\pages.config.ts
+ */
 import { defineUniPages } from "@uni-helper/vite-plugin-uni-pages"
 
 export default defineUniPages({
@@ -34,7 +40,7 @@ export default defineUniPages({
       {
         iconPath: "static/tabbar/coupon.png",
         selectedIconPath: "static/tabbar/coupon_active.png",
-        pagePath: "pages/coupon/index",
+        pagePath: "pages/index/index",
         text: "优惠券领取专区",
       },
       {
