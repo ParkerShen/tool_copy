@@ -1,462 +1,333 @@
 <template>
-  <view class="container">
-    <!-- 漂浮活动标签 -->
-    <view class="floating-event">婚礼: 还有15天</view>
-    <view class="floating-event floating-right">生日: 还有120天</view>
-
-    <view class="header">
-      <text class="title">时光倒数</text>
-      <text class="subtitle">记录每一个重要的日子</text>
-    </view>
-
-    <view class="current-date">
-      <text>{{ todayDate }}</text>
-    </view>
-
-    <!-- 倒数日卡片区域 -->
-    <view v-if="events.length > 0" class="countdown-container">
-      <view v-for="(event, index) in events" :key="index" class="countdown-card">
+  <view class="home-page">
+    <!-- 财务/倒数日/备忘卡片 -->
+    <view class="card-group">
+      <view class="card">
         <view class="card-header">
-          <text class="event-name">{{ event.name }}</text>
-          <view class="delete-btn" @click="deleteEvent(index)">
-            <uni-icons type="trash" size="20" color="#fff"></uni-icons>
+          <view class="icon-circle bg-blue">
+            <wd-icon name="money-circle" size="25px" color="white"></wd-icon>
+          </view>
+          <view class="title">
+            今日收支
+            <view class="sub-title">查看今日财务状况</view>
+          </view>
+          <view class="value text-blue">
+            收入128
+            <!-- <view class="unit">净收入</view> -->
           </view>
         </view>
-        <view class="days-container">
-          <text class="days-count">
-            {{ daysRemaining(event.date) > 0 ? daysRemaining(event.date) : "0" }}
-          </text>
-          <text class="days-label">天</text>
+        <view class="detail-list">
+          <view class="item">
+            <view class="label">午餐支出</view>
+            <view class="amount minus">-¥25</view>
+          </view>
+          <view class="item">
+            <view class="label">交通费</view>
+            <view class="amount minus">-¥15</view>
+          </view>
+          <view class="item">
+            <view class="label">工资收入</view>
+            <view class="amount plus">+¥3000</view>
+          </view>
         </view>
-        <text class="event-date">{{ formatDate(event.date) }}</text>
-        <view class="progress-container">
-          <view class="progress-bar" :style="{ width: progressWidth(event.date) + '%' }"></view>
+      </view>
+
+      <view class="card">
+        <view class="card-header">
+          <view class="icon-circle bg-orange">
+            <wd-icon name="dashboard" size="25px" color="white"></wd-icon>
+          </view>
+          <view class="title">
+            最近倒数日
+            <view class="sub-title">春节还有</view>
+          </view>
+          <view class="value text-orange">
+            42天
+            <!-- <view class="unit">剩余时间</view> -->
+          </view>
+        </view>
+        <view class="detail-list">
+          <view class="item">
+            <view class="label">期末考试已经</view>
+            <view class="amount minus">10天</view>
+          </view>
+          <view class="item">
+            <view class="label">项目结束已经</view>
+            <view class="amount minus">2天</view>
+          </view>
+          <view class="item">
+            <view class="label">面试还有</view>
+            <view class="amount plus">10天</view>
+          </view>
+        </view>
+      </view>
+
+      <view class="card">
+        <view class="card-header">
+          <view class="icon-circle bg-green">
+            <wd-icon name="list" size="25px" color="white"></wd-icon>
+          </view>
+          <view class="title">
+            我的备忘录
+            <view class="sub-title">代办事项管理</view>
+          </view>
+          <view class="value text-green">
+            8条
+            <!-- <view class="unit">未完成</view> -->
+          </view>
+        </view>
+        <view class="detail-list">
+          <view class="item">
+            <view class="label">需要写日记</view>
+            <!-- <view class="amount">
+              <wd-icon name="check" size="15px"></wd-icon>
+            </view> -->
+          </view>
+          <view class="item">
+            <view class="label">需要养马</view>
+            <view class="amount"></view>
+          </view>
+          <view class="item">
+            <view class="label">需要上墙</view>
+            <view class="amount plus"></view>
+          </view>
         </view>
       </view>
     </view>
 
-    <!-- 空状态 -->
-    <view v-else class="empty-state">
-      <uni-icons type="calendar" size="80" color="rgba(255,255,255,0.5)"></uni-icons>
-      <text class="empty-text">添加您的第一个倒数日事件，记录重要的日子</text>
-    </view>
+    <!-- 精选动态 -->
+    <view class="section-title">精选动态</view>
+    <view class="section-description">发现社区的精彩内容</view>
 
-    <!-- 添加按钮 -->
-    <view class="add-btn" @click="showModal = true">
-      <uni-icons type="plus" size="28" color="#fff"></uni-icons>
-    </view>
-
-    <!-- 添加事件弹窗 -->
-    <uni-popup ref="popup" :is-mask-click="true" type="center" :mask-background-color="maskBgColor">
-      <view class="modal-content">
-        <view class="modal-header">
-          <text class="modal-title">添加倒数日</text>
-          <uni-icons type="close" size="24" color="#fff" @click="closeModal"></uni-icons>
+    <scroll-view class="waterfall" scroll-y>
+      <view class="columns">
+        <view class="column">
+          <view
+            v-for="(item, index) in leftPosts"
+            :key="'left' + index"
+            class="post-card"
+            @click="viewPost(item)"
+          >
+            <image v-if="item.img" :src="item.img" class="post-img" mode="aspectFill" />
+            <view class="post-text">{{ item.text }}</view>
+            <view class="post-meta">
+              <text class="post-user">{{ item.user }}</text>
+              <text class="post-like">❤️ {{ item.like }}</text>
+            </view>
+          </view>
         </view>
 
-        <view class="form-group">
-          <text class="form-label">事件名称</text>
-          <input
-            class="form-input"
-            type="text"
-            placeholder="例如：婚礼、生日、毕业"
-            v-model="newEvent.name"
-          />
+        <view class="column">
+          <view
+            v-for="(item, index) in rightPosts"
+            :key="'right' + index"
+            class="post-card"
+            @click="viewPost(item)"
+          >
+            <image v-if="item.img" :src="item.img" class="post-img" mode="aspectFill" />
+            <view class="post-text">{{ item.text }}</view>
+            <view class="post-meta">
+              <text class="post-user">{{ item.user }}</text>
+              <text class="post-like">❤️ {{ item.like }}</text>
+            </view>
+          </view>
         </view>
-
-        <view class="form-group">
-          <text class="form-label">目标日期</text>
-          <picker mode="date" :value="newEvent.date" @change="bindDateChange">
-            <view class="picker">{{ newEvent.date || "请选择日期" }}</view>
-          </picker>
-        </view>
-
-        <button class="submit-btn" @click="addEvent">添加事件</button>
       </view>
-    </uni-popup>
+    </scroll-view>
+
+    <!-- 悬浮发布按钮 -->
+    <wd-button class="fab" type="primary" icon="add" shape="circle" @click="createPost"></wd-button>
   </view>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      todayDate: "",
-      events: [
-        { name: "李雷的生日", date: "2025-08-30" },
-        { name: "夏日旅行", date: "2025-07-20" },
-        { name: "项目截止日期", date: "2025-09-15" },
-      ],
-      newEvent: {
-        name: "",
-        date: "",
-      },
-      showModal: false,
-      maskBgColor: "rgba(0,0,0,0.5)",
+<script setup>
+import { ref, onMounted } from "vue"
+
+const leftPosts = ref([])
+const rightPosts = ref([])
+
+onMounted(() => {
+  const posts = [
+    {
+      user: "小明",
+      text: "今天看到了超美的日落，心情顿时变好了！",
+      img: "https://via.placeholder.com/300x200",
+      like: 12,
+    },
+    { user: "旅行者", text: "刚完成了一次说走就走的旅行，收获满满！", img: "", like: 15 },
+    {
+      user: "书虫",
+      text: "读书让人静下心来，享受当下。",
+      img: "https://via.placeholder.com/300x250",
+      like: 9,
+    },
+    {
+      user: "摄影控",
+      text: "拍到了超美银河星空。",
+      img: "https://via.placeholder.com/300x450",
+      like: 21,
+    },
+  ]
+  posts.forEach((item, index) => {
+    if (index % 2 === 0) {
+      leftPosts.value.push(item)
+    } else {
+      rightPosts.value.push(item)
     }
-  },
-  mounted() {
-    this.updateCurrentDate()
-  },
-  methods: {
-    // 更新当前日期显示
-    updateCurrentDate() {
-      const date = new Date()
-      const weekdays = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"]
-      this.todayDate = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${weekdays[date.getDay()]}`
-    },
+  })
+})
 
-    // 计算剩余天数
-    daysRemaining(targetDate) {
-      const target = new Date(targetDate)
-      const today = new Date()
-      const diffTime = target.getTime() - today.getTime()
-      return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    },
-
-    // 格式化日期显示
-    formatDate(dateStr) {
-      const date = new Date(dateStr)
-      return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`
-    },
-
-    // 计算进度条宽度
-    progressWidth(targetDate) {
-      const days = this.daysRemaining(targetDate)
-      return Math.max(5, Math.min(95, 100 - (days / 30) * 100))
-    },
-
-    // 日期选择变化
-    bindDateChange(e) {
-      this.newEvent.date = e.detail.value
-    },
-
-    // 添加事件
-    addEvent() {
-      if (!this.newEvent.name || !this.newEvent.date) {
-        uni.showToast({
-          title: "请填写事件名称并选择日期",
-          icon: "none",
-        })
-        return
-      }
-
-      this.events.push({
-        name: this.newEvent.name,
-        date: this.newEvent.date,
-      })
-
-      // 重置表单并关闭弹窗
-      this.newEvent = {
-        name: "",
-        date: "",
-      }
-      this.closeModal()
-    },
-
-    // 删除事件
-    deleteEvent(index) {
-      uni.showModal({
-        title: "确认删除",
-        content: "确定要删除这个事件吗？",
-        success: (res) => {
-          if (res.confirm) {
-            this.events.splice(index, 1)
-          }
-        },
-      })
-    },
-
-    // 打开弹窗
-    openModal() {
-      this.$refs.popup.open()
-    },
-
-    // 关闭弹窗
-    closeModal() {
-      this.$refs.popup.close()
-    },
-  },
+const createPost = () => uni.navigateTo({ url: "/pages/post/create" })
+const viewPost = (item) => {
+  console.log("查看动态", item)
 }
 </script>
 
-<style lang="scss">
-.container {
-  position: relative;
+<style scoped>
+.home-page {
+  padding: 20rpx;
+  background: #f7f8fa;
   min-height: 100vh;
-  padding: 40rpx;
-  background: linear-gradient(135deg, #6e8efb 0%, #a777e3 100%);
-  color: #fff;
-  overflow-x: hidden;
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.1) 0%, transparent 40%);
-    pointer-events: none;
-  }
 }
-
-.floating-event {
-  position: absolute;
-  top: 60rpx;
-  left: 10%;
-  font-size: 24rpx;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 10rpx 20rpx;
-  border-radius: 40rpx;
-  animation: float 8s infinite ease-in-out;
-
-  &.floating-right {
-    left: auto;
-    right: 10%;
-    top: 13%;
-    animation-delay: 2s;
-  }
+.card-group {
+  margin-bottom: 30rpx;
 }
-
-.header {
-  text-align: center;
-  padding: 40rpx 0;
+.card {
+  background: #fff;
+  border-radius: 15rpx;
+  padding: 24rpx;
+  box-shadow: 0 8rpx 16rpx rgba(0, 0, 0, 0.05);
+  margin-bottom: 30rpx;
 }
-
-.title {
-  font-size: 56rpx;
-  font-weight: bold;
-  letter-spacing: 1px;
-  text-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.2);
-  display: block;
-}
-
-.subtitle {
-  font-size: 32rpx;
-  opacity: 0.9;
-  font-weight: 300;
-}
-
-.current-date {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(20rpx);
-  border-radius: 40rpx;
-  padding: 20rpx 50rpx;
-  margin: 60rpx auto;
-  max-width: 700rpx;
-  font-size: 40rpx;
-  font-weight: 500;
-  text-align: center;
-  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.countdown-container {
-  margin-bottom: 120rpx;
-}
-
-.countdown-card {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(24rpx);
-  border-radius: 40rpx;
-  padding: 50rpx;
-  box-shadow: 0 16rpx 40rpx rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 50rpx;
-  transition: all 0.3s ease;
-
-  &:active {
-    transform: translateY(-10rpx);
-    box-shadow: 0 30rpx 60rpx rgba(0, 0, 0, 0.2);
-    background: rgba(255, 255, 255, 0.2);
-  }
-}
-
 .card-header {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30rpx;
-  padding-bottom: 20rpx;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 20rpx;
 }
-
-.event-name {
-  font-size: 48rpx;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  max-width: 70%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.days-container {
-  display: flex;
-  align-items: baseline;
-  gap: 10rpx;
-  margin: 20rpx 0;
-}
-
-.days-count {
-  font-size: 70rpx;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.days-label {
-  font-size: 36rpx;
-  opacity: 0.9;
-}
-
-.event-date {
-  font-size: 32rpx;
-  opacity: 0.85;
-  margin: 10rpx 0;
-  display: block;
-}
-
-.progress-container {
-  height: 16rpx;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 20rpx;
-  overflow: hidden;
-  margin-top: 40rpx;
-}
-
-.progress-bar {
-  height: 100%;
-  background: linear-gradient(90deg, #ff9a9e, #fad0c4);
-  border-radius: 20rpx;
-}
-
-.delete-btn {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
+.icon-circle {
+  width: 80rpx;
+  height: 80rpx;
   border-radius: 50%;
-  width: 70rpx;
-  height: 70rpx;
   display: flex;
-  align-items: center;
   justify-content: center;
-}
-
-.add-btn {
-  position: fixed;
-  bottom: 60rpx;
-  right: 60rpx;
-  width: 140rpx;
-  height: 140rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ff9a9e, #fad0c4);
-  color: white;
-  box-shadow: 0 10rpx 40rpx rgba(0, 0, 0, 0.2);
-  display: flex;
   align-items: center;
-  justify-content: center;
-  z-index: 10;
-
-  &:active {
-    transform: scale(0.98);
-  }
+  margin-right: 5px;
 }
-
-.modal-content {
-  background: linear-gradient(135deg, #6e8efb, #a777e3);
-  border-radius: 50rpx;
-  padding: 80rpx;
-  width: 90%;
-  max-width: 1000rpx;
-  box-shadow: 0 40rpx 100rpx rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  position: relative;
+.bg-blue {
+  background-color: #409eff;
 }
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 50rpx;
+.bg-orange {
+  background-color: #ffae4c;
 }
-
-.modal-title {
-  font-size: 60rpx;
+.bg-green {
+  background-color: #43d2cd;
+}
+.title {
+  flex: 1;
+  font-size: 30rpx;
   font-weight: bold;
+  color: #333;
 }
-
-.form-group {
-  margin-bottom: 50rpx;
+.sub-title {
+  font-size: 22rpx;
+  color: gray;
+  font-weight: 100;
 }
-
-.form-label {
-  display: block;
-  margin-bottom: 16rpx;
-  font-size: 36rpx;
-  font-weight: 500;
+.value {
+  font-size: 48rpx;
+  font-weight: bold;
+  text-align: right;
 }
-
-.form-input,
-.picker {
-  width: 100%;
-  padding: 30rpx;
-  border-radius: 30rpx;
-  border: none;
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
-  font-size: 32rpx;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-
-  &::placeholder {
-    color: rgba(255, 255, 255, 0.7);
-  }
+.text-blue {
+  color: #409eff;
 }
-
-.submit-btn {
-  background: linear-gradient(90deg, #ff9a9e, #fad0c4);
-  color: white;
-  border: none;
-  width: 100%;
-  padding: 32rpx;
-  border-radius: 30rpx;
-  font-size: 40rpx;
+.text-orange {
+  color: #ffae4c;
+}
+.text-green {
+  color: #43d2cd;
+}
+.unit {
+  font-size: 20rpx;
+  color: gray;
+  font-weight: 100;
+}
+.detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+.item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 26rpx;
+  color: #666;
+}
+.amount {
+  font-size: 26rpx;
+}
+.minus {
+  color: #f56c6c;
+}
+.plus {
+  color: #67c23a;
+}
+.section-title {
+  font-size: 34rpx;
   font-weight: 600;
-  margin-top: 20rpx;
-  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.2);
-
-  &:active {
-    transform: translateY(-6rpx);
-  }
+  margin: 30rpx 0 0rpx;
 }
-
-.empty-state {
-  text-align: center;
-  padding: 100rpx 40rpx;
+.section-description {
+  font-size: 25rpx;
+  font-weight: 300;
+  margin-bottom: 20px;
+  color: gray;
 }
-
-.empty-text {
-  display: block;
-  font-size: 40rpx;
-  max-width: 900rpx;
-  margin: 40rpx auto 0;
-  opacity: 0.9;
+.waterfall {
+  max-height: 900rpx;
+  overflow: hidden;
 }
-
-@keyframes float {
-  0% {
-    transform: translateY(0) rotate(0deg);
-  }
-  25% {
-    transform: translateY(-20rpx) rotate(4deg);
-  }
-  50% {
-    transform: translateY(0) rotate(0deg);
-  }
-  75% {
-    transform: translateY(-30rpx) rotate(-4deg);
-  }
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
+.columns {
+  display: flex;
+  justify-content: space-between;
+}
+.column {
+  width: 48%;
+}
+.post-card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 16rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.05);
+  transition: all 0.25s ease;
+}
+.post-card:active {
+  transform: scale(0.97);
+}
+.post-img {
+  width: 100%;
+  border-radius: 12rpx;
+  margin-bottom: 16rpx;
+}
+.post-text {
+  font-size: 28rpx;
+  line-height: 38rpx;
+  margin-bottom: 14rpx;
+}
+.post-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 24rpx;
+  color: #888;
+}
+.fab {
+  position: fixed;
+  bottom: 50rpx;
+  right: 40rpx;
+  width: 100rpx;
+  height: 100rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.25);
 }
 </style>
