@@ -1,7 +1,7 @@
 /*
  * @Date: 2025-07-03 15:10:43
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-11 16:48:20
+ * @LastEditTime: 2025-07-14 22:09:24
  * @FilePath: \mobile\pages.config.ts
  */
 import { defineUniPages } from "@uni-helper/vite-plugin-uni-pages"
@@ -29,7 +29,7 @@ export default defineUniPages({
   },
   tabBar: {
     color: "#666666",
-    selectedColor: "#E95412",
+    selectedColor: "#2f88ff",
     backgroundColor: "#FFFFFF",
     borderStyle: "white",
     height: "88px",
@@ -38,32 +38,32 @@ export default defineUniPages({
     spacing: "3px",
     list: [
       {
-        iconPath: "static/tabbar/coupon.png",
-        selectedIconPath: "static/tabbar/coupon_active.png",
+        iconPath: "static/tabbar/home.png",
+        selectedIconPath: "static/tabbar/home_active.png",
         pagePath: "pages/index/index",
         text: "首页",
       },
       {
-        iconPath: "static/tabbar/coupon.png",
-        selectedIconPath: "static/tabbar/coupon_active.png",
+        iconPath: "static/tabbar/bookkeeping.png",
+        selectedIconPath: "static/tabbar/bookkeeping_active.png",
         pagePath: "pages/BookKeeping/index",
         text: "记账",
       },
       {
-        iconPath: "static/tabbar/coupon.png",
-        selectedIconPath: "static/tabbar/coupon_active.png",
+        iconPath: "static/tabbar/calendar.png",
+        selectedIconPath: "static/tabbar/calendar_active.png",
         pagePath: "pages/DayMaster/index",
         text: "倒数日",
       },
       {
-        iconPath: "static/tabbar/coupon.png",
-        selectedIconPath: "static/tabbar/coupon_active.png",
+        iconPath: "static/tabbar/write.png",
+        selectedIconPath: "static/tabbar/write_active.png",
         pagePath: "pages/Diary/index",
         text: "日记",
       },
       {
-        iconPath: "static/tabbar/my.png",
-        selectedIconPath: "static/tabbar/my_active.png",
+        iconPath: "static/tabbar/user.png",
+        selectedIconPath: "static/tabbar/user_active.png",
         pagePath: "pages/my/index",
         text: "我的",
       },

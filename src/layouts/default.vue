@@ -1,7 +1,7 @@
 <!--
  * @Date: 2025-07-03 15:10:43
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-03 21:01:32
+ * @LastEditTime: 2025-07-15 14:39:13
  * @FilePath: \mobile\src\layouts\default.vue
 -->
 <template>
@@ -15,7 +15,7 @@
   // height: 100vh;
   /* #ifdef H5 */
   // padding-bottom: 88px;
-  overflow: auto;
+  // overflow: auto;
   /* #endif */
 }
 </style>

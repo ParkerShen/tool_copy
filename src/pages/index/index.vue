@@ -111,7 +111,15 @@
             <image v-if="item.img" :src="item.img" class="post-img" mode="aspectFill" />
             <view class="post-text">{{ item.text }}</view>
             <view class="post-meta">
-              <text class="post-user">{{ item.user }}</text>
+              <text class="post-user">
+                <image
+                  :src="item.head"
+                  style="width: 30rpx; height: 30rpx; border-radius: 50%; margin-right: 8rpx"
+                  mode="aspectFill"
+                  @error="handleImageError(item)"
+                />
+                {{ item.user }}
+              </text>
               <text class="post-like">❤️ {{ item.like }}</text>
             </view>
           </view>
@@ -127,7 +135,14 @@
             <image v-if="item.img" :src="item.img" class="post-img" mode="aspectFill" />
             <view class="post-text">{{ item.text }}</view>
             <view class="post-meta">
-              <text class="post-user">{{ item.user }}</text>
+              <text class="post-user">
+                <image
+                  :src="item.head"
+                  style="width: 30rpx; height: 30rpx; border-radius: 50%; margin-right: 8rpx"
+                  mode="aspectFill"
+                />
+                {{ item.user }}
+              </text>
               <text class="post-like">❤️ {{ item.like }}</text>
             </view>
           </view>
@@ -136,7 +151,7 @@
     </scroll-view>
 
     <!-- 悬浮发布按钮 -->
-    <wd-button class="fab" type="primary" icon="add" shape="circle" @click="createPost"></wd-button>
+    <!-- <wd-button class="fab" type="primary" icon="add" shape="circle" @click="createPost"></wd-button> -->
   </view>
 </template>
 
@@ -153,6 +168,7 @@ onMounted(() => {
       text: "今天看到了超美的日落，心情顿时变好了！",
       img: "https://via.placeholder.com/300x200",
       like: 12,
+      head: "https://iknow-pic.cdn.bcebos.com/c83d70cf3bc79f3d8b7aedb5a8a1cd11738b299f",
     },
     { user: "旅行者", text: "刚完成了一次说走就走的旅行，收获满满！", img: "", like: 15 },
     {
@@ -180,6 +196,12 @@ onMounted(() => {
 const createPost = () => uni.navigateTo({ url: "/pages/post/create" })
 const viewPost = (item) => {
   console.log("查看动态", item)
+}
+
+const handleImageError = (item) => {
+  console.error("头像加载失败:", item.head)
+  // 设置默认头像
+  item.head = "https://via.placeholder.com/40" // 使用默认图片
 }
 </script>
 
@@ -321,13 +343,5 @@ const viewPost = (item) => {
   justify-content: space-between;
   font-size: 24rpx;
   color: #888;
-}
-.fab {
-  position: fixed;
-  bottom: 50rpx;
-  right: 40rpx;
-  width: 100rpx;
-  height: 100rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.25);
 }
 </style>

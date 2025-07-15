@@ -71,13 +71,6 @@
       }
     },
     {
-      "path": "pages/login/index",
-      "type": "page",
-      "style": {
-        "navigationBarTitleText": ""
-      }
-    },
-    {
       "path": "pages/DayMaster/index",
       "type": "page",
       "layout": "default",
@@ -129,6 +122,13 @@
     },
     {
       "path": "pages/login/forgot-password",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": ""
+      }
+    },
+    {
+      "path": "pages/login/index",
       "type": "page",
       "style": {
         "navigationBarTitleText": ""
