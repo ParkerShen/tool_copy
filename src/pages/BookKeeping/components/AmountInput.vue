@@ -1,334 +1,302 @@
 <template>
-  <view class="record-page">
-    <!-- 金额输入区 -->
-    <view class="amount-section">
-      <text class="input-label">输入金额</text>
-      <view class="amount-input">
-        <text class="currency">
-          <text :style="{ color: type === 'expense' ? '#4d80f0' : '#34d19d' }">¥</text>
-        </text>
-        <wd-input
-          v-model="amount"
-          placeholder="0.00"
-          type="digit"
-          clearable
-          :border="false"
-          class="amount-input-field"
-          input-align="center"
-        />
-      </view>
+  <view class="page-container">
+    <!-- 顶部导航栏 -->
+    <view class="tabs-container">
+      <text
+        class="tab-item"
+        :class="{ active: activeTab === 'expense' }"
+        @click="handleTabChange('expense')"
+      >
+        支出
+      </text>
+      <text
+        class="tab-item"
+        :class="{ active: activeTab === 'income' }"
+        @click="handleTabChange('income')"
+      >
+        收入
+      </text>
+      <text class="tab-cancel" @click="handleCancel">取消</text>
     </view>
 
-    <!-- 收支类型 -->
-    <view class="section">
-      <text class="section-title">收支类型</text>
-      <view class="type-buttons">
-        <wd-button size="large" style="width: 48%" type="primary" @click="type = 'expense'">
-          支出
-        </wd-button>
-        <wd-button size="large" style="width: 48%" type="success" @click="type = 'income'">
-          收入
-        </wd-button>
-      </view>
-    </view>
-
-    <!-- 分类选择 -->
-    <view class="section">
-      <text class="section-title">选择分类</text>
-      <wd-grid :column="4">
-        <wd-grid-item
-          v-for="category in categories"
-          :key="category.name"
-          :custom-class="
-            selectedCategory === category.name ? 'category-item active' : 'category-item'
-          "
-          @click="selectCategory(category.name)"
+    <!-- 分类图标区域 -->
+    <view class="category-container">
+      <view
+        v-for="(item, index) in currentCategories"
+        :key="index"
+        class="category-item"
+        @click="handleCategoryClick(item)"
+      >
+        <!-- 普通分类图标 -->
+        <view
+          v-if="item.type !== 'config'"
+          class="icon-circle"
+          :class="{ selected: selectedCategory === item }"
         >
-          <view class="category-icon">
-            <wd-icon :name="category.icon" size="20px" />
-          </view>
-          <text class="category-name">{{ category.name }}</text>
-        </wd-grid-item>
-      </wd-grid>
+          {{ item.icon }}
+        </view>
+        <!-- 配置按钮 -->
+        <view v-else class="icon-circle config-button">+</view>
+        <text class="icon-text">{{ item.name }}</text>
+      </view>
     </view>
 
-    <!-- 日期时间选择 -->
-    <view class="section">
-      <text class="section-title">日期时间</text>
-      <wd-cell
-        :title="formattedDateTime"
-        is-link
-        @click="showDateTimePicker = true"
-        custom-title-class="date-cell"
-      />
-      <wd-datetime-picker v-model="dateTime" v-model:visible="showDateTimePicker" type="datetime" />
-    </view>
-
-    <!-- 备注输入 -->
-    <view class="section">
-      <text class="section-title">备注</text>
-      <wd-input v-model="note" placeholder="添加备注" clearable custom-class="note-input" />
-    </view>
-
-    <!-- 底部操作按钮 -->
-    <view class="action-buttons">
-      <wd-button plain size="large" custom-class="cancel-btn" @click="handleClose">返回</wd-button>
-      <wd-button type="primary" size="large" custom-class="submit-btn" @click="saveRecord">
-        保存
-      </wd-button>
-    </view>
+    <!-- 添加分类的弹窗组件 -->
+    <add-category-modal
+      :visible="showAddModal"
+      :category-type="activeTab"
+      @close="showAddModal = false"
+      @add="handleAddCategory"
+    />
+    <wd-popup :modal="false" v-model="showAmountKeyboard" position="bottom" round>
+      <AmountKeyboard />
+    </wd-popup>
   </view>
 </template>
 
-<script setup lang="ts">
-import { ref, computed, defineEmits } from "vue"
-import { onReady } from "@dcloudio/uni-app"
-import dayjs from "dayjs"
-
-// 数据状态
-const amount = ref("")
-const type = ref("expense") // 'expense' 或 'income'
-const selectedCategory = ref("餐饮")
-const dateTime = ref(dayjs().format("YYYY-MM-DD HH:mm"))
-const showDateTimePicker = ref(false)
-const note = ref("")
-
+<script setup>
+import { ref, computed } from "vue"
+import AddCategoryModal from "@/pages/BookKeeping/components/AddCategoryModal.vue"
+import AmountKeyboard from "@/pages/BookKeeping/components/AmountKeyboard.vue"
+// 当前激活标签（支出/收入）
+const activeTab = ref("expense")
+const showAddModal = ref(false) // 控制添加分类弹窗的显示
+const showAmountKeyboard = ref(false) // 控制金额键盘的显示
+const selectedCategory = ref(null) // 存储当前选中的分类
 const emit = defineEmits(["close"])
 
-const handleClose = () => {
-  emit("close") // 触发 close 事件
-}
-
-// 格式化显示的日期时间
-const formattedDateTime = computed(() => {
-  const today = dayjs()
-  const recordDate = dayjs(dateTime.value)
-
-  if (recordDate.isSame(today, "day")) {
-    return "今天"
-  } else if (recordDate.isSame(today.subtract(1, "day"), "day")) {
-    return "昨天"
-  } else if (recordDate.isSame(today.add(1, "day"), "day")) {
-    return "明天"
-  } else {
-    return recordDate.format("YYYY-MM-DD HH:mm")
-  }
-})
-
-// 分类数据
-const categories = ref([
-  { name: "餐饮", icon: "cart" },
-  { name: "交通", icon: "car" },
-  { name: "购物", icon: "bag" },
-  { name: "娱乐", icon: "star" },
-  { name: "医疗", icon: "medal" },
-  { name: "教育", icon: "book" },
-  { name: "住房", icon: "home" },
-  { name: "其他", icon: "more" },
+// 支出分类数据
+const expenseCategories = ref([
+  { icon: "🍔", name: "餐饮", type: "category" },
+  { icon: "🛒", name: "购物", type: "category" },
+  { icon: "🏠", name: "住房", type: "category" },
+  { icon: "🚗", name: "交通", type: "category" },
+  { icon: "👚", name: "服饰", type: "category" },
+  { icon: "💄", name: "美容", type: "category" },
+  { icon: "🎁", name: "礼物", type: "category" },
+  { icon: "🏥", name: "医疗", type: "category" },
+  { type: "config", name: "设置", configAction: "manage" },
 ])
 
-// 选择分类
-const selectCategory = (name: string) => {
-  selectedCategory.value = name
+// 收入分类数据
+const incomeCategories = ref([
+  { icon: "💰", name: "工资", type: "category" },
+  { icon: "🏆", name: "奖金", type: "category" },
+  { icon: "📈", name: "理财", type: "category" },
+  { icon: "💼", name: "兼职", type: "category" },
+  { type: "config", name: "设置", configAction: "manage" },
+])
+
+// 当前显示的分类列表
+const currentCategories = computed(() =>
+  activeTab.value === "expense" ? expenseCategories.value : incomeCategories.value,
+)
+
+// 标签切换处理
+const handleTabChange = (tabType) => {
+  activeTab.value = tabType
+  selectedCategory.value = null
 }
 
-// 保存记录
-const saveRecord = () => {
-  if (!amount.value) {
-    uni.showToast({ title: "请输入金额", icon: "none" })
+// 分类点击处理
+const handleCategoryClick = (item) => {
+  if (item.type === "config") {
+    // 打开配置管理弹窗
+    showConfigModal(item.configAction)
+  } else {
+    selectedCategory.value = item
+    // 正常分类选择
+    console.log("选中分类:", item.name)
+    uni.showToast({
+      title: `已选择: ${item.name}`,
+      icon: "none",
+    })
+  }
+  showAmountKeyboard.value = true // 显示金额键盘
+}
+
+// 配置管理弹窗
+const showConfigModal = (action) => {
+  uni.showModal({
+    title: "管理分类",
+    content: "请选择要执行的操作",
+    confirmText: "添加分类",
+    cancelText: "删除分类",
+    success: (res) => {
+      if (res.confirm) {
+        // 不再使用模态框输入，改为显示单独的添加分类组件
+        showAddModal.value = true
+      } else if (res.cancel) {
+        removeCategory()
+      }
+    },
+  })
+}
+
+// 添加新分类处理
+const handleAddCategory = (newCategory) => {
+  const categories = currentCategories.value
+  const lastIndex = categories.findIndex((item) => item.type === "config")
+
+  if (lastIndex > -1) {
+    // 在设置按钮前插入新分类
+    categories.splice(lastIndex, 0, {
+      ...newCategory,
+      type: "category",
+    })
+    uni.showToast({
+      title: "添加成功",
+      icon: "success",
+    })
+  }
+}
+
+// 删除分类
+const removeCategory = () => {
+  const categories = currentCategories.value.filter((item) => item.type === "category")
+  if (categories.length === 0) {
+    uni.showToast({
+      title: "没有可删除的分类",
+      icon: "none",
+    })
     return
   }
 
-  const record = {
-    amount: type.value === "expense" ? -parseFloat(amount.value) : parseFloat(amount.value),
-    type: type.value,
-    category: selectedCategory.value,
-    dateTime: dateTime.value,
-    note: note.value,
-  }
+  const categoryNames = categories.map((item) => item.name)
+  uni.showActionSheet({
+    title: "选择要删除的分类",
+    itemList: categoryNames,
+    success: (res) => {
+      const index = res.tapIndex
+      const name = categoryNames[index]
 
-  // 调用API保存记录（示例）
-  console.log("保存记录:", record)
+      uni.showModal({
+        title: "确认删除",
+        content: `确定要删除"${name}"分类吗？`,
+        success: (confirmRes) => {
+          if (confirmRes.confirm) {
+            // 从当前数组中删除选中的分类
+            const currentIndex = currentCategories.value.findIndex(
+              (item) => item.type === "category" && item.name === name,
+            )
 
-  uni.showToast({ title: "保存成功", icon: "success" })
-
-  // 保存成功后触发关闭
-  emit("close")
-
-  // 重置表单（可选）
-  setTimeout(() => {
-    amount.value = ""
-    note.value = ""
-    selectedCategory.value = "餐饮"
-  }, 1500)
+            if (currentIndex > -1) {
+              currentCategories.value.splice(currentIndex, 1)
+              uni.showToast({
+                title: "删除成功",
+                icon: "success",
+              })
+            }
+          }
+        },
+      })
+    },
+  })
 }
 
-onReady(() => {
-  // 设置页面标题
-  uni.setNavigationBarTitle({
-    title: "记账",
-  })
-})
+// 关闭分类弹窗
+const handleCancel = () => {
+  emit("close")
+}
 </script>
 
-<style lang="scss">
-.record-page {
-  padding: 20px;
+<style scoped>
+/* 页面容器 */
+.page-container {
   background-color: #ffffff;
   min-height: 100vh;
+  padding-top: 20rpx;
 }
 
-.amount-section {
-  margin-bottom: 30px;
-
-  .input-label {
-    display: block;
-    text-align: center;
-    font-size: 16px;
-    color: #666;
-    margin-bottom: 10px;
-  }
-
-  .amount-input {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    //   border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
-    margin: 0 20px;
-
-    .currency {
-      font-size: 24px;
-      color: #333;
-      margin-right: 10px;
-      font-weight: bold;
-    }
-
-    .amount-input-field {
-      flex: 1;
-      font-size: 36px;
-      font-weight: bold;
-      text-align: center;
-      padding: 0;
-
-      .wd-input__inner {
-        min-height: 50px;
-        line-height: 50px;
-        font-size: 36px;
-        font-weight: bold;
-      }
-    }
-  }
-}
-
-.section {
-  margin-bottom: 25px;
-
-  .section-title {
-    display: block;
-    font-size: 15px;
-    color: #666;
-    margin-bottom: 12px;
-    padding-left: 10px;
-  }
-}
-
-.type-buttons {
+/* 标签栏样式 */
+.tabs-container {
   display: flex;
-  justify-content: space-around;
-  gap: 15px;
-  margin: 0 10px;
-
-  .expense-btn,
-  .income-btn {
-    flex: 1;
-    border-radius: 8px;
-
-    &.active {
-      background: var(--button-primary-background-color) !important;
-      color: white !important;
-    }
-  }
-
-  .expense-btn {
-    background: #4d80f0;
-    color: #409eff;
-  }
-
-  .income-btn {
-    background: #34d19d;
-    color: #666;
-
-    &.active {
-      background: #67c23a !important;
-    }
-  }
+  position: relative;
+  padding: 20rpx 40rpx;
+  border-bottom: 1px solid #eee;
 }
 
+.tab-item {
+  font-size: 34rpx;
+  margin-right: 60rpx;
+  color: #999;
+  position: relative;
+  padding-bottom: 8rpx;
+}
+
+.tab-item.active {
+  color: #000;
+  font-weight: 500;
+}
+
+.tab-item.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  width: 80%;
+  height: 6rpx;
+  background-color: #ffc000;
+  border-radius: 3rpx;
+}
+
+.tab-cancel {
+  position: absolute;
+  right: 40rpx;
+  font-size: 32rpx;
+  color: #666;
+}
+
+/* 分类网格布局 */
+.category-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30rpx 0;
+  padding: 30rpx;
+  position: relative;
+}
+
+/* 分类项样式 */
 .category-item {
-  padding: 12px 0;
-
-  .category-icon {
-    width: 40px;
-    height: 40px;
-    background-color: #f8f9fa;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 8px;
-  }
-
-  .category-name {
-    font-size: 13px;
-    color: #333;
-  }
-
-  &.active {
-    .category-icon {
-      background-color: #ecf5ff;
-      color: #409eff;
-    }
-
-    .category-name {
-      color: #409eff;
-      font-weight: bold;
-    }
-  }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
-.date-cell {
-  padding: 12px 0;
-  font-size: 16px;
+.icon-circle {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background: #f8f8f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 50rpx;
+  margin-bottom: 10rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.config-button {
+  background-color: #ffc000;
+  color: white;
+  font-weight: bold;
+  font-size: 60rpx;
+  line-height: 90rpx;
+}
+
+.icon-text {
+  font-size: 26rpx;
   color: #333;
 }
-
-.note-input {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 12px 15px;
-
-  .wd-input__inner {
-    font-size: 16px;
-    min-height: 40px;
-  }
+/* 添加选中状态样式 */
+.icon-circle.selected {
+  background-color: #ffc000; /* 黄色背景 */
+  box-shadow: 0 4rpx 12rpx rgba(255, 192, 0, 0.3);
+  transform: scale(1.05); /* 稍微放大 */
 }
-
-.action-buttons {
-  display: flex;
-  gap: 15px;
-  margin: 40px 10px 20px;
-
-  .cancel-btn {
-    flex: 1;
-    border-color: #dcdfe6;
-    border-radius: 8px;
-    color: #606266;
-  }
-
-  .submit-btn {
-    flex: 1;
-    border-radius: 8px;
-  }
+/* 选中状态下文字加粗 */
+.icon-circle.selected + .icon-text {
+  font-weight: bold;
 }
 </style>

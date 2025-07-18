@@ -1,7 +1,7 @@
 <!--
  * @Date: 2025-07-11 16:18:38
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-15 17:55:41
+ * @LastEditTime: 2025-07-18 17:24:14
  * @FilePath: \mobile\src\pages\BookKeeping\index.vue
 -->
 <route lang="json5" type="page">
@@ -31,6 +31,56 @@
       <view class="stats-card expense">
         <view class="stats-title">本月支出</view>
         <view class="stats-value">¥{{ formatNumber(expenseToday) }}</view>
+      </view>
+    </view>
+    <view class="bills-container">
+      <!-- 记录分组1 -->
+      <view class="day-group">
+        <view class="day-header">
+          <text>07月18日 星期五</text>
+          <view>
+            <text class="expense-label">支出：1</text>
+          </view>
+        </view>
+
+        <!-- 具体记录 -->
+        <view class="record-item">
+          <view class="icon shopping"><wd-icon name="add-circle" /></view>
+          <view class="record-info">
+            <text class="type">购物</text>
+            <text class="amount expense">-1</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 记录分组2 -->
+      <view class="day-group">
+        <view class="day-header">
+          <text>07月17日 星期四</text>
+          <view>
+            <text class="income-label">收入：1</text>
+            <text class="expense-label">支出：83.62</text>
+          </view>
+        </view>
+
+        <!-- 具体记录 -->
+        <view class="record-item">
+          <view class="icon salary"><wd-icon name="circle" /></view>
+          <view class="record-info">
+            <text class="type">工资</text>
+            <text class="amount income">1</text>
+          </view>
+        </view>
+
+        <!-- 更多记录... -->
+        <view class="record-item">
+          <view class="icon entertainment"><wd-icon name="circle" /></view>
+          <view class="record-info">
+            <text class="type">腾讯会员</text>
+            <text class="amount expense">-8.99</text>
+          </view>
+        </view>
+        <!-- 其他记录结构类似... -->
       </view>
     </view>
 
@@ -64,25 +114,6 @@
       <!-- #endif -->
     </view>
 
-    <!-- 账单列表 -->
-    <view class="bills-header">
-      <view class="bills-title">本月账单</view>
-      <!-- <wd-link type="primary" size="small" @click="viewAllBills">查看全部</wd-link> -->
-    </view>
-
-    <view v-for="(bill, index) in recentBills" :key="index" class="bill-item">
-      <view class="bill-icon" :class="bill.type">
-        <wd-icon :name="bill.icon" size="40"></wd-icon>
-      </view>
-      <view class="bill-info">
-        <view class="bill-title">{{ bill.title }}</view>
-        <view class="bill-date">{{ bill.date }} {{ bill.time }}</view>
-      </view>
-      <view class="bill-amount" :class="bill.type">
-        {{ bill.amount > 0 ? "+" : "" }}{{ formatNumber(bill.amount) }}
-      </view>
-    </view>
-
     <!-- 悬浮按钮 -->
     <wd-button
       class="fab"
@@ -110,8 +141,8 @@ import dayjs from "dayjs"
 // 数据模型
 const incomeToday = ref(2580)
 const expenseToday = ref(1240)
-
-const showPopup = ref(true)
+const safeAreaInsets = ref(uni.getSystemInfoSync().safeAreaInsets || { bottom: 0 })
+const showPopup = ref(false)
 const handleClosePopup = () => {
   showPopup.value = false
 }
@@ -355,7 +386,7 @@ onUnmounted(() => {})
   background: #fff;
   border-radius: 12px;
   padding: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  // box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   margin-bottom: 20px;
 }
 
@@ -480,5 +511,104 @@ onUnmounted(() => {})
   bottom: 200rpx;
   right: 10rpx;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.25);
+}
+
+/* 容器样式 */
+.bills-container {
+  background-color: #ffffff;
+  padding: 10rpx;
+  border-radius: 12rpx;
+  margin-bottom: 15rpx;
+}
+
+/* 日期分组样式 */
+.day-group {
+  margin-bottom: 30rpx;
+  border-bottom: 1rpx solid #eeeeee;
+  // padding-bottom: 10rpx;
+}
+
+.day-header {
+  // background-color: #f8f8f8;
+  // padding: 15rpx 20rpx;
+  margin-bottom: 10rpx;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  color: #333;
+  display: flex;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.income-label {
+  color: #333;
+}
+
+.expense-label {
+  color: #999;
+}
+
+/* 记录项样式 */
+.record-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx;
+  // border-bottom: 1rpx solid #f5f5f5;
+}
+
+.icon {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  margin-right: 20rpx;
+}
+
+.shopping {
+  background-color: #ffd700; /* 购物图标-黄色 */
+}
+
+.salary {
+  background-color: #4caf50; /* 工资图标-绿色 */
+}
+
+.entertainment {
+  background-color: #2196f3; /* 娱乐图标-蓝色 */
+}
+
+/* 其他类型图标颜色... */
+.food {
+  background-color: #ff5722; /* 食物图标-橙色 */
+}
+
+.record-info {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.type {
+  font-size: 32rpx;
+  color: #000;
+}
+
+.amount {
+  font-size: 32rpx;
+  font-weight: 500;
+}
+
+.income {
+  color: #000;
+}
+
+.expense {
+  color: #999;
+}
+.record-item .icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  color: #fff;
 }
 </style>

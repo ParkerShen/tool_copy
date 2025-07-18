@@ -13,6 +13,7 @@ declare module '@vue/runtime-core' {
     AppTest2: typeof import('./../components/app-test-dir/AppTest2.vue')['default']
     BaseChart: typeof import('./../components/BaseChart.vue')['default']
     CustomTabbar: typeof import('./../components/custom-tabbar/index.vue')['default']
+    CustomTabBar: typeof import('./../components/CustomTabBar.vue')['default']
     FlyContent: typeof import('./../components/fly-content/fly-content.vue')['default']
     FlyHeader: typeof import('./../components/fly-header/fly-header.vue')['default']
     FlyNavbar: typeof import('./../components/fly-navbar/fly-navbar.vue')['default']
