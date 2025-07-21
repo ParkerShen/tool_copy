@@ -7,15 +7,15 @@
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 export default {
-  HOST: "localhost",
-  USER: "xin",
-  PASSWORD: "123456",
-  DB: "xin",
-  port: 3306,
+  HOST: process.env.DB_HOST || "localhost",
+  USER: process.env.DB_USER || "xin",
+  PASSWORD: process.env.DB_PASSWORD || "123456",
+  DB: process.env.DB_NAME || "xin",
+  port: parseInt(process.env.DB_PORT || "3306"),
   dialect: "mysql" as const,
   timezone: '+08:00',
   pool: {
-    max: 5,
+    max: process.env.NODE_ENV === 'production' ? 10 : 5,
     min: 0,
     acquire: 30000,
     idle: 10000

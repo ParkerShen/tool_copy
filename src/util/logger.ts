@@ -1,3 +1,9 @@
+/*
+ * @Date: 2025-07-21 17:12:25
+ * @LastEditors: parker 960822987@qq.com
+ * @LastEditTime: 2025-07-21 18:05:51
+ * @FilePath: \serveradmin\src\util\logger.ts
+ */
 import winston, { format, Logger as WinstonLogger } from 'winston';
 import 'winston-mongodb';
 import 'winston-daily-rotate-file';
@@ -83,7 +89,7 @@ const logger: winston.Logger & {
       format: combine(
         format.colorize(),
         format.printf((info) => {
-          const metadata: Record<string, any> = info.metadata || {};
+          const metadata: any = info.metadata || {};
           let message = `${info.timestamp} [${info.level}]`;
           
           // 显示模块信息（如果存在）
@@ -148,15 +154,18 @@ const logger: winston.Logger & {
       )
     }),
     
-    // MongoDB 存储
-    new winston.transports.MongoDB({
-      db: process.env.MONGO_LOG_URI!,
-      collection: 'app_logs',
-      options: { useUnifiedTopology: true },
-      metaKey: 'metadata',
-      decolorize: true,
-      level: 'warn' // 只记录警告及以上级别
-    }),
+    // MongoDB 存储 - 使用127.0.0.1而不是::1
+    // new winston.transports.MongoDB({
+    //   db: process.env.MONGO_LOG_URI || 'mongodb://127.0.0.1:27017/logs',
+    //   collection: 'app_logs',
+    //   options: { 
+    //     useUnifiedTopology: true,
+    //     serverSelectionTimeoutMS: 5000 // 5秒超时
+    //   },
+    //   metaKey: 'metadata',
+    //   decolorize: true,
+    //   level: 'warn'
+    // }),
     
     // 文件轮转存储
     new winston.transports.DailyRotateFile({

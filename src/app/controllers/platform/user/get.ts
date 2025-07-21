@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import db from '../../models/platform';
+import db from '../../../models/platform';
 import { Op } from 'sequelize';
 import svgCaptcha from 'svg-captcha';
 import moment from 'moment';

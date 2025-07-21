@@ -1,13 +1,17 @@
 import express from 'express';
-import userRoutes from './userRoutes';
-import roleRoutes from './roleRoutes';
-import uploadRoutes from './uploadRoutes';
-import menuRoutes from './menuRoutes';
+import platformRoutes from './platform';
+import clientRoutes from './client';
+import miniappRoutes from './miniapp';
+
 const router = express.Router();
 
-router.use('/users', userRoutes);
-router.use('/roles', roleRoutes);
-router.use('/menus', menuRoutes);
-router.use('/uploads', uploadRoutes); 
+// 平台管理端路由
+router.use('/platform', platformRoutes);
+
+// PC端用户路由
+router.use('/client', clientRoutes);
+
+// 小程序端路由
+router.use('/miniapp', miniappRoutes);
 
 export default router;

@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
-import db from '../../models/platform';
+import db from '../../../models/platform';
 import { Op } from 'sequelize';
 import svgCaptcha from 'svg-captcha';
 import moment from 'moment';
 const { Permission } = db;
-import { generateRandom20String } from '../../../util/common'
+import { generateRandom20String } from '../../../../util/common'
 
 // 取得所有权限
 export const getAllPermissions = async (req: Request, res: Response, next: NextFunction) => {

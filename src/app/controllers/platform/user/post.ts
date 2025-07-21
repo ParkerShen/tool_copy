@@ -2,14 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
 import moment from 'moment';
 import { Op, Sequelize, Transaction } from 'sequelize';
-import db from '../../models/platform';
+import db from '../../../models/platform';
 const { User,  UserRole, Role, BlackToken, Permission } = db;
-import { generateToken } from '../../../util/jwtUtils';
-import { generateRandom20String } from '../../../util/common';
+import { generateToken } from '../../../../util/jwtUtils';
+import { generateRandom20String } from '../../../../util/common';
 import { 
   UserErrorCode, 
   ShowType 
-} from '../../config/enums';
+} from '../../../config/enums';
 
 // 登录接口
 export const login = async (req: any, res: Response, next: NextFunction) => {

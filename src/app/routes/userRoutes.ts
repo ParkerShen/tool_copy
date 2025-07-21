@@ -13,7 +13,7 @@ import {
   deleteUser,
   login,
   logout
-} from '../controllers/user/post';
+} from '../controllers/platform/user/post';
 import {
   getUsers,
   getAllUserroles,
@@ -21,7 +21,7 @@ import {
   currentUser,
   // currentPermission,
   // currentMenu,
-} from '../controllers/user/get';
+} from '../controllers/platform/user/get';
 import { authenticateToken } from './authMiddleware';
 
 const router = express.Router();

@@ -11,7 +11,7 @@
  * @FilePath: \serveradmin\src\app\controllers\role\post.ts
  */
 import { NextFunction, Request, Response } from 'express';
-import db from '../../models/platform';
+import db from '../../../models/platform';
 const {Role,RolePermission,Permission,UserRole} = db;
 import { Op, Sequelize, Transaction } from 'sequelize';
 interface RoleRequestBody {
