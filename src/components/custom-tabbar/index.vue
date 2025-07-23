@@ -191,7 +191,7 @@ onMounted(() => {
 
 @media screen and (width >= 414px) {
   .add-button {
-    top: -62rpx;
+    top: -63rpx;
     width: 85rpx;
     height: 85rpx;
   }
