@@ -45,7 +45,7 @@ export const http = <T>(options: CustomRequestOptions) => {
         const userStore = useUserStore()
         const data = res.data as IResData<T>
         // 状态码 2xx，参考 axios 的设计
-        if (data.code === 0) {
+        if (data.code === 200) {
           // 2.1 提取核心数据 res.data
           resolve(data)
         } else if (data.code === 401) {

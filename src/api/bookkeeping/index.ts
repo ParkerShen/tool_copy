@@ -1,7 +1,7 @@
 /*
  * @Date: 2025-07-23 16:56:06
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-23 17:05:09
+ * @LastEditTime: 2025-07-23 21:12:36
  * @FilePath: \mobile\src\api\bookkeeping\index.ts
  */
 import { http } from "@/utils/http"
@@ -18,7 +18,7 @@ import type {
  */
 export function getMonthlyStats(month: string) {
   return http<{ code: number; data: MonthlyStatsResult }>({
-    url: "/bookkeepings/monthly-stats",
+    url: "/api/miniapp/bookkeepings/monthly-stats",
     method: "GET",
     query: { month },
   })
@@ -29,7 +29,7 @@ export function getMonthlyStats(month: string) {
  */
 export function getDailyRecords(month: string) {
   return http<{ code: number; data: DailyRecordGroup[] }>({
-    url: "/bookkeepings/daily-records",
+    url: "/api/miniapp/bookkeepings/daily-records",
     method: "GET",
     query: { month },
   })

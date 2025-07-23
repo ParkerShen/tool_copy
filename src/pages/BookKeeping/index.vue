@@ -1,7 +1,7 @@
 <!--
  * @Date: 2025-07-11 16:18:38
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-23 16:51:16
+ * @LastEditTime: 2025-07-23 22:11:10
  * @FilePath: \mobile\src\pages\BookKeeping\index.vue
 -->
 <route lang="json5" type="page">
@@ -26,61 +26,42 @@
     <view class="stats-cards">
       <view class="stats-card income">
         <view class="stats-title">本月收入</view>
-        <view class="stats-value">¥{{ formatNumber(incomeToday) }}</view>
+        <view class="stats-value">¥{{ animatedIncome || formatNumber(incomeToday) }}</view>
       </view>
       <view class="stats-card expense">
         <view class="stats-title">本月支出</view>
-        <view class="stats-value">¥{{ formatNumber(expenseToday) }}</view>
+        <view class="stats-value">¥{{ animatedExpense || formatNumber(expenseToday) }}</view>
       </view>
     </view>
     <view class="bills-container">
-      <!-- 记录分组1 -->
-      <view class="day-group">
+      <view v-for="dayGroup in dailyRecords" :key="dayGroup.date" class="day-group">
         <view class="day-header">
-          <text>07月18日 星期五</text>
+          <text>{{ dayjs(dayGroup.date).format("MM月DD日 dddd") }}</text>
           <view>
-            <text class="expense-label">支出：1</text>
+            <text v-if="dayGroup.dayIncome > 0" class="income-label">
+              收入：{{ parseFloat(dayGroup.dayIncome).toFixed(2) }}
+            </text>
+            <text v-if="dayGroup.dayExpense > 0" class="expense-label">
+              支出：{{ parseFloat(dayGroup.dayExpense).toFixed(2) }}
+            </text>
           </view>
         </view>
 
         <!-- 具体记录 -->
-        <view class="record-item">
-          <view class="icon shopping"><wd-icon name="add-circle" /></view>
+        <view v-for="record in dayGroup.records" :key="record.id" class="record-item">
+          <view class="icon default">
+            <wd-icon :name="record.category?.icon || 'circle'" />
+          </view>
           <view class="record-info">
-            <text class="type">购物</text>
-            <text class="amount expense">-1</text>
+            <view class="record-left">
+              <text class="type">{{ record.title || record.category?.name || "未知" }}</text>
+              <text v-if="record.remark" class="remark">{{ record.remark }}</text>
+            </view>
+            <text class="amount" :class="record.type">
+              {{ record.type === "expense" ? "-" : "" }}{{ parseFloat(record.amount).toFixed(2) }}
+            </text>
           </view>
         </view>
-      </view>
-
-      <!-- 记录分组2 -->
-      <view class="day-group">
-        <view class="day-header">
-          <text>07月17日 星期四</text>
-          <view>
-            <text class="income-label">收入：1</text>
-            <text class="expense-label">支出：83.62</text>
-          </view>
-        </view>
-
-        <!-- 具体记录 -->
-        <view class="record-item">
-          <view class="icon salary"><wd-icon name="circle" /></view>
-          <view class="record-info">
-            <text class="type">工资</text>
-            <text class="amount income">1</text>
-          </view>
-        </view>
-
-        <!-- 更多记录... -->
-        <view class="record-item">
-          <view class="icon entertainment"><wd-icon name="circle" /></view>
-          <view class="record-info">
-            <text class="type">腾讯会员</text>
-            <text class="amount expense">-8.99</text>
-          </view>
-        </view>
-        <!-- 其他记录结构类似... -->
       </view>
     </view>
 
@@ -107,13 +88,7 @@
       </view>
       <!-- 修复图表容器，添加条件渲染 -->
       <view class="chart-scroll-container">
-        <scroll-view
-          class="chart-scroll"
-          scroll-x
-          :scroll-left="scrollLeft"
-          @scroll="onChartScroll"
-          :enable-flex="true"
-        >
+        <scroll-view class="chart-scroll" scroll-x :enable-flex="true">
           <view class="chart-wrapper">
             <BaseChart v-if="chartOption && xAxisLabels.length > 0" :option="chartOption" />
           </view>
@@ -134,14 +109,21 @@ import BaseChart from "@/components/BaseChart.vue"
 import AmountInput from "@/pages/BookKeeping/components/AmountInput.vue"
 import { onReady, onShow } from "@dcloudio/uni-app"
 import dayjs from "dayjs"
+import "dayjs/locale/zh-cn"
+
 import { useTabbarStore, useBookkeepingStore } from "@/store"
+import { getMonthlyStats, getDailyRecords } from "@/api/bookkeeping"
+import { MonthlyStatsResult, DailyRecordGroup } from "@/api/bookkeeping/types"
+
+// 设置dayjs为中文
+dayjs.locale("zh-cn")
 
 const tabbarStore = useTabbarStore()
 const bookkeepingStore = useBookkeepingStore()
 
 // 数据模型
-const incomeToday = ref(2580)
-const expenseToday = ref(1240)
+const incomeToday = ref(0)
+const expenseToday = ref(0)
 const safeAreaInsets = ref(uni.getSystemInfoSync().safeAreaInsets || { bottom: 0 })
 const showPopup = ref(false)
 
@@ -155,13 +137,29 @@ onShow(() => {
   }
 })
 
-// 监听事件总线
-onMounted(() => {
-  uni.$on("showBookkeepingPopup", () => {
-    console.log("收到显示弹窗事件")
-    showPopup.value = true
+const init = () => {
+  getMonthlyData(currentMonth.value.format("YYYY-MM"))
+  getDailyRecordsData(currentMonth.value.format("YYYY-MM"))
+}
+
+// 获取顶部板块数据
+const getMonthlyData = (val: string) => {
+  getMonthlyStats(val).then(({ data }) => {
+    animatedIncome.value = data.income
+    animatedExpense.value = data.expense
   })
-})
+}
+
+// 每日记录数据
+const dailyRecords = ref<DailyRecordGroup[]>([])
+
+// 获取每日记录数据
+const getDailyRecordsData = (val: string) => {
+  getDailyRecords(val).then(({ data }) => {
+    dailyRecords.value = data
+    console.log("🚀 ~ getDailyRecords ~ data:", dailyRecords.value)
+  })
+}
 
 // 页面卸载时移除监听
 onUnmounted(() => {
@@ -350,8 +348,12 @@ const chartOption = computed(() => {
 const changeMonth = (direction: number) => {
   currentMonth.value = dayjs(currentMonth.value).add(direction, "month")
 
-  // 若不存在该月数据则初始化
+  // 获取新月份的数据
   const monthKey = currentMonth.value.format("YYYY-MM")
+  getMonthlyData(monthKey)
+  getDailyRecordsData(monthKey)
+
+  // 若不存在该月数据则初始化
   if (!monthlyData.value[monthKey]) {
     monthlyData.value[monthKey] = {
       income: [0],
@@ -366,13 +368,13 @@ const changeMonth = (direction: number) => {
 onMounted(() => {
   // 为当前月生成测试数据
   const days = dayjs().daysInMonth()
+  init()
   monthlyData.value[dayjs().format("YYYY-MM")] = {
     income: [2580],
     expense: [1240],
     dailyExpense: Array.from({ length: days }, () => Math.floor(Math.random() * 300)),
     dailyIncome: Array.from({ length: days }, () => Math.floor(Math.random() * 200)),
   }
-  console.log("🚀 ~ monthlyData.value[dayjs ~ monthlyData.value:", monthlyData.value)
 
   // 生成上月/下月测试数据
   const prevMonth = dayjs().subtract(1, "month").format("YYYY-MM")
@@ -398,6 +400,44 @@ onMounted(() => {
       .fill(0)
       .map(() => Math.floor(Math.random() * 220)),
   }
+
+  // 启动数字动画
+  nextTick(() => {
+    setTimeout(() => {
+      mounted.value = true
+
+      // 启动数字动画，添加延迟让卡片先出现
+      setTimeout(() => {
+        animateNumber(animatedIncome.value, (val) => (animatedIncome.value = val), incomeAnimating)
+      }, 600)
+      setTimeout(() => {
+        animateNumber(
+          animatedExpense.value,
+          (val) => (animatedExpense.value = val),
+          expenseAnimating,
+        )
+      }, 800)
+    }, 100)
+  })
+
+  // 监听事件总线
+  uni.$on("showBookkeepingPopup", () => {
+    console.log("收到显示弹窗事件")
+    showPopup.value = true
+  })
+  nextTick(() => {
+    setTimeout(() => {
+      mounted.value = true
+
+      // 启动数字动画，添加延迟让卡片先出现
+      setTimeout(() => {
+        animateNumber(incomeToday.value, (val) => (animatedIncome.value = val), incomeAnimating)
+      }, 600)
+      setTimeout(() => {
+        animateNumber(expenseToday.value, (val) => (animatedExpense.value = val), expenseAnimating)
+      }, 800)
+    }, 100)
+  })
 })
 
 // 页面准备就绪
@@ -446,21 +486,7 @@ const animateNumber = (target, setter, animatingFlag) => {
   }, stepTime)
 }
 
-// 页面挂载时启动动画
-onMounted(() => {
-  nextTick(() => {
-    setTimeout(() => {
-      mounted.value = true
-      // 启动数字动画，添加延迟让卡片先出现
-      setTimeout(() => {
-        animateNumber(incomeToday.value, (val) => (animatedIncome.value = val), incomeAnimating)
-      }, 600)
-      setTimeout(() => {
-        animateNumber(expenseToday.value, (val) => (animatedExpense.value = val), expenseAnimating)
-      }, 800)
-    }, 100)
-  })
-})
+const mounted = ref(false)
 </script>
 
 <style lang="scss">
@@ -473,37 +499,35 @@ onMounted(() => {
 .stats-cards {
   display: flex;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 .stats-card {
   flex: 1;
-  padding: 16px;
-
-  // background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 5%);
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 5%);
 
   &.income {
     background-color: #409eff;
-    border-top: 3px solid #409eff;
+    border-top: 2px solid #409eff;
   }
 
   &.expense {
     background-color: #ffae4c;
-    border-top: 3px solid #ffae4c;
+    border-top: 2px solid #ffae4c;
   }
 }
 
 .stats-title {
-  margin-bottom: 8px;
-  font-size: 14px;
+  margin-bottom: 6px;
+  font-size: 12px;
   color: white;
 }
 
 .stats-value {
-  font-size: 24px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 600;
   color: white;
 }
 
@@ -640,69 +664,74 @@ onMounted(() => {
 }
 /* 容器样式 */
 .bills-container {
-  padding: 10rpx;
+  padding: 8rpx;
   margin-bottom: 15rpx;
   background-color: #fff;
   border-radius: 12rpx;
 }
 /* 日期分组样式 */
 .day-group {
-  margin-bottom: 30rpx;
-  border-bottom: 1rpx solid #eee;
+  margin-bottom: 24rpx;
 
-  // padding-bottom: 10rpx;
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 
 .day-header {
   display: flex;
-  gap: 20rpx;
+  align-items: center;
   justify-content: space-between;
-
-  // background-color: #f8f8f8;
-  // padding: 15rpx 20rpx;
-  margin-bottom: 10rpx;
-  font-size: 28rpx;
+  padding: 12rpx 16rpx;
+  margin-bottom: 8rpx;
+  font-size: 26rpx;
   color: #333;
+  background-color: #f8f9fa;
   border-radius: 8rpx;
 }
 
 .income-label {
-  color: #333;
+  margin-right: 16rpx;
+  font-size: 24rpx;
+  color: #409eff;
 }
 
 .expense-label {
-  color: #999;
+  font-size: 24rpx;
+  color: #ffae4c;
 }
 /* 记录项样式 */
 .record-item {
   display: flex;
   align-items: center;
-  padding: 20rpx;
+  padding: 12rpx 16rpx;
+  margin-bottom: 8rpx;
+  border-radius: 8rpx;
+  transition: background-color 0.2s;
 
-  // border-bottom: 1rpx solid #f5f5f5;
+  &:hover {
+    // background-color: #f5f5f5;
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 
 .icon {
-  width: 64rpx;
-  height: 64rpx;
-  margin-right: 20rpx;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-right: 12rpx;
   border-radius: 50%;
-}
 
-.shopping {
-  background-color: #ffd700; /* 购物图标-黄色 */
-}
-
-.salary {
-  background-color: #4caf50; /* 工资图标-绿色 */
-}
-
-.entertainment {
-  background-color: #2196f3; /* 娱乐图标-蓝色 */
-}
-/* 其他类型图标颜色... */
-.food {
-  background-color: #ff5722; /* 食物图标-橙色 */
+  &.default {
+    color: #666;
+    background-color: #e8e8e8;
+  }
 }
 
 .record-info {
@@ -712,29 +741,37 @@ onMounted(() => {
   justify-content: space-between;
 }
 
+.record-left {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
 .type {
-  font-size: 32rpx;
-  color: #000;
-}
-
-.amount {
-  font-size: 32rpx;
+  font-size: 28rpx;
   font-weight: 500;
+  line-height: 1.2;
+  color: #333;
 }
 
-.income {
-  color: #000;
-}
-
-.expense {
+.remark {
+  margin-top: 2rpx;
+  font-size: 22rpx;
+  line-height: 1.2;
   color: #999;
 }
 
-.record-item .icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 36rpx;
-  color: #fff;
+.amount {
+  flex-shrink: 0;
+  font-size: 28rpx;
+  font-weight: 600;
+
+  &.income {
+    color: #409eff;
+  }
+
+  &.expense {
+    color: #333;
+  }
 }
 </style>

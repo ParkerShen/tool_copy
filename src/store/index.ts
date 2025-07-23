@@ -23,5 +23,6 @@ export default store
 export * from "./user"
 export * from "./lang"
 export * from "./coupon"
+// eslint-disable-next-line import/extensions
 export * from "./tabbar"
 export * from "./bookkeeping"
