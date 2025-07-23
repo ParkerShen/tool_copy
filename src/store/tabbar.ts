@@ -1,8 +1,8 @@
 /*
  * @Date: 2025-07-23 14:57:04
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-23 14:57:11
- * @FilePath: \mobile\src\store\tabbar.js
+ * @LastEditTime: 2025-07-23 15:57:04
+ * @FilePath: \mobile\src\store\tabbar.ts
  */
 import { defineStore } from "pinia"
 
@@ -44,12 +44,13 @@ export const useTabbarStore = defineStore("tabbar", {
   }),
 
   actions: {
-    setActiveIndex(index) {
+    setActiveIndex(index: number) {
       this.activeIndex = index
     },
 
     // 根据页面路径设置当前激活的tab
-    setActiveByPath(path) {
+    setActiveByPath(path: string) {
+      console.log("🚀 ~ setActiveByPath ~ path:", path)
       const index = this.tabList.findIndex(
         (tab) => path.includes(tab.pagePath) || `/${tab.pagePath}` === path,
       )

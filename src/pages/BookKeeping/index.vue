@@ -1,7 +1,7 @@
 <!--
  * @Date: 2025-07-11 16:18:38
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-23 14:46:57
+ * @LastEditTime: 2025-07-23 16:51:16
  * @FilePath: \mobile\src\pages\BookKeeping\index.vue
 -->
 <route lang="json5" type="page">
@@ -121,17 +121,7 @@
       </view>
     </view>
 
-    <!-- 悬浮按钮 -->
-    <wd-button
-      class="fab"
-      :style="{ position: 'fixed', right: '20px' }"
-      type="primary"
-      shape="circle"
-      size="large"
-      @click="showPopup = true"
-    >
-      <wd-icon name="add" size="22px"></wd-icon>
-    </wd-button>
+    <!-- 弹窗 -->
     <wd-popup v-model="showPopup" position="bottom" round>
       <AmountInput @close="handleClosePopup" />
     </wd-popup>
@@ -139,19 +129,47 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from "vue"
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue"
 import BaseChart from "@/components/BaseChart.vue"
 import AmountInput from "@/pages/BookKeeping/components/AmountInput.vue"
-import { onReady } from "@dcloudio/uni-app"
+import { onReady, onShow } from "@dcloudio/uni-app"
 import dayjs from "dayjs"
-import { useTabbarStore } from "@/store/tabbar"
+import { useTabbarStore, useBookkeepingStore } from "@/store"
+
+const tabbarStore = useTabbarStore()
+const bookkeepingStore = useBookkeepingStore()
 
 // 数据模型
 const incomeToday = ref(2580)
 const expenseToday = ref(1240)
 const safeAreaInsets = ref(uni.getSystemInfoSync().safeAreaInsets || { bottom: 0 })
 const showPopup = ref(false)
+
+// 页面显示时检查是否需要显示添加弹窗
+onShow(() => {
+  console.log("onShow - shouldShowAdd:", bookkeepingStore.shouldShowAdd)
+  if (bookkeepingStore.shouldShowAdd) {
+    console.log("设置 showPopup 为 true")
+    showPopup.value = true
+    bookkeepingStore.setShouldShowAdd(false) // 重置标志
+  }
+})
+
+// 监听事件总线
+onMounted(() => {
+  uni.$on("showBookkeepingPopup", () => {
+    console.log("收到显示弹窗事件")
+    showPopup.value = true
+  })
+})
+
+// 页面卸载时移除监听
+onUnmounted(() => {
+  uni.$off("showBookkeepingPopup")
+})
+
 const handleClosePopup = () => {
+  console.log("关闭弹窗")
   showPopup.value = false
 }
 
@@ -239,33 +257,90 @@ const chartOption = computed(() => {
     dailyIncome: Array(daysInMonth.value).fill(0),
   }
 
+  const today = dayjs().date()
+  const isCurrentMonth = currentMonth.value.format("YYYY-MM") === dayjs().format("YYYY-MM")
+
   return {
     grid: { left: "3%", right: "4%", bottom: "15%" },
     xAxis: {
       type: "category",
       data: xAxisLabels.value,
-      // axisLabel: {
-      //   interval: Math.max(1, Math.floor(daysInMonth.value / 7)) // 动态调整标签密度
-      // }
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: {
+        color: "#999",
+        fontSize: 11,
+      },
     },
     yAxis: {
       type: "value",
       minInterval: 1,
+      axisLine: { show: false },
+      axisTick: { show: false },
+      splitLine: {
+        lineStyle: {
+          color: "#f0f0f0",
+          type: "dashed",
+        },
+      },
     },
-    dataZoom: [],
     series: [
       {
         type: "bar",
-        data: chartMode.value === "income" ? currentData.dailyIncome : currentData.dailyExpense,
-        itemStyle: {
-          color: chartMode.value === "income" ? "#409eff" : "#ffae4c",
-        },
+        barWidth: "60%",
+        data: (chartMode.value === "income"
+          ? currentData.dailyIncome
+          : currentData.dailyExpense
+        ).map((value, index) => ({
+          value,
+          itemStyle: {
+            color: chartMode.value === "income" ? "#409eff" : "#ffae4c",
+            borderRadius: [4, 4, 0, 0],
+            // 今天的柱子添加边框
+            ...(isCurrentMonth &&
+              index + 1 === today && {
+                borderColor: "#ff6b6b",
+                borderWidth: 2,
+                shadowColor: "rgba(255, 107, 107, 0.3)",
+                shadowBlur: 8,
+              }),
+          },
+        })),
         label: {
           show: true,
           position: "top",
-          color: "#333",
-          fontSize: 12,
+          color: "#666",
+          fontSize: 11,
+          formatter: function (params) {
+            // 今天的数据添加标记
+            if (isCurrentMonth && params.dataIndex + 1 === today) {
+              return `${params.value}\n●`
+            }
+            return params.value
+          },
         },
+        markLine: isCurrentMonth
+          ? {
+              silent: true,
+              data: [
+                {
+                  xAxis: today - 1,
+                  lineStyle: {
+                    color: "#ff6b6b",
+                    type: "dashed",
+                    width: 1,
+                  },
+                  label: {
+                    show: true,
+                    position: "insideEndTop",
+                    formatter: "今日",
+                    color: "#ff6b6b",
+                    fontSize: 10,
+                  },
+                },
+              ],
+            }
+          : undefined,
       },
     ],
   }
@@ -344,6 +419,48 @@ const addBill = () => {
 
 // 页面卸载时销毁图表
 onUnmounted(() => {})
+
+// 数字动画相关
+const animatedIncome = ref(0)
+const animatedExpense = ref(0)
+const incomeAnimating = ref(false)
+const expenseAnimating = ref(false)
+
+// 改进的数字动画函数
+const animateNumber = (target, setter, animatingFlag) => {
+  animatingFlag.value = true
+  let current = 0
+  const duration = 1500 // 动画持续时间
+  const steps = 60 // 动画步数
+  const increment = target / steps
+  const stepTime = duration / steps
+
+  const timer = setInterval(() => {
+    current += increment
+    if (current >= target) {
+      current = target
+      clearInterval(timer)
+      animatingFlag.value = false
+    }
+    setter(formatNumber(Math.floor(current)))
+  }, stepTime)
+}
+
+// 页面挂载时启动动画
+onMounted(() => {
+  nextTick(() => {
+    setTimeout(() => {
+      mounted.value = true
+      // 启动数字动画，添加延迟让卡片先出现
+      setTimeout(() => {
+        animateNumber(incomeToday.value, (val) => (animatedIncome.value = val), incomeAnimating)
+      }, 600)
+      setTimeout(() => {
+        animateNumber(expenseToday.value, (val) => (animatedExpense.value = val), expenseAnimating)
+      }, 800)
+    }, 100)
+  })
+})
 </script>
 
 <style lang="scss">

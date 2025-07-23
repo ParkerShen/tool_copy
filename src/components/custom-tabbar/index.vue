@@ -31,8 +31,10 @@
 <script setup>
 import { ref, onMounted } from "vue"
 import { useTabbarStore } from "@/store/tabbar"
+import { useBookkeepingStore } from "@/store/bookkeeping"
 
 const tabbarStore = useTabbarStore()
+const bookkeepingStore = useBookkeepingStore()
 
 // 获取安全区域，添加默认值
 const systemInfo = uni.getSystemInfoSync()
@@ -66,12 +68,28 @@ const showActionSheet = () => {
 
 // 处理操作选择
 const handleActionSelect = (action) => {
-  switch (action.value) {
+  console.log("🚀 ~ handleActionSelect ~ action:", action.item.value)
+  switch (action.item.value) {
     case "bookkeeping":
-      // 跳转到记账页面并显示添加弹窗
-      uni.navigateTo({
-        url: "/pages/BookKeeping/index?showAdd=true",
-      })
+      // 获取当前页面
+      const pages = getCurrentPages()
+      const currentPage = pages[pages.length - 1]
+      const currentRoute = currentPage.route
+
+      // 如果当前已经在记账页面，直接触发弹窗
+      if (currentRoute === "pages/BookKeeping/index") {
+        // 通过事件总线或者直接调用页面方法
+        uni.$emit("showBookkeepingPopup")
+      } else {
+        // 不在记账页面，先跳转再显示弹窗
+        bookkeepingStore.setShouldShowAdd(true)
+        uni.switchTab({
+          url: "/pages/BookKeeping/index",
+          success: () => {
+            tabbarStore.setActiveByPath("pages/BookKeeping/index")
+          },
+        })
+      }
       break
     case "countdown":
       // TODO: 跳转到添加倒数日页面
