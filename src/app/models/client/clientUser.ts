@@ -1,6 +1,6 @@
 import { DataTypes, Model, Sequelize } from 'sequelize';
-import timestamps from '../platform/timestamps';
-import modelConfig from '../platform/modelConfig';
+import timestamps from '../timestamps';
+import modelConfig from '../modelConfig';
 
 interface ClientUserAttributes {
   userId: number;

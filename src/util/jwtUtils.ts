@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import db from '../app/models/platform';
 // 导入客户端模型（需要创建）
-import clientDb from '../app/models/client';
+import clientDb from '../app/models/platform';
 
 const { User, Role } = db;
 const { User: ClientUser } = clientDb;

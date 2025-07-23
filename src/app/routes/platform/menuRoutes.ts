@@ -2,12 +2,12 @@
 import express from 'express';
 import {
   getAllPermissions,
-} from '../controllers/platform/menu/get';
+} from '../../controllers/platform/menu/get';
 import {
   createMenu,
   updateMenu,
   deleteMenu,
-} from '../controllers/platform/menu/post';
+} from '../../controllers/platform/menu/post';
 import { authenticateToken } from './authMiddleware';
 
 const router = express.Router();

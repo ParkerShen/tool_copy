@@ -1,4 +1,10 @@
 /*
+ * @Date: 2025-07-18 18:56:54
+ * @LastEditors: parker 960822987@qq.com
+ * @LastEditTime: 2025-07-21 21:59:18
+ * @FilePath: \serveradmin\src\app\models\platform\index.ts
+ */
+/*
  * @Date: 2025-06-29 15:59:39
  * @LastEditors: parker 960822987@qq.com
  * @LastEditTime: 2025-06-30 23:34:24
@@ -19,8 +25,12 @@ const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   dialect: dbConfig.dialect,
   logging: false,
   sync: false as any,
-  define: { underscored: true },
-  
+  define: {
+    freezeTableName: true,
+    timestamps: true,
+    underscored: true,
+    paranoid: true
+  },
   pool: dbConfig.pool,
   timezone: '+08:00'
 });

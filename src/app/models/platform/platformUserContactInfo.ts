@@ -1,6 +1,6 @@
 import { DataTypes, Model, Sequelize } from 'sequelize';
-import timestamps from './timestamps';
-import modelConfig from './modelConfig';
+import timestamps from '../timestamps';
+import modelConfig from '../modelConfig';
 
 interface UsercontactinfoAttributes {
   id: number;

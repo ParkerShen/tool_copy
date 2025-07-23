@@ -1,6 +1,6 @@
 export default {
   freezeTableName: true,
-  timestamps: false,
+  timestamps: true,
   underscored: true,
   paranoid: true
 };

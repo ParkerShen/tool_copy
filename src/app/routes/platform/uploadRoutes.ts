@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import moment from 'moment';
-import { uploadImage } from '../controllers/platform/upload/post';
+import { uploadImage } from '../../controllers/platform/upload/post';
 import { authenticateToken } from './authMiddleware';
 
 const router = express.Router();

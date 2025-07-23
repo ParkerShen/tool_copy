@@ -5,7 +5,7 @@
  * @FilePath: \serveradmin\src\app\routes\client\index.ts
  */
 import express from 'express';
-import userRoutes from '../userRoutes';
+import userRoutes from '../platform/userRoutes';
 import { authenticateClientToken } from '../../routes/middleware/clientAuth';
 
 const router = express.Router();

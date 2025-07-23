@@ -9,12 +9,12 @@ import {
   createRole,
   updateRole,
   deleteRole
-} from '../controllers/platform/role/post';
+} from '../../controllers/platform/role/post';
 import {
   getAllroles,
   getAllmenus,
   getRoleList,
-} from '../controllers/platform/role/get';
+} from '../../controllers/platform/role/get';
 import { authenticateToken } from './authMiddleware';
 
 const router = express.Router();

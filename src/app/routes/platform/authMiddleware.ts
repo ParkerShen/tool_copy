@@ -1,6 +1,12 @@
+/*
+ * @Date: 2025-07-21 16:33:28
+ * @LastEditors: parker 960822987@qq.com
+ * @LastEditTime: 2025-07-21 20:16:31
+ * @FilePath: \serveradmin\src\app\routes\platform\authMiddleware.ts
+ */
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
-import db from '../models/platform';
+import db from '../../models/platform';
 const { BlackToken } = db;
 
 interface DecodedToken {
