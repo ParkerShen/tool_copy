@@ -1,11 +1,11 @@
 <route lang="json5">
 {
+  layout: "default",
   style: { navigationBarTitleText: "" },
 }
 </route>
 <template>
   <view class="main-container">这是我的页面</view>
-  <!-- <custom-tabbar :activeIndex="activeTab" @tabChange="handleTabChange" /> -->
 </template>
 
 <script lang="ts" setup>
@@ -145,7 +145,7 @@ watch(
 <style>
 page {
   height: 100%;
-  background: #ffffff;
+  background: #fff;
 }
 </style>
 

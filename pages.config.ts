@@ -1,8 +1,8 @@
 /*
  * @Date: 2025-07-03 15:10:43
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-16 21:24:11
- * @FilePath: \mobile\pages.config.ts
+ * @LastEditTime: 2025-07-23 14:39:05
+ * @FilePath: \serveradminc:\Users\Administrator\Desktop\project\mobile\pages.config.ts
  */
 import { defineUniPages } from "@uni-helper/vite-plugin-uni-pages"
 

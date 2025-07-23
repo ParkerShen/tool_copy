@@ -153,6 +153,7 @@
     {
       "path": "pages/my/index",
       "type": "page",
+      "layout": "default",
       "style": {
         "navigationBarTitleText": ""
       }

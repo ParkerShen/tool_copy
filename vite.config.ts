@@ -62,7 +62,7 @@ export default (options: CommandOptions) => {
 
   // 添加代理目标配置
   const proxyTarget = process.env.VITE_APP_API_URL
-  const proxyPrefix = "/api" // 代理前缀，可自定义
+  const proxyPrefix = "/api/miniapp" // 代理前缀，可自定义
 
   console.log(`代理配置: ${proxyPrefix} -> ${proxyTarget}`)
 

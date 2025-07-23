@@ -1,7 +1,7 @@
 <!--
  * @Date: 2025-07-11 16:18:38
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-18 17:24:14
+ * @LastEditTime: 2025-07-23 14:46:57
  * @FilePath: \mobile\src\pages\BookKeeping\index.vue
 -->
 <route lang="json5" type="page">
@@ -105,13 +105,20 @@
           </wd-button>
         </view>
       </view>
-      <!-- 条件编译实现跨平台 -->
-      <!-- #ifdef H5 || APP -->
-      <BaseChart :option="chartOption" />
-      <!-- #endif -->
-      <!-- #ifdef MP-WEIXIN -->
-      <BaseChart :option="chartOption" />
-      <!-- #endif -->
+      <!-- 修复图表容器，添加条件渲染 -->
+      <view class="chart-scroll-container">
+        <scroll-view
+          class="chart-scroll"
+          scroll-x
+          :scroll-left="scrollLeft"
+          @scroll="onChartScroll"
+          :enable-flex="true"
+        >
+          <view class="chart-wrapper">
+            <BaseChart v-if="chartOption && xAxisLabels.length > 0" :option="chartOption" />
+          </view>
+        </scroll-view>
+      </view>
     </view>
 
     <!-- 悬浮按钮 -->
@@ -137,6 +144,7 @@ import BaseChart from "@/components/BaseChart.vue"
 import AmountInput from "@/pages/BookKeeping/components/AmountInput.vue"
 import { onReady } from "@dcloudio/uni-app"
 import dayjs from "dayjs"
+import { useTabbarStore } from "@/store/tabbar"
 
 // 数据模型
 const incomeToday = ref(2580)
@@ -340,8 +348,8 @@ onUnmounted(() => {})
 
 <style lang="scss">
 .container {
-  padding: 15px;
   width: 93%;
+  padding: 15px;
   background-color: #f7f8fa;
 }
 
@@ -353,27 +361,27 @@ onUnmounted(() => {})
 
 .stats-card {
   flex: 1;
+  padding: 16px;
+
   // background: #fff;
   border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 5%);
 
   &.income {
-    border-top: 3px solid #409eff;
-
     background-color: #409eff;
+    border-top: 3px solid #409eff;
   }
 
   &.expense {
-    border-top: 3px solid #ffae4c;
     background-color: #ffae4c;
+    border-top: 3px solid #ffae4c;
   }
 }
 
 .stats-title {
+  margin-bottom: 8px;
   font-size: 14px;
   color: white;
-  margin-bottom: 8px;
 }
 
 .stats-value {
@@ -383,17 +391,18 @@ onUnmounted(() => {})
 }
 
 .chart-container {
-  background: #fff;
-  border-radius: 12px;
   padding: 16px;
+
   // box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   margin-bottom: 20px;
+  background: #fff;
+  border-radius: 12px;
 }
 
 .chart-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 16px;
 }
 
@@ -415,8 +424,8 @@ onUnmounted(() => {})
 
 .bills-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin: 20px 0 12px;
 }
 
@@ -427,32 +436,32 @@ onUnmounted(() => {})
 
 .bill-item {
   display: flex;
+  align-items: center;
+  padding: 8px;
+  margin-bottom: 12px;
   background: #fff;
   border-radius: 12px;
-  padding: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  margin-bottom: 12px;
-  align-items: center;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 5%);
 }
 
 .bill-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 36px;
   height: 36px;
+  margin-right: 12px;
   background: #f2f6fc;
   border-radius: 8px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-right: 12px;
 
   &.income {
-    background: rgba(64, 158, 255, 0.1);
     color: #409eff;
+    background: rgb(64 158 255 / 10%);
   }
 
   &.expense {
-    background: rgba(255, 174, 76, 0.1);
     color: #ffae4c;
+    background: rgb(255 174 76 / 10%);
   }
 }
 
@@ -461,9 +470,9 @@ onUnmounted(() => {})
 }
 
 .bill-title {
+  margin-bottom: 4px;
   font-size: 15px;
   font-weight: 500;
-  margin-bottom: 4px;
 }
 
 .bill-date {
@@ -472,8 +481,8 @@ onUnmounted(() => {})
 }
 
 .bill-amount {
-  font-weight: 600;
   font-size: 16px;
+  font-weight: 600;
 
   &.income {
     color: #409eff;
@@ -486,17 +495,17 @@ onUnmounted(() => {})
 
 .month-control {
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   margin: 15px 0;
   font-size: 18px;
 
   .wd-icon {
-    font-size: 22px;
-    margin: 0 20px;
     padding: 8px;
-    border-radius: 50%;
+    margin: 0 20px;
+    font-size: 22px;
     background: #f0f5ff;
+    border-radius: 50%;
   }
 
   .month-text {
@@ -506,38 +515,38 @@ onUnmounted(() => {})
 
 .fab {
   position: fixed;
+  right: 10rpx;
+  bottom: 200rpx;
   width: 100rpx;
   height: 100rpx;
-  bottom: 200rpx;
-  right: 10rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8rpx 24rpx rgb(0 0 0 / 25%);
 }
-
 /* 容器样式 */
 .bills-container {
-  background-color: #ffffff;
   padding: 10rpx;
-  border-radius: 12rpx;
   margin-bottom: 15rpx;
+  background-color: #fff;
+  border-radius: 12rpx;
 }
-
 /* 日期分组样式 */
 .day-group {
   margin-bottom: 30rpx;
-  border-bottom: 1rpx solid #eeeeee;
+  border-bottom: 1rpx solid #eee;
+
   // padding-bottom: 10rpx;
 }
 
 .day-header {
+  display: flex;
+  gap: 20rpx;
+  justify-content: space-between;
+
   // background-color: #f8f8f8;
   // padding: 15rpx 20rpx;
   margin-bottom: 10rpx;
-  border-radius: 8rpx;
   font-size: 28rpx;
   color: #333;
-  display: flex;
-  justify-content: space-between;
-  gap: 20rpx;
+  border-radius: 8rpx;
 }
 
 .income-label {
@@ -547,20 +556,20 @@ onUnmounted(() => {})
 .expense-label {
   color: #999;
 }
-
 /* 记录项样式 */
 .record-item {
   display: flex;
   align-items: center;
   padding: 20rpx;
+
   // border-bottom: 1rpx solid #f5f5f5;
 }
 
 .icon {
   width: 64rpx;
   height: 64rpx;
-  border-radius: 50%;
   margin-right: 20rpx;
+  border-radius: 50%;
 }
 
 .shopping {
@@ -574,17 +583,16 @@ onUnmounted(() => {})
 .entertainment {
   background-color: #2196f3; /* 娱乐图标-蓝色 */
 }
-
 /* 其他类型图标颜色... */
 .food {
   background-color: #ff5722; /* 食物图标-橙色 */
 }
 
 .record-info {
-  flex: 1;
   display: flex;
-  justify-content: space-between;
+  flex: 1;
   align-items: center;
+  justify-content: space-between;
 }
 
 .type {
@@ -604,6 +612,7 @@ onUnmounted(() => {})
 .expense {
   color: #999;
 }
+
 .record-item .icon {
   display: flex;
   align-items: center;

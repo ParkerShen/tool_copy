@@ -1,185 +1,198 @@
 <!-- components/custom-tabbar.vue -->
 <template>
-  <wd-sticky style="position: absolute; bottom: 0upx">
+  <view class="custom-tabbar" :style="{ paddingBottom: safeAreaInsets?.bottom + 'px' }">
     <view
-      class="custom-tabbar"
-      :style="{
-        paddingBottom: safeAreaInsets?.bottom + 'px',
-        width: screenWidth + 'px',
-      }"
+      class="tab-item"
+      v-for="(item, index) in tabbarStore.tabList"
+      :key="index"
+      @click="switchTab(item, index)"
+      :class="{ active: tabbarStore.activeIndex === index }"
     >
-      <view class="tab-item" v-for="(item, index) in tabList" :key="index" @click="switchTab(item)">
+      <view class="icon-wrapper">
         <image
-          class="icon"
-          :src="activeIndex === index ? item.selectedIcon : item.icon"
+          class="icon-image"
+          :src="tabbarStore.activeIndex === index ? item.selectedIconPath : item.iconPath"
           mode="aspectFit"
         />
-        <text :class="['label', { active: activeIndex === index }]">{{ item.text }}</text>
       </view>
-
-      <!-- 凸起加号按钮 -->
-      <view class="add-button" @click="showBillTypeModal">
-        <wd-icon name="add" size="22px"></wd-icon>
-      </view>
+      <text class="label">{{ item.text }}</text>
     </view>
 
-    <!-- 分类选择弹窗 -->
-    <wd-action-sheet
-      v-model="showTypeSelect"
-      :actions="billTypes"
-      @select="handleTypeSelect"
-      title="选择账单类型"
-    >
-      <template #header>
-        <view class="action-sheet-header">
-          <text class="title">新建账单</text>
-          <wd-icon name="close" @click="showTypeSelect = false" />
-        </view>
-      </template>
-    </wd-action-sheet>
+    <!-- 凸起加号按钮 -->
+    <view class="add-button" @click="showActionSheet">
+      <text class="add-icon">+</text>
+    </view>
 
-    <!-- 金额输入弹窗 -->
-    <!-- <wd-number-box
-      v-model="amount"
-      v-model:show="showNumberPad"
-      title="输入金额"
-      confirm-text="保存"
-      @confirm="saveBill"
-    /> -->
-  </wd-sticky>
+    <!-- 操作选择弹窗 -->
+    <wd-action-sheet v-model="showActions" :actions="actionList" @select="handleActionSelect" />
+  </view>
 </template>
 
 <script setup>
-import { ref } from "vue"
-const emit = defineEmits(["tabChange"])
-const props = defineProps({
-  activeIndex: {
-    type: Number,
-    default: 0,
-  },
-})
-const screenWidth = computed(() => {
-  const systemInfo = uni.getSystemInfoSync()
-  return systemInfo.screenWidth
-})
-// 选项卡数据
-const tabList = ref([
-  {
-    pagePath: "/",
-    icon: "/static/tabbar/activity.png",
-    selectedIcon: "/static/tabbar/activity_active.png",
-    text: "首页",
-  },
-  {
-    pagePath: "/pages/my/index",
-    icon: "/static/tabbar/my.png",
-    selectedIcon: "/static/tabbar/my_active.png",
-    text: "我的",
-  },
-])
+import { ref, onMounted } from "vue"
+import { useTabbarStore } from "@/store/tabbar"
 
-// 账单类型
-const billTypes = ref([
-  { name: "餐饮", value: "meal", icon: "restaurant", color: "#ff9f43" },
-  { name: "购物", value: "shopping", icon: "cart", color: "#54bab9" },
-  { name: "交通", value: "transport", icon: "car", color: "#5d87ff" },
-  { name: "收入", value: "income", icon: "money", color: "#4cd964" },
-])
+const tabbarStore = useTabbarStore()
 
-// 控制变量
-const showTypeSelect = ref(false)
-const showNumberPad = ref(false)
-const selectedType = ref(null)
-const amount = ref(0)
+// 获取安全区域，添加默认值
+const systemInfo = uni.getSystemInfoSync()
+const safeAreaInsets = systemInfo.safeAreaInsets || { bottom: 0 }
+
+const showActions = ref(false)
+const actionList = ref([
+  { name: "添加记账", value: "bookkeeping" },
+  { name: "添加倒数日", value: "countdown" },
+  { name: "添加日记", value: "diary" },
+])
 
 // 切换选项卡
-const switchTab = (item) => {
-  console.log("🚀 ~ switchTab ~ item:", item)
-  uni.switchTab({ url: item.pagePath })
-  emit(
-    "tabChange",
-    tabList.value.findIndex((t) => t.pagePath === item.pagePath),
-  )
+const switchTab = (item, index) => {
+  tabbarStore.setActiveIndex(index)
+  uni.switchTab({
+    url: `/${item.pagePath}`,
+    success: () => {
+      console.log("切换成功:", item.text)
+    },
+    fail: (err) => {
+      console.error("切换失败:", err)
+    },
+  })
 }
 
-// 显示分类选择
-const showBillTypeModal = () => {
-  showTypeSelect.value = true
+// 显示操作选择
+const showActionSheet = () => {
+  showActions.value = true
 }
 
-// 选择账单类型
-const handleTypeSelect = (type) => {
-  selectedType.value = type
-  showTypeSelect.value = false
-  showNumberPad.value = true
-}
-
-// 保存账单
-const saveBill = () => {
-  const billData = {
-    type: selectedType.value,
-    amount: amount.value,
-    date: new Date().toISOString(),
+// 处理操作选择
+const handleActionSelect = (action) => {
+  switch (action.value) {
+    case "bookkeeping":
+      // 跳转到记账页面并显示添加弹窗
+      uni.navigateTo({
+        url: "/pages/BookKeeping/index?showAdd=true",
+      })
+      break
+    case "countdown":
+      // TODO: 跳转到添加倒数日页面
+      uni.showToast({
+        title: "添加倒数日功能开发中",
+        icon: "none",
+      })
+      break
+    case "diary":
+      // TODO: 跳转到添加日记页面
+      uni.showToast({
+        title: "添加日记功能开发中",
+        icon: "none",
+      })
+      break
   }
-  console.log("保存账单:", billData)
-
-  // 这里添加保存逻辑
-  uni.showToast({ title: "保存成功", icon: "success" })
-
-  // 重置数据
-  amount.value = 0
-  selectedType.value = null
+  showActions.value = false
 }
+
+// 组件挂载时根据当前页面设置激活状态
+onMounted(() => {
+  const pages = getCurrentPages()
+  if (pages.length > 0) {
+    const currentPage = pages[pages.length - 1]
+    const currentRoute = currentPage.route
+    tabbarStore.setActiveByPath(currentRoute)
+  }
+})
 </script>
 
 <style scoped>
 .custom-tabbar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
   display: flex;
-  border-top: 1px solid #f5f5f5;
+  align-items: center;
+  justify-content: space-around;
+  height: 100rpx;
+  background: #fff;
+  border-top: 1rpx solid #f0f0f0;
 }
 
 .tab-item {
-  flex: 1;
+  position: relative;
   display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  height: 100%;
 }
-.icon {
+
+.icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 48rpx;
   height: 48rpx;
 }
 
-.label {
-  font-size: 22rpx;
-  color: #999;
-  margin-top: 8rpx;
-}
-.label.active {
-  color: #e95412;
+.icon-image {
+  width: 44rpx;
+  height: 44rpx;
 }
 
+.label {
+  margin-top: 8rpx;
+  font-size: 20rpx;
+  color: #999;
+}
+
+.tab-item.active .label {
+  color: #2f88ff;
+}
+/* 中间的记账按钮 */
 .add-button {
   position: absolute;
+  top: -30rpx;
   left: 50%;
-  top: -40rpx;
-  transform: translateX(-50%);
-  width: 100rpx;
-  height: 100rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ff9d3c, #e95412);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4rpx 16rpx rgba(233, 84, 18, 0.3);
-  z-index: 100;
+  width: 100rpx;
+  height: 100rpx;
+  background: #ffd700;
+  border-radius: 50%;
+  box-shadow: 0 4rpx 12rpx rgb(255 215 0 / 30%);
+  transform: translateX(-50%);
 }
+
+.add-icon {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #333;
+}
+
 .action-sheet-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   padding: 32rpx;
   font-size: 32rpx;
   font-weight: bold;
+}
+/* 图标字体类 - 你需要根据实际图标字体调整 */
+.icon-mingxi::before {
+  content: "≡";
+}
+
+.icon-tubiao::before {
+  content: "📊";
+}
+
+.icon-zhangdan::before {
+  content: "📋";
+}
+
+.icon-wode::before {
+  content: "👤";
 }
 </style>

@@ -23,3 +23,4 @@ export default store
 export * from "./user"
 export * from "./lang"
 export * from "./coupon"
+export * from "./tabbar"
