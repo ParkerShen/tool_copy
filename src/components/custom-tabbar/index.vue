@@ -152,32 +152,53 @@ onMounted(() => {
 /* 中间的记账按钮 */
 .add-button {
   position: absolute;
-  top: -30rpx;
+  top: -60rpx;
   left: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100rpx;
-  height: 100rpx;
-  background: #ffd700;
+  width: 80rpx;
+  height: 80rpx;
+  background: linear-gradient(135deg, #2f84f5 0%, #1e6fd9 100%);
   border-radius: 50%;
-  box-shadow: 0 4rpx 12rpx rgb(255 215 0 / 30%);
+  box-shadow: 0 2rpx 8rpx rgb(47 132 245 / 30%);
+  transition: all 0.2s ease;
   transform: translateX(-50%);
 }
 
-.add-icon {
-  font-size: 48rpx;
-  font-weight: bold;
-  color: #333;
+.add-button:active {
+  box-shadow: 0 1rpx 4rpx rgb(47 132 245 / 40%);
+  transform: translateX(-50%) scale(0.95);
 }
 
-.action-sheet-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 32rpx;
-  font-size: 32rpx;
+.add-icon {
+  font-size: 36rpx;
   font-weight: bold;
+  color: #fff;
+}
+/* 响应式适配 */
+@media screen and (width <= 375px) {
+  .add-button {
+    top: -55rpx;
+    width: 70rpx;
+    height: 70rpx;
+  }
+
+  .add-icon {
+    font-size: 32rpx;
+  }
+}
+
+@media screen and (width >= 414px) {
+  .add-button {
+    top: -62rpx;
+    width: 85rpx;
+    height: 85rpx;
+  }
+
+  .add-icon {
+    font-size: 38rpx;
+  }
 }
 /* 图标字体类 - 你需要根据实际图标字体调整 */
 .icon-mingxi::before {
