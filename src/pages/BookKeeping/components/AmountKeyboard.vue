@@ -16,7 +16,7 @@
     <!-- 备注框 -->
     <wd-input v-model="note" label="备注：" placeholder="点击填写备注">
       <template #suffix>
-        <view style="display: flex; align-items: center; gap: 10rpx">
+        <view style="display: flex; gap: 10rpx; align-items: center">
           <wd-icon name="picture" color="gray" @click.stop="onImageSelect" />
           <wd-icon name="list" color="gray" @click.stop="onTagSelect" />
         </view>
@@ -81,9 +81,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue"
+import { ref, computed, watch } from "vue"
 import moment from "moment"
 import dayjs from "dayjs"
+import { createRecord } from "@/api/bookkeeping"
+
+// 接收父组件传递的数据
+const props = defineProps({
+  categoryId: String,
+  categoryType: String,
+  categoryName: String,
+  visible: Boolean, // 添加可见性属性
+})
+
+const emit = defineEmits(["close", "success"])
+
 const input = ref("") // 当前输入
 const note = ref("")
 const showDatePicker = ref(false)
@@ -105,6 +117,46 @@ watch(
     immediate: true,
   },
 )
+
+// 监听组件显示状态，每次显示时重置数据
+watch(
+  () => props.categoryId,
+  (newVal) => {
+    if (newVal) {
+      // 重置输入数据
+      input.value = ""
+      note.value = ""
+      date.value = dayjs().format("YYYY-MM-DD")
+    }
+  },
+)
+
+// 监听可见性变化
+watch(
+  () => props.visible,
+  (newVisible) => {
+    if (newVisible) {
+      // 每次显示时重置
+      input.value = ""
+      note.value = ""
+      date.value = dayjs().format("YYYY-MM-DD")
+    }
+  },
+)
+
+// 添加一个专门的重置方法
+const resetForm = () => {
+  input.value = ""
+  note.value = ""
+  date.value = dayjs().format("YYYY-MM-DD")
+  showDatePicker.value = false
+}
+
+// 在组件关闭时也调用重置
+const handleClose = () => {
+  resetForm()
+  emit("close")
+}
 
 // 判断是否处于计算模式（包含运算符）
 const isCalculationMode = computed(() => {
@@ -139,7 +191,8 @@ function onKeyPress(key: any) {
         uni.showToast({ title: "公式错误", icon: "none" })
       }
     } else {
-      uni.showToast({ title: "完成", icon: "success" })
+      // 点击完成，调用创建接口
+      handleComplete()
     }
     return
   }
@@ -209,77 +262,128 @@ function onDateChange(val: { value: string }) {
   showDatePicker.value = false
   uni.showToast({ title: `日期：${val}`, icon: "none" })
 }
+
+// 处理完成操作
+const handleComplete = async () => {
+  if (!input.value || parseFloat(input.value) <= 0) {
+    uni.showToast({ title: "请输入有效金额", icon: "none" })
+    return
+  }
+
+  if (!props.categoryId) {
+    uni.showToast({ title: "请选择分类", icon: "none" })
+    return
+  }
+
+  try {
+    uni.showLoading({ title: "保存中..." })
+
+    const recordData = {
+      categoryId: props.categoryId,
+      type: props.categoryType,
+      amount: parseFloat(input.value),
+      title: props.categoryName,
+      remark: note.value,
+      recordDate: date.value || dayjs().format("YYYY-MM-DD"),
+      recordTime: dayjs().format("HH:mm:ss"),
+    }
+
+    await createRecord(recordData)
+
+    uni.hideLoading()
+    uni.showToast({ title: "记录成功", icon: "success" })
+
+    // 重置输入数据
+    input.value = ""
+    note.value = ""
+    date.value = dayjs().format("YYYY-MM-DD")
+
+    // 延迟触发成功回调
+    setTimeout(() => {
+      emit("success")
+    }, 1000)
+  } catch (error) {
+    uni.hideLoading()
+    console.error("创建记录失败:", error)
+    uni.showToast({ title: "保存失败", icon: "error" })
+  }
+}
 </script>
 
 <style scoped>
 .calculator-container {
-  padding: 20rpx;
-  background: #fff;
   min-height: 30vh;
+  padding: 20rpx;
   padding-bottom: 98rpx;
+  background: #fff;
 }
+
 .expression {
+  padding: 20rpx 0;
   font-size: 36rpx;
   text-align: right;
-  padding: 20rpx 0;
 }
+
 .keyboard {
   margin-top: 30rpx;
 }
+
 .row {
   display: flex;
   justify-content: space-between;
   margin-bottom: 10rpx;
 }
+
 .key {
   flex: 1;
   height: 100rpx;
+  font-size: 36rpx;
   line-height: 100rpx;
   text-align: center;
-  border: 1rpx solid #f1f1f1;
-  font-size: 36rpx;
   background: #fff;
+  border: 1rpx solid #f1f1f1;
 }
+
 .key.action {
   color: #555;
 }
+
 .key.equal {
-  background: #ffda44;
   color: #000;
+  background: #ffda44;
 }
+
 .icon-group {
   display: flex;
   gap: 20rpx;
   align-items: center;
 }
+
 .expression-wrapper {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  min-height: 80rpx; /* 确保有最小高度 */
   padding: 5px 10rpx;
+  margin-bottom: 10rpx;
   background-color: #f8f9fa;
   border-radius: 16rpx;
-  margin-bottom: 10rpx;
-  position: relative;
-  min-height: 80rpx; /* 确保有最小高度 */
-
   /* 动画效果 - 当值变化时 */
   transition: all 0.3s ease;
 }
 
 .expression {
+  flex: 1;
+  min-width: 60%;
   font-size: 30rpx;
   font-weight: bold;
   color: #333;
   text-align: right;
-  flex: 1;
-  min-width: 60%;
-
   /* 没有值时的样式 */
   &:not(.has-value) {
     color: #aaa;
   }
-
   /* 值存在时的样式 */
   &.has-value {
     color: #333;
@@ -287,15 +391,15 @@ function onDateChange(val: { value: string }) {
 }
 
 .placeholder {
-  opacity: 0.5;
   font-weight: normal;
+  opacity: 0.5;
 }
 
 .amount-label {
   position: absolute;
   left: 30rpx;
   font-size: 38rpx;
-  color: #4d80f0;
   font-weight: bold;
+  color: #4d80f0;
 }
 </style>

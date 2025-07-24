@@ -1,7 +1,7 @@
 <!--
  * @Date: 2025-07-11 16:18:38
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-24 12:43:10
+ * @LastEditTime: 2025-07-24 15:34:53
  * @FilePath: \mobile\src\pages\BookKeeping\index.vue
 -->
 <route lang="json5" type="page">
@@ -316,6 +316,12 @@ const changeMonth = (direction: number): void => {
 // 初始化模拟数据（实际应用需替换为API请求）
 onMounted(() => {
   init()
+
+  // 监听数据刷新事件
+  uni.$on("refreshBookkeepingData", () => {
+    console.log("刷新记账数据")
+    init() // 重新加载数据
+  })
 
   // 添加事件监听 - 监听来自tabbar的弹窗显示事件
   uni.$on("showBookkeepingPopup", () => {

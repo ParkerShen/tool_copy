@@ -34,7 +34,6 @@
           :class="{ selected: selectedCategory === item }"
           :style="{ backgroundColor: selectedCategory === item ? item.color : '#f8f8f8' }"
         >
-         
           <IconFont :name="item.icon" size="36" color="#f60" />
         </view>
         <!-- 配置按钮 -->
@@ -51,7 +50,14 @@
       @add="handleAddCategory"
     />
     <wd-popup :modal="false" v-model="showAmountKeyboard" position="bottom" round>
-      <AmountKeyboard />
+      <AmountKeyboard
+        :category-id="selectedCategory?.id"
+        :category-type="activeTab"
+        :category-name="selectedCategory?.name"
+        :visible="showAmountKeyboard"
+        @close="handleKeyboardClose"
+        @success="handleRecordSuccess"
+      />
     </wd-popup>
   </view>
 </template>
@@ -61,7 +67,7 @@ import { getCategories } from "@/api/bookkeeping"
 import AddCategoryModal from "@/pages/BookKeeping/components/AddCategoryModal.vue"
 import AmountKeyboard from "@/pages/BookKeeping/components/AmountKeyboard.vue"
 import SvgIcon from "@/components/SvgIcon.vue"
-import IconFont from '@/components/IconFont.vue';
+import IconFont from "@/components/IconFont.vue"
 
 // 当前激活标签（支出/收入）
 const activeTab = ref("expense")
@@ -117,6 +123,9 @@ const currentCategories = computed(() =>
 const handleTabChange = (tabType) => {
   activeTab.value = tabType
   selectedCategory.value = null
+  // 关闭键盘和其他弹窗
+  showAmountKeyboard.value = false
+  showAddModal.value = false
 }
 
 // 分类点击处理
@@ -217,7 +226,26 @@ const removeCategory = () => {
 
 // 关闭分类弹窗
 const handleCancel = () => {
+  // 重置所有状态
+  activeTab.value = "expense"
+  selectedCategory.value = null
+  showAmountKeyboard.value = false
+  showAddModal.value = false
+
   emit("close")
+}
+
+// 键盘关闭处理
+const handleKeyboardClose = () => {
+  showAmountKeyboard.value = false
+}
+
+// 记录创建成功处理
+const handleRecordSuccess = () => {
+  showAmountKeyboard.value = false
+  emit("close") // 关闭整个添加页面
+  // 触发首页数据刷新
+  uni.$emit("refreshBookkeepingData")
 }
 </script>
 

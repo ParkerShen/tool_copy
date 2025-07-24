@@ -1,7 +1,7 @@
 /*
  * @Date: 2025-07-23 17:04:56
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-24 12:39:35
+ * @LastEditTime: 2025-07-24 15:40:18
  * @FilePath: \mobile\src\api\bookkeeping\types.ts
  */
 /**
@@ -80,11 +80,11 @@ export interface CreateRecordRequest {
   /** 分类ID */
   categoryId: number
   /** 记录类型 */
-  type: "income" | "expense"
+  type?: "income" | "expense"
   /** 金额 */
   amount: number
   /** 标题 */
-  title: string
+  title?: string
   /** 备注 */
   remark?: string
   /** 记录日期 */
