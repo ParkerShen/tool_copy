@@ -84,14 +84,18 @@
 import { ref, computed, watch } from "vue"
 import moment from "moment"
 import dayjs from "dayjs"
-import { createRecord } from "@/api/bookkeeping"
+import { createRecord, updateRecord } from "@/api/bookkeeping"
 
 // 接收父组件传递的数据
 const props = defineProps({
   categoryId: String,
   categoryType: String,
   categoryName: String,
-  visible: Boolean, // 添加可见性属性
+  visible: Boolean,
+  editRecord: {
+    type: Object,
+    default: null,
+  },
 })
 
 const emit = defineEmits(["close", "success"])
@@ -154,7 +158,7 @@ const resetForm = () => {
 
 // 在组件关闭时也调用重置
 const handleClose = () => {
-  resetForm()
+  // 不调用 resetForm()，保持编辑数据
   emit("close")
 }
 
@@ -263,6 +267,23 @@ function onDateChange(val: { value: string }) {
   uni.showToast({ title: `日期：${val}`, icon: "none" })
 }
 
+// 编辑模式状态
+const isEditMode = computed(() => !!props.editRecord)
+
+// 监听编辑记录变化
+watch(
+  () => props.editRecord,
+  (newRecord) => {
+    if (newRecord) {
+      // 初始化编辑数据
+      input.value = String(newRecord.amount)
+      note.value = newRecord.remark || ""
+      date.value = newRecord.recordDate || dayjs().format("YYYY-MM-DD")
+    }
+  },
+  { immediate: true },
+)
+
 // 处理完成操作
 const handleComplete = async () => {
   if (!input.value || parseFloat(input.value) <= 0) {
@@ -270,42 +291,44 @@ const handleComplete = async () => {
     return
   }
 
-  if (!props.categoryId) {
+  if (!props.categoryId && !props.editRecord) {
     uni.showToast({ title: "请选择分类", icon: "none" })
     return
   }
 
   try {
-    uni.showLoading({ title: "保存中..." })
+    uni.showLoading({ title: isEditMode.value ? "更新中..." : "保存中..." })
 
     const recordData = {
-      categoryId: props.categoryId,
-      type: props.categoryType,
+      categoryId: props.categoryId || props.editRecord?.categoryId,
+      type: props.categoryType || props.editRecord?.type,
       amount: parseFloat(input.value),
-      title: props.categoryName,
+      title: props.categoryName || props.editRecord?.title,
       remark: note.value,
       recordDate: date.value || dayjs().format("YYYY-MM-DD"),
       recordTime: dayjs().format("HH:mm:ss"),
     }
 
-    await createRecord(recordData)
+    if (isEditMode.value) {
+      // 编辑模式：调用更新接口
+      await updateRecord(props.editRecord.id, recordData)
+      uni.showToast({ title: "更新成功", icon: "success" })
+    } else {
+      // 新增模式：调用创建接口
+      await createRecord(recordData)
+      uni.showToast({ title: "记录成功", icon: "success" })
+    }
 
     uni.hideLoading()
-    uni.showToast({ title: "记录成功", icon: "success" })
-
-    // 重置输入数据
-    input.value = ""
-    note.value = ""
-    date.value = dayjs().format("YYYY-MM-DD")
-
-    // 延迟触发成功回调
+    // 只有成功后才重置
+    resetForm()
     setTimeout(() => {
       emit("success")
     }, 1000)
   } catch (error) {
     uni.hideLoading()
-    console.error("创建记录失败:", error)
-    uni.showToast({ title: "保存失败", icon: "error" })
+    console.error(isEditMode.value ? "更新记录失败:" : "创建记录失败:", error)
+    uni.showToast({ title: isEditMode.value ? "更新失败" : "保存失败", icon: "error" })
   }
 }
 </script>

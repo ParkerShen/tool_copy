@@ -55,6 +55,7 @@
         :category-type="activeTab"
         :category-name="selectedCategory?.name"
         :visible="showAmountKeyboard"
+        :edit-record="editRecord"
         @close="handleKeyboardClose"
         @success="handleRecordSuccess"
       />
@@ -63,10 +64,9 @@
 </template>
 <script setup>
 import { ref, computed, onMounted, watch } from "vue"
-import { getCategories } from "@/api/bookkeeping"
+import { getCategories, updateRecord } from "@/api/bookkeeping"
 import AddCategoryModal from "@/pages/BookKeeping/components/AddCategoryModal.vue"
 import AmountKeyboard from "@/pages/BookKeeping/components/AmountKeyboard.vue"
-import SvgIcon from "@/components/SvgIcon.vue"
 import IconFont from "@/components/IconFont.vue"
 
 // 当前激活标签（支出/收入）
@@ -75,6 +75,53 @@ const showAddModal = ref(false) // 控制添加分类弹窗的显示
 const showAmountKeyboard = ref(false) // 控制金额键盘的显示
 const selectedCategory = ref(null) // 存储当前选中的分类
 const emit = defineEmits(["close"])
+
+// 保存原始编辑记录，避免取消后丢失
+const originalEditRecord = ref(null)
+
+// 接收父组件传递的编辑记录
+const props = defineProps({
+  editRecord: {
+    type: Object,
+    default: null,
+  },
+})
+
+// 编辑模式状态
+const isEditMode = computed(() => !!props.editRecord)
+
+// 监听编辑记录变化，初始化编辑数据
+watch(
+  () => props.editRecord,
+  (newRecord) => {
+    if (newRecord) {
+      // 保存原始编辑记录
+      originalEditRecord.value = { ...newRecord }
+
+      // 进入编辑模式，初始化数据
+      activeTab.value = newRecord.type
+      selectedCategory.value = {
+        id: newRecord.categoryId,
+        name: newRecord.category?.name || newRecord.title,
+        icon: newRecord.category?.icon,
+      }
+
+      // 根据编辑类型决定显示什么
+      if (newRecord.editType === "amount") {
+        showAmountKeyboard.value = true
+      } else {
+        showAmountKeyboard.value = false
+      }
+    } else {
+      // 完全退出编辑模式时才清空
+      originalEditRecord.value = null
+      activeTab.value = "expense"
+      selectedCategory.value = null
+      showAmountKeyboard.value = false
+    }
+  },
+  { immediate: true },
+)
 
 // 分类数据
 const expenseCategories = ref([])
@@ -129,20 +176,44 @@ const handleTabChange = (tabType) => {
 }
 
 // 分类点击处理
-const handleCategoryClick = (item) => {
+const handleCategoryClick = async (item) => {
   if (item.type === "config") {
-    // 打开配置管理弹窗
     showConfigModal(item.configAction)
-  } else {
-    selectedCategory.value = item
-    // 正常分类选择
-    console.log("选中分类:", item.name)
-    uni.showToast({
-      title: `已选择: ${item.name}`,
-      icon: "none",
-    })
+    return
   }
-  showAmountKeyboard.value = true // 显示金额键盘
+
+  selectedCategory.value = item
+
+  // 如果是编辑分类模式，直接提交更新
+  if (props.editRecord && props.editRecord.editType === "category") {
+    try {
+      uni.showLoading({ title: "更新中..." })
+
+      const updatedData = {
+        ...props.editRecord,
+        categoryId: item.id,
+        title: item.name,
+        type: activeTab.value, // 更新类型为当前选中的标签页类型
+      }
+
+      await updateRecord(props.editRecord.id, updatedData)
+      uni.showToast({ title: "分类已更新", icon: "success" })
+
+      setTimeout(() => {
+        emit("close")
+        uni.$emit("refreshBookkeepingData")
+      }, 1000)
+    } catch (error) {
+      console.error("更新分类失败:", error)
+      uni.showToast({ title: "更新失败", icon: "error" })
+    } finally {
+      uni.hideLoading()
+    }
+    return
+  }
+
+  // 普通模式显示键盘
+  showAmountKeyboard.value = true
 }
 
 // 配置管理弹窗
@@ -224,20 +295,22 @@ const removeCategory = () => {
   })
 }
 
-// 关闭分类弹窗
+// 关闭分类弹窗 - 真正的取消操作
 const handleCancel = () => {
   // 重置所有状态
   activeTab.value = "expense"
   selectedCategory.value = null
   showAmountKeyboard.value = false
   showAddModal.value = false
+  originalEditRecord.value = null
 
   emit("close")
 }
 
-// 键盘关闭处理
+// 键盘关闭处理 - 只关闭键盘，不清空编辑状态
 const handleKeyboardClose = () => {
   showAmountKeyboard.value = false
+  // 保持编辑状态，不清空 selectedCategory
 }
 
 // 记录创建成功处理
@@ -324,9 +397,11 @@ const handleRecordSuccess = () => {
 }
 
 .config-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 60rpx;
   font-weight: bold;
-  line-height: 90rpx;
   color: white;
   background-color: #ffc000;
 }

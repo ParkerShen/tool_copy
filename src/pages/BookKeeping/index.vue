@@ -1,7 +1,7 @@
 <!--
  * @Date: 2025-07-11 16:18:38
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-24 15:34:53
+ * @LastEditTime: 2025-07-24 21:52:26
  * @FilePath: \mobile\src\pages\BookKeeping\index.vue
 -->
 <route lang="json5" type="page">
@@ -79,15 +79,35 @@
 
         <!-- 具体记录 -->
         <view v-for="record in dayGroup.records" :key="record.id" class="record-item">
-          <view class="icon default">
-            <wd-icon :name="record.category?.icon || 'circle'" />
+          <view class="icon default" @click.stop="editCategory(record)">
+            <IconFont :name="record.systemCategory.icon" size="24" color="#f60" />
           </view>
           <view class="record-info">
             <view class="record-left">
               <text class="type">{{ record.title || record.category?.name || "未知" }}</text>
-              <text v-if="record.remark" class="remark">{{ record.remark }}</text>
+              <!-- 备注可编辑 -->
+              <view v-if="editingRemarkId === record.id" class="remark-input-wrapper">
+                <input
+                  v-model="tempRemark"
+                  class="remark-input"
+                  @blur="saveRemark(record)"
+                  @confirm="saveRemark(record)"
+                  auto-focus
+                  placeholder="输入备注"
+                />
+                <view class="remark-icons">
+                  <wd-icon name="picture" size="16px" color="gray" @click.stop="onImageSelect" />
+                  <wd-icon name="list" size="16px" color="gray" @click.stop="onTagSelect" />
+                </view>
+              </view>
+              <text v-else-if="record.remark" class="remark" @click.stop="editRemark(record)">
+                {{ record.remark }}
+              </text>
+              <text v-else class="remark placeholder" @click.stop="editRemark(record)">
+                点击添加备注
+              </text>
             </view>
-            <text class="amount" :class="record.type">
+            <text class="amount" :class="record.type" @click.stop="editAmount(record)">
               {{ record.type === "expense" ? "-" : "" }}{{ parseFloat(record.amount).toFixed(2) }}
             </text>
           </view>
@@ -97,7 +117,16 @@
 
     <!-- 弹窗 -->
     <wd-popup v-model="showPopup" position="bottom" round>
-      <AmountAdd @close="handleClosePopup" />
+      <AmountAdd :edit-record="editingRecord" @close="handleClosePopup" />
+    </wd-popup>
+    <!-- 在页面底部添加 -->
+    <wd-popup v-model="showAmountEditPopup" position="bottom" round>
+      <AmountEditKeyboard
+        :record="editingAmountRecord"
+        :visible="showAmountEditPopup"
+        @close="handleCloseAmountEdit"
+        @success="handleAmountEditSuccess"
+      />
     </wd-popup>
   </view>
 </template>
@@ -107,12 +136,19 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick, type Ref } from
 import type { Dayjs } from "dayjs"
 import BaseChart from "@/components/BaseChart.vue"
 import AmountAdd from "@/pages/BookKeeping/components/AmountAdd.vue"
+import AmountEditKeyboard from "@/pages/BookKeeping/components/AmountEditKeyboard.vue"
 import { onReady, onShow } from "@dcloudio/uni-app"
 import dayjs from "dayjs"
 import "dayjs/locale/zh-cn"
 
 import { useTabbarStore, useBookkeepingStore } from "@/store"
-import { getMonthlyStats, getDailyRecords, getMonthlyChartData } from "@/api/bookkeeping"
+import {
+  getMonthlyStats,
+  getDailyRecords,
+  getMonthlyChartData,
+  getRecords,
+  updateRecord,
+} from "@/api/bookkeeping"
 import type { MonthlyStatsResult, DailyRecordGroup } from "@/api/bookkeeping/types"
 
 // 设置dayjs为中文
@@ -171,9 +207,101 @@ onUnmounted(() => {
   uni.$off("refreshBookkeepingData") // 如果有的话也要移除
 })
 
+// 编辑相关状态
+const editingRecord = ref(null)
+const editingRemarkId = ref(null)
+const tempRemark = ref("")
+
+// 编辑记录函数
+const editRecord = (record) => {
+  console.log("编辑记录:", record)
+  editingRecord.value = record
+  showPopup.value = true
+}
+
+// 编辑分类 - 直接更换分类
+const editCategory = (record) => {
+  console.log("编辑分类:", record)
+  editingRecord.value = { ...record, editType: "category" }
+  showPopup.value = true
+}
+
+// 编辑备注 - 原位置编辑
+const editRemark = (record) => {
+  editingRemarkId.value = record.id
+  tempRemark.value = record.remark || ""
+  // 不要弹出分类选择弹窗
+}
+
+// 保存备注
+const saveRemark = async (record) => {
+  try {
+    uni.showLoading({ title: "保存中..." })
+
+    const updatedData = {
+      categoryId: record.categoryId,
+      type: record.type,
+      amount: record.amount,
+      title: record.title,
+      remark: tempRemark.value,
+      recordDate: record.recordDate,
+      recordTime: record.recordTime,
+    }
+
+    await updateRecord(record.id, updatedData)
+
+    // 更新本地数据 - 修正变量名
+    const dayGroup = dailyRecords.value.find((group) =>
+      group.records.some((r) => r.id === record.id),
+    )
+    if (dayGroup) {
+      const recordIndex = dayGroup.records.findIndex((r) => r.id === record.id)
+      if (recordIndex > -1) {
+        dayGroup.records[recordIndex].remark = tempRemark.value
+      }
+    }
+
+    uni.showToast({ title: "备注已更新", icon: "success" })
+  } catch (error) {
+    console.error("更新备注失败:", error)
+    uni.showToast({ title: "更新失败", icon: "error" })
+  } finally {
+    uni.hideLoading()
+    editingRemarkId.value = null
+    tempRemark.value = ""
+  }
+}
+
+// 添加状态
+const showAmountEditPopup = ref(false)
+const editingAmountRecord = ref(null)
+
+// 编辑金额 - 显示简化版金额键盘
+const editAmount = (record) => {
+  console.log("编辑金额:", record)
+  editingAmountRecord.value = record
+  showAmountEditPopup.value = true
+}
+
+// 关闭金额编辑弹窗
+const handleCloseAmountEdit = () => {
+  showAmountEditPopup.value = false
+  editingAmountRecord.value = null
+}
+
+// 金额编辑成功
+const handleAmountEditSuccess = () => {
+  showAmountEditPopup.value = false
+  editingAmountRecord.value = null
+  // 刷新数据
+  init()
+}
+
+// 修改关闭弹窗函数，处理编辑完成
 const handleClosePopup = (): void => {
   console.log("关闭弹窗")
   showPopup.value = false
+  editingRecord.value = null // 清空编辑状态
 }
 
 // 格式化数字
@@ -401,6 +529,37 @@ const animateNumber = (
 }
 
 const mounted: Ref<boolean> = ref(false)
+// 添加一个标志位
+const isClickingIcon = ref(false)
+
+// 处理备注输入框失焦
+const handleRemarkBlur = (record) => {
+  // 如果正在点击图标，不保存
+  if (isClickingIcon.value) {
+    isClickingIcon.value = false
+    return
+  }
+  saveRemark(record)
+}
+
+// 图片选择
+const onImageSelect = () => {
+  isClickingIcon.value = true
+  uni.chooseImage({
+    count: 1,
+    success: (res) => {
+      uni.showToast({ title: "图片已选择", icon: "success" })
+      // 这里可以处理图片上传逻辑
+    },
+  })
+}
+
+// 标签选择
+const onTagSelect = () => {
+  isClickingIcon.value = true
+  uni.showToast({ title: "选择标签", icon: "none" })
+  // 这里可以处理标签选择逻辑
+}
 </script>
 
 <style lang="scss">
@@ -505,7 +664,6 @@ const mounted: Ref<boolean> = ref(false)
   justify-content: center;
   width: 36px;
   height: 36px;
-  margin-right: 12px;
   background: #f2f6fc;
   border-radius: 8px;
 
@@ -633,19 +791,46 @@ const mounted: Ref<boolean> = ref(false)
 }
 
 .icon {
-  display: flex;
+  display: flex !important;
   flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  margin-right: 12rpx;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 60rpx;
+  height: 60rpx;
+  margin-right: 20rpx;
+  text-align: center;
   border-radius: 50%;
 
   &.default {
     color: #666;
-    background-color: #e8e8e8;
+    background-color: #f8f8f8;
   }
+}
+
+.icon * {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100%;
+  height: 100%;
+  margin-left: 20rpx;
+  font-size: 24rpx; /* 添加字体大小确保图标大小一致 */
+  line-height: 1 !important;
+}
+/* 如果使用IconFont组件，确保图标居中 */
+.icon .iconfont {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  line-height: 1 !important;
+}
+/* 确保图片图标也居中 */
+.icon image {
+  width: 36rpx !important;
+  height: 36rpx !important;
+  object-fit: contain;
 }
 
 .record-info {
@@ -673,6 +858,44 @@ const mounted: Ref<boolean> = ref(false)
   font-size: 22rpx;
   line-height: 1.2;
   color: #999;
+}
+
+.remark-input-wrapper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 4rpx 8rpx;
+  background: transparent;
+  border: 1rpx solid #ddd;
+  border-radius: 4rpx;
+}
+
+.remark-input {
+  flex: 1;
+  min-height: 32rpx;
+  font-size: 24rpx;
+  color: #999;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.remark-icons {
+  display: flex;
+  gap: 10rpx;
+  align-items: center;
+  margin-left: 10rpx;
+}
+
+.remark.placeholder {
+  font-style: italic;
+  color: #ccc;
+}
+
+.remark {
+  display: inline-block;
+  min-height: 32rpx;
+  cursor: pointer;
 }
 
 .amount {
