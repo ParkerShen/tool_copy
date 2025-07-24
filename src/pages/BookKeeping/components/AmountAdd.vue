@@ -32,8 +32,10 @@
           v-if="item.type !== 'config'"
           class="icon-circle"
           :class="{ selected: selectedCategory === item }"
+          :style="{ backgroundColor: selectedCategory === item ? item.color : '#f8f8f8' }"
         >
-          {{ item.icon }}
+         
+          <IconFont :name="item.icon" size="36" color="#f60" />
         </view>
         <!-- 配置按钮 -->
         <view v-else class="icon-circle config-button">+</view>
@@ -53,11 +55,14 @@
     </wd-popup>
   </view>
 </template>
-
 <script setup>
-import { ref, computed } from "vue"
+import { ref, computed, onMounted, watch } from "vue"
+import { getCategories } from "@/api/bookkeeping"
 import AddCategoryModal from "@/pages/BookKeeping/components/AddCategoryModal.vue"
 import AmountKeyboard from "@/pages/BookKeeping/components/AmountKeyboard.vue"
+import SvgIcon from "@/components/SvgIcon.vue"
+import IconFont from '@/components/IconFont.vue';
+
 // 当前激活标签（支出/收入）
 const activeTab = ref("expense")
 const showAddModal = ref(false) // 控制添加分类弹窗的显示
@@ -65,27 +70,43 @@ const showAmountKeyboard = ref(false) // 控制金额键盘的显示
 const selectedCategory = ref(null) // 存储当前选中的分类
 const emit = defineEmits(["close"])
 
-// 支出分类数据
-const expenseCategories = ref([
-  { icon: "🍔", name: "餐饮", type: "category" },
-  { icon: "🛒", name: "购物", type: "category" },
-  { icon: "🏠", name: "住房", type: "category" },
-  { icon: "🚗", name: "交通", type: "category" },
-  { icon: "👚", name: "服饰", type: "category" },
-  { icon: "💄", name: "美容", type: "category" },
-  { icon: "🎁", name: "礼物", type: "category" },
-  { icon: "🏥", name: "医疗", type: "category" },
-  { type: "config", name: "设置", configAction: "manage" },
-])
+// 分类数据
+const expenseCategories = ref([])
+const incomeCategories = ref([])
 
-// 收入分类数据
-const incomeCategories = ref([
-  { icon: "💰", name: "工资", type: "category" },
-  { icon: "🏆", name: "奖金", type: "category" },
-  { icon: "📈", name: "理财", type: "category" },
-  { icon: "💼", name: "兼职", type: "category" },
-  { type: "config", name: "设置", configAction: "manage" },
-])
+// 获取分类数据
+const loadCategories = async (type) => {
+  try {
+    const response = await getCategories(type)
+    const categories = response.data
+      .filter((item) => item.type === type)
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+
+    // 添加配置按钮
+    const categoriesWithConfig = [
+      ...categories,
+      { type: "config", name: "设置", configAction: "manage" },
+    ]
+
+    if (type === "expense") {
+      expenseCategories.value = categoriesWithConfig
+    } else {
+      incomeCategories.value = categoriesWithConfig
+    }
+  } catch (error) {
+    console.error("获取分类失败:", error)
+    uni.showToast({
+      title: "获取分类失败",
+      icon: "error",
+    })
+  }
+}
+
+// 组件挂载时加载数据
+onMounted(() => {
+  loadCategories("expense")
+  loadCategories("income")
+})
 
 // 当前显示的分类列表
 const currentCategories = computed(() =>
@@ -203,39 +224,38 @@ const handleCancel = () => {
 <style scoped>
 /* 页面容器 */
 .page-container {
-  background-color: #ffffff;
   min-height: 100vh;
   padding-top: 20rpx;
+  background-color: #fff;
 }
-
 /* 标签栏样式 */
 .tabs-container {
-  display: flex;
   position: relative;
+  display: flex;
   padding: 20rpx 40rpx;
   border-bottom: 1px solid #eee;
 }
 
 .tab-item {
-  font-size: 34rpx;
-  margin-right: 60rpx;
-  color: #999;
   position: relative;
   padding-bottom: 8rpx;
+  margin-right: 60rpx;
+  font-size: 34rpx;
+  color: #999;
 }
 
 .tab-item.active {
-  color: #000;
   font-weight: 500;
+  color: #000;
 }
 
 .tab-item.active::after {
-  content: "";
   position: absolute;
   bottom: 0;
   left: 10%;
   width: 80%;
   height: 6rpx;
+  content: "";
   background-color: #ffc000;
   border-radius: 3rpx;
 }
@@ -246,16 +266,14 @@ const handleCancel = () => {
   font-size: 32rpx;
   color: #666;
 }
-
 /* 分类网格布局 */
 .category-container {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 30rpx 0;
   padding: 30rpx;
-  position: relative;
 }
-
 /* 分类项样式 */
 .category-item {
   display: flex;
@@ -265,24 +283,24 @@ const handleCancel = () => {
 }
 
 .icon-circle {
-  width: 100rpx;
-  height: 100rpx;
-  border-radius: 50%;
-  background: #f8f8f8;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 50rpx;
+  width: 100rpx;
+  height: 100rpx;
   margin-bottom: 10rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  font-size: 50rpx;
+  background: #f8f8f8;
+  border-radius: 50%;
+  box-shadow: 0 4rpx 12rpx rgb(0 0 0 / 5%);
 }
 
 .config-button {
-  background-color: #ffc000;
-  color: white;
-  font-weight: bold;
   font-size: 60rpx;
+  font-weight: bold;
   line-height: 90rpx;
+  color: white;
+  background-color: #ffc000;
 }
 
 .icon-text {
@@ -292,7 +310,7 @@ const handleCancel = () => {
 /* 添加选中状态样式 */
 .icon-circle.selected {
   background-color: #ffc000; /* 黄色背景 */
-  box-shadow: 0 4rpx 12rpx rgba(255, 192, 0, 0.3);
+  box-shadow: 0 4rpx 12rpx rgb(255 192 0 / 30%);
   transform: scale(1.05); /* 稍微放大 */
 }
 /* 选中状态下文字加粗 */

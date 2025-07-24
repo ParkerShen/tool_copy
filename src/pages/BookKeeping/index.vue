@@ -1,7 +1,7 @@
 <!--
  * @Date: 2025-07-11 16:18:38
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-24 12:18:56
+ * @LastEditTime: 2025-07-24 12:43:10
  * @FilePath: \mobile\src\pages\BookKeeping\index.vue
 -->
 <route lang="json5" type="page">
@@ -97,7 +97,7 @@
 
     <!-- 弹窗 -->
     <wd-popup v-model="showPopup" position="bottom" round>
-      <AmountInput @close="handleClosePopup" />
+      <AmountAdd @close="handleClosePopup" />
     </wd-popup>
   </view>
 </template>
@@ -106,7 +106,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, type Ref } from "vue"
 import type { Dayjs } from "dayjs"
 import BaseChart from "@/components/BaseChart.vue"
-import AmountInput from "@/pages/BookKeeping/components/AmountInput.vue"
+import AmountAdd from "@/pages/BookKeeping/components/AmountAdd.vue"
 import { onReady, onShow } from "@dcloudio/uni-app"
 import dayjs from "dayjs"
 import "dayjs/locale/zh-cn"
@@ -168,6 +168,7 @@ const getDailyRecordsData = (val: string): void => {
 // 页面卸载时移除监听
 onUnmounted(() => {
   uni.$off("showBookkeepingPopup")
+  uni.$off("refreshBookkeepingData") // 如果有的话也要移除
 })
 
 const handleClosePopup = (): void => {
@@ -315,6 +316,12 @@ const changeMonth = (direction: number): void => {
 // 初始化模拟数据（实际应用需替换为API请求）
 onMounted(() => {
   init()
+
+  // 添加事件监听 - 监听来自tabbar的弹窗显示事件
+  uni.$on("showBookkeepingPopup", () => {
+    console.log("收到显示弹窗事件")
+    showPopup.value = true
+  })
 
   nextTick(() => {
     setTimeout(() => {

@@ -1,7 +1,7 @@
 /*
  * @Date: 2025-07-23 16:56:06
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-24 12:06:14
+ * @LastEditTime: 2025-07-24 13:09:10
  * @FilePath: \mobile\src\api\bookkeeping\index.ts
  */
 import { http } from "@/utils/http"
@@ -11,6 +11,7 @@ import type {
   DailyRecordGroup,
   ChartDataResult,
   CreateRecordRequest,
+  Category,
 } from "./types"
 
 /**
@@ -51,7 +52,7 @@ export function getMonthlyChartData(month: string, type: "income" | "expense" = 
  */
 export function createRecord(data: CreateRecordRequest) {
   return http<{ code: number; data: DailyRecord }>({
-    url: "/bookkeepings/records",
+    url: "/api/miniapp/bookkeepings/records",
     method: "POST",
     data,
   })
@@ -62,7 +63,7 @@ export function createRecord(data: CreateRecordRequest) {
  */
 export function updateRecord(id: number, data: Partial<DailyRecord>) {
   return http<{ code: number; message: string }>({
-    url: `/bookkeepings/records/${id}`,
+    url: `/api/miniapp/bookkeepings/records/${id}`,
     method: "PUT",
     data,
   })
@@ -73,8 +74,19 @@ export function updateRecord(id: number, data: Partial<DailyRecord>) {
  */
 export function deleteRecord(id: number) {
   return http<{ code: number; message: string }>({
-    url: `/bookkeepings/records/${id}`,
+    url: `/api/miniapp/bookkeepings/records/${id}`,
     method: "DELETE",
+  })
+}
+
+/**
+ * 获取分类列表
+ */
+export function getCategories(type?: "income" | "expense") {
+  return http<{ code: number; data: Category[] }>({
+    url: "/api/miniapp/bookkeepings/categories",
+    method: "GET",
+    query: type ? { type } : {},
   })
 }
 
@@ -85,4 +97,5 @@ export type {
   DailyRecordGroup,
   ChartDataResult,
   CreateRecordRequest,
+  Category,
 }

@@ -1,7 +1,7 @@
 /*
  * @Date: 2025-07-23 17:04:56
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-23 17:05:02
+ * @LastEditTime: 2025-07-24 12:39:35
  * @FilePath: \mobile\src\api\bookkeeping\types.ts
  */
 /**
@@ -91,4 +91,34 @@ export interface CreateRecordRequest {
   recordDate: string
   /** 记录时间 */
   recordTime?: string
+}
+
+/**
+ * 分类信息
+ */
+export interface Category {
+  /** 分类ID */
+  id: string | number
+  /** 分类名称 */
+  name: string
+  /** 分类类型 */
+  type: "income" | "expense"
+  /** 图标标识 */
+  icon: string
+  /** 颜色 */
+  color: string
+  /** 排序 */
+  sortOrder: number
+  /** 是否系统分类 */
+  isSystem: boolean
+  /** 用户ID */
+  userId?: string
+  /** 创建时间 */
+  createdAt: string
+  /** 更新时间 */
+  updatedAt: string
+  /** 删除时间 */
+  deletedAt?: string
+  /** 来源标识 */
+  source: "system" | "custom"
 }

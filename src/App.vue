@@ -81,6 +81,9 @@ onLaunch(() => {
   // #endif
   // #ifdef H5
   // getH5UserPosition()
+  const script = document.createElement('script');
+  script.src = '/static/iconfont/iconfont.js';
+  document.body.appendChild(script);
   // #endif
   // getLangList()
   // getCaptchaSettings()
