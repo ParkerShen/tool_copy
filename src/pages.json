@@ -66,13 +66,6 @@
       "type": "page"
     },
     {
-      "path": "pages/index/transfer",
-      "type": "page",
-      "style": {
-        "navigationBarTitleText": ""
-      }
-    },
-    {
       "path": "pages/BookKeeping/index",
       "type": "page",
       "layout": "default",
@@ -97,6 +90,13 @@
       "style": {
         "navigationBarTitleText": "日记",
         "navigationBarBackgroundColor": "#FFFFFF"
+      }
+    },
+    {
+      "path": "pages/index/transfer",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": ""
       }
     },
     {

@@ -1,7 +1,7 @@
 /*
  * @Date: 2025-07-23 16:56:06
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-23 21:12:36
+ * @LastEditTime: 2025-07-24 12:06:14
  * @FilePath: \mobile\src\api\bookkeeping\index.ts
  */
 import { http } from "@/utils/http"
@@ -40,7 +40,7 @@ export function getDailyRecords(month: string) {
  */
 export function getMonthlyChartData(month: string, type: "income" | "expense" = "expense") {
   return http<{ code: number; data: number[] }>({
-    url: "/bookkeepings/chart-data",
+    url: "/api/miniapp/bookkeepings/chart-data",
     method: "GET",
     query: { month, type },
   })

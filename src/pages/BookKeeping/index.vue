@@ -1,7 +1,7 @@
 <!--
  * @Date: 2025-07-11 16:18:38
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-23 22:11:10
+ * @LastEditTime: 2025-07-24 12:18:56
  * @FilePath: \mobile\src\pages\BookKeeping\index.vue
 -->
 <route lang="json5" type="page">
@@ -33,7 +33,37 @@
         <view class="stats-value">¥{{ animatedExpense || formatNumber(expenseToday) }}</view>
       </view>
     </view>
-    <view class="bills-container">
+    <!-- 图表区域 -->
+    <view class="chart-container">
+      <view class="chart-header">
+        <view class="chart-title">本月统计</view>
+        <view class="chart-toggle">
+          <wd-button
+            size="small"
+            :type="chartMode === 'income' ? 'primary' : 'default'"
+            @click="chartMode = 'income'"
+          >
+            收入
+          </wd-button>
+          <wd-button
+            size="small"
+            :type="chartMode === 'expense' ? 'warning' : 'default'"
+            @click="chartMode = 'expense'"
+          >
+            支出
+          </wd-button>
+        </view>
+      </view>
+      <!-- 修复图表容器，添加条件渲染 -->
+      <view class="chart-scroll-container">
+        <scroll-view class="chart-scroll" scroll-x :enable-flex="true">
+          <view class="chart-wrapper">
+            <BaseChart v-if="chartOption && xAxisLabels.length > 0" :option="chartOption" />
+          </view>
+        </scroll-view>
+      </view>
+    </view>
+    <view class="bills-container" v-if="dailyRecords">
       <view v-for="dayGroup in dailyRecords" :key="dayGroup.date" class="day-group">
         <view class="day-header">
           <text>{{ dayjs(dayGroup.date).format("MM月DD日 dddd") }}</text>
@@ -65,37 +95,6 @@
       </view>
     </view>
 
-    <!-- 图表区域 -->
-    <view class="chart-container">
-      <view class="chart-header">
-        <view class="chart-title">本月统计</view>
-        <view class="chart-toggle">
-          <wd-button
-            size="small"
-            :type="chartMode === 'income' ? 'primary' : 'default'"
-            @click="chartMode = 'income'"
-          >
-            收入
-          </wd-button>
-          <wd-button
-            size="small"
-            :type="chartMode === 'expense' ? 'warning' : 'default'"
-            @click="chartMode = 'expense'"
-          >
-            支出
-          </wd-button>
-        </view>
-      </view>
-      <!-- 修复图表容器，添加条件渲染 -->
-      <view class="chart-scroll-container">
-        <scroll-view class="chart-scroll" scroll-x :enable-flex="true">
-          <view class="chart-wrapper">
-            <BaseChart v-if="chartOption && xAxisLabels.length > 0" :option="chartOption" />
-          </view>
-        </scroll-view>
-      </view>
-    </view>
-
     <!-- 弹窗 -->
     <wd-popup v-model="showPopup" position="bottom" round>
       <AmountInput @close="handleClosePopup" />
@@ -104,7 +103,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue"
+import { ref, computed, onMounted, onUnmounted, watch, nextTick, type Ref } from "vue"
+import type { Dayjs } from "dayjs"
 import BaseChart from "@/components/BaseChart.vue"
 import AmountInput from "@/pages/BookKeeping/components/AmountInput.vue"
 import { onReady, onShow } from "@dcloudio/uni-app"
@@ -112,8 +112,8 @@ import dayjs from "dayjs"
 import "dayjs/locale/zh-cn"
 
 import { useTabbarStore, useBookkeepingStore } from "@/store"
-import { getMonthlyStats, getDailyRecords } from "@/api/bookkeeping"
-import { MonthlyStatsResult, DailyRecordGroup } from "@/api/bookkeeping/types"
+import { getMonthlyStats, getDailyRecords, getMonthlyChartData } from "@/api/bookkeeping"
+import type { MonthlyStatsResult, DailyRecordGroup } from "@/api/bookkeeping/types"
 
 // 设置dayjs为中文
 dayjs.locale("zh-cn")
@@ -122,10 +122,12 @@ const tabbarStore = useTabbarStore()
 const bookkeepingStore = useBookkeepingStore()
 
 // 数据模型
-const incomeToday = ref(0)
-const expenseToday = ref(0)
-const safeAreaInsets = ref(uni.getSystemInfoSync().safeAreaInsets || { bottom: 0 })
-const showPopup = ref(false)
+const incomeToday: Ref<number> = ref(0)
+const expenseToday: Ref<number> = ref(0)
+const safeAreaInsets: Ref<{ bottom: number }> = ref(
+  uni.getSystemInfoSync().safeAreaInsets || { bottom: 0 },
+)
+const showPopup: Ref<boolean> = ref(false)
 
 // 页面显示时检查是否需要显示添加弹窗
 onShow(() => {
@@ -137,25 +139,27 @@ onShow(() => {
   }
 })
 
-const init = () => {
-  getMonthlyData(currentMonth.value.format("YYYY-MM"))
-  getDailyRecordsData(currentMonth.value.format("YYYY-MM"))
+const init = (): void => {
+  const monthKey: string = currentMonth.value.format("YYYY-MM")
+  getMonthlyData(monthKey)
+  getDailyRecordsData(monthKey)
+  getChartData(monthKey, chartMode.value)
 }
 
 // 获取顶部板块数据
-const getMonthlyData = (val: string) => {
-  getMonthlyStats(val).then(({ data }) => {
+const getMonthlyData = (val: string): void => {
+  getMonthlyStats(val).then(({ data }: { data: MonthlyStatsResult }) => {
     animatedIncome.value = data.income
     animatedExpense.value = data.expense
   })
 }
 
 // 每日记录数据
-const dailyRecords = ref<DailyRecordGroup[]>([])
+const dailyRecords: Ref<DailyRecordGroup[]> = ref<DailyRecordGroup[]>([])
 
 // 获取每日记录数据
-const getDailyRecordsData = (val: string) => {
-  getDailyRecords(val).then(({ data }) => {
+const getDailyRecordsData = (val: string): void => {
+  getDailyRecords(val).then(({ data }: { data: DailyRecordGroup[] }) => {
     dailyRecords.value = data
     console.log("🚀 ~ getDailyRecords ~ data:", dailyRecords.value)
   })
@@ -166,102 +170,56 @@ onUnmounted(() => {
   uni.$off("showBookkeepingPopup")
 })
 
-const handleClosePopup = () => {
+const handleClosePopup = (): void => {
   console.log("关闭弹窗")
   showPopup.value = false
 }
 
-// 账单数据
-const recentBills = ref([
-  {
-    title: "午餐",
-    date: "今天",
-    time: "12:30",
-    amount: -45,
-    type: "expense",
-    icon: "bag",
-  },
-  {
-    title: "工资收入",
-    date: "昨天",
-    time: "09:00",
-    amount: 8500,
-    type: "income",
-    icon: "card",
-  },
-  {
-    title: "房租",
-    date: "7月1日",
-    time: "10:00",
-    amount: -3000,
-    type: "expense",
-    icon: "home",
-  },
-  {
-    title: "超市购物",
-    date: "6月30日",
-    time: "18:45",
-    amount: -356,
-    type: "expense",
-    icon: "shop",
-  },
-  {
-    title: "兼职收入",
-    date: "6月28日",
-    time: "15:20",
-    amount: 1500,
-    type: "income",
-    icon: "wallet",
-  },
-])
-
-// 图表数据
-const incomeData = [1200, 2000, 1500, 3000, 2500, 2000, 1800, 2500, 2800, 3100, 3500, 8500]
-const expenseData = [800, 1200, 1000, 1500, 2000, 2400, 3000, 2800, 2200, 1800, 1600, 1240]
-
 // 格式化数字
-const formatNumber = (num: number) => {
+const formatNumber = (num: number): string => {
   return num.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")
 }
 
 // 状态管理
-const currentMonth = ref(dayjs())
-const chartMode = ref("expense") // 默认显示支出
+const currentMonth: Ref<Dayjs> = ref(dayjs())
+const chartMode: Ref<"income" | "expense"> = ref("expense") // 默认显示支出
 
 // 数据结构重构成按月份存储
-const monthlyData = ref({
-  [currentMonth.value.format("YYYY-MM")]: {
-    income: [2580],
-    expense: [1240],
-    dailyExpense: Array(dayjs().daysInMonth()).fill(0),
-    dailyIncome: Array(dayjs().daysInMonth()).fill(0),
-  },
-})
+const monthlyData: Ref<Record<string, any>> = ref({})
+
+// 新增图表数据状态
+const chartData: Ref<number[]> = ref<number[]>([])
+
+// 获取图表数据
+const getChartData = async (month: string, type: "income" | "expense"): Promise<void> => {
+  try {
+    const { data }: { data: number[] } = await getMonthlyChartData(month, type)
+    chartData.value = data
+  } catch (error) {
+    console.error("获取图表数据失败:", error)
+    chartData.value = Array(daysInMonth.value).fill(0)
+  }
+}
 
 // 计算本月天数
-const daysInMonth = computed(() => {
+const daysInMonth = computed((): number => {
   return dayjs(currentMonth.value).daysInMonth()
 })
 
 // 生成X轴日期标签 (1日, 2日,...)
-const xAxisLabels = computed(() => {
+const xAxisLabels = computed((): string[] => {
   return Array.from({ length: daysInMonth.value }, (_, i) => `${i + 1}日`)
 })
 
 // 动态图表配置
 const chartOption = computed(() => {
-  const currentData = monthlyData.value[currentMonth.value.format("YYYY-MM")] || {
-    dailyExpense: Array(daysInMonth.value).fill(0),
-    dailyIncome: Array(daysInMonth.value).fill(0),
-  }
-
-  const today = dayjs().date()
-  const isCurrentMonth = currentMonth.value.format("YYYY-MM") === dayjs().format("YYYY-MM")
+  const today: number = dayjs().date()
+  const isCurrentMonth: boolean = currentMonth.value.format("YYYY-MM") === dayjs().format("YYYY-MM")
 
   return {
     grid: { left: "3%", right: "4%", bottom: "15%" },
     xAxis: {
-      type: "category",
+      type: "category" as const,
       data: xAxisLabels.value,
       axisLine: { show: false },
       axisTick: { show: false },
@@ -271,30 +229,26 @@ const chartOption = computed(() => {
       },
     },
     yAxis: {
-      type: "value",
+      type: "value" as const,
       minInterval: 1,
       axisLine: { show: false },
       axisTick: { show: false },
       splitLine: {
         lineStyle: {
           color: "#f0f0f0",
-          type: "dashed",
+          type: "dashed" as const,
         },
       },
     },
     series: [
       {
-        type: "bar",
+        type: "bar" as const,
         barWidth: "60%",
-        data: (chartMode.value === "income"
-          ? currentData.dailyIncome
-          : currentData.dailyExpense
-        ).map((value, index) => ({
+        data: chartData.value.map((value: number, index: number) => ({
           value,
           itemStyle: {
             color: chartMode.value === "income" ? "#409eff" : "#ffae4c",
             borderRadius: [4, 4, 0, 0],
-            // 今天的柱子添加边框
             ...(isCurrentMonth &&
               index + 1 === today && {
                 borderColor: "#ff6b6b",
@@ -306,11 +260,10 @@ const chartOption = computed(() => {
         })),
         label: {
           show: true,
-          position: "top",
+          position: "top" as const,
           color: "#666",
           fontSize: 11,
-          formatter: function (params) {
-            // 今天的数据添加标记
+          formatter: function (params: any) {
             if (isCurrentMonth && params.dataIndex + 1 === today) {
               return `${params.value}\n●`
             }
@@ -325,12 +278,12 @@ const chartOption = computed(() => {
                   xAxis: today - 1,
                   lineStyle: {
                     color: "#ff6b6b",
-                    type: "dashed",
+                    type: "dashed" as const,
                     width: 1,
                   },
                   label: {
                     show: true,
-                    position: "insideEndTop",
+                    position: "insideEndTop" as const,
                     formatter: "今日",
                     color: "#ff6b6b",
                     fontSize: 10,
@@ -344,97 +297,41 @@ const chartOption = computed(() => {
   }
 })
 
-// 切换月份功能
-const changeMonth = (direction: number) => {
-  currentMonth.value = dayjs(currentMonth.value).add(direction, "month")
+// 监听图表模式变化
+watch(chartMode, (newMode: "income" | "expense") => {
+  getChartData(currentMonth.value.format("YYYY-MM"), newMode)
+})
 
-  // 获取新月份的数据
-  const monthKey = currentMonth.value.format("YYYY-MM")
+// 切换月份功能
+const changeMonth = (direction: number): void => {
+  currentMonth.value = dayjs(currentMonth.value).add(direction, "month")
+  const monthKey: string = currentMonth.value.format("YYYY-MM")
+
   getMonthlyData(monthKey)
   getDailyRecordsData(monthKey)
-
-  // 若不存在该月数据则初始化
-  if (!monthlyData.value[monthKey]) {
-    monthlyData.value[monthKey] = {
-      income: [0],
-      expense: [0],
-      dailyExpense: Array(dayjs(currentMonth.value).daysInMonth()).fill(0),
-      dailyIncome: Array(dayjs(currentMonth.value).daysInMonth()).fill(0),
-    }
-  }
+  getChartData(monthKey, chartMode.value)
 }
 
 // 初始化模拟数据（实际应用需替换为API请求）
 onMounted(() => {
-  // 为当前月生成测试数据
-  const days = dayjs().daysInMonth()
   init()
-  monthlyData.value[dayjs().format("YYYY-MM")] = {
-    income: [2580],
-    expense: [1240],
-    dailyExpense: Array.from({ length: days }, () => Math.floor(Math.random() * 300)),
-    dailyIncome: Array.from({ length: days }, () => Math.floor(Math.random() * 200)),
-  }
 
-  // 生成上月/下月测试数据
-  const prevMonth = dayjs().subtract(1, "month").format("YYYY-MM")
-  monthlyData.value[prevMonth] = {
-    income: [2300],
-    expense: [1400],
-    dailyExpense: Array(dayjs(prevMonth).daysInMonth())
-      .fill(0)
-      .map(() => Math.floor(Math.random() * 280)),
-    dailyIncome: Array(dayjs(prevMonth).daysInMonth())
-      .fill(0)
-      .map(() => Math.floor(Math.random() * 180)),
-  }
-
-  const nextMonth = dayjs().add(1, "month").format("YYYY-MM")
-  monthlyData.value[nextMonth] = {
-    income: [2700],
-    expense: [1300],
-    dailyExpense: Array(dayjs(nextMonth).daysInMonth())
-      .fill(0)
-      .map(() => Math.floor(Math.random() * 320)),
-    dailyIncome: Array(dayjs(nextMonth).daysInMonth())
-      .fill(0)
-      .map(() => Math.floor(Math.random() * 220)),
-  }
-
-  // 启动数字动画
   nextTick(() => {
     setTimeout(() => {
       mounted.value = true
-
-      // 启动数字动画，添加延迟让卡片先出现
       setTimeout(() => {
-        animateNumber(animatedIncome.value, (val) => (animatedIncome.value = val), incomeAnimating)
+        animateNumber(
+          animatedIncome.value,
+          (val: string) => (animatedIncome.value = val),
+          incomeAnimating,
+        )
       }, 600)
       setTimeout(() => {
         animateNumber(
           animatedExpense.value,
-          (val) => (animatedExpense.value = val),
+          (val: string) => (animatedExpense.value = val),
           expenseAnimating,
         )
-      }, 800)
-    }, 100)
-  })
-
-  // 监听事件总线
-  uni.$on("showBookkeepingPopup", () => {
-    console.log("收到显示弹窗事件")
-    showPopup.value = true
-  })
-  nextTick(() => {
-    setTimeout(() => {
-      mounted.value = true
-
-      // 启动数字动画，添加延迟让卡片先出现
-      setTimeout(() => {
-        animateNumber(incomeToday.value, (val) => (animatedIncome.value = val), incomeAnimating)
-      }, 600)
-      setTimeout(() => {
-        animateNumber(expenseToday.value, (val) => (animatedExpense.value = val), expenseAnimating)
       }, 800)
     }, 100)
   })
@@ -444,14 +341,14 @@ onMounted(() => {
 onReady(() => {})
 
 // 查看所有账单
-const viewAllBills = () => {
+const viewAllBills = (): void => {
   uni.navigateTo({
     url: "/pages/finance/bills",
   })
 }
 
 // 添加账单
-const addBill = () => {
+const addBill = (): void => {
   uni.navigateTo({
     url: "/pages/finance/create",
   })
@@ -461,21 +358,25 @@ const addBill = () => {
 onUnmounted(() => {})
 
 // 数字动画相关
-const animatedIncome = ref(0)
-const animatedExpense = ref(0)
-const incomeAnimating = ref(false)
-const expenseAnimating = ref(false)
+const animatedIncome: Ref<number | string> = ref(0)
+const animatedExpense: Ref<number | string> = ref(0)
+const incomeAnimating: Ref<boolean> = ref(false)
+const expenseAnimating: Ref<boolean> = ref(false)
 
 // 改进的数字动画函数
-const animateNumber = (target, setter, animatingFlag) => {
+const animateNumber = (
+  target: number,
+  setter: (val: string) => void,
+  animatingFlag: Ref<boolean>,
+): void => {
   animatingFlag.value = true
-  let current = 0
-  const duration = 1500 // 动画持续时间
-  const steps = 60 // 动画步数
-  const increment = target / steps
-  const stepTime = duration / steps
+  let current: number = 0
+  const duration: number = 1500 // 动画持续时间
+  const steps: number = 60 // 动画步数
+  const increment: number = target / steps
+  const stepTime: number = duration / steps
 
-  const timer = setInterval(() => {
+  const timer: number = setInterval(() => {
     current += increment
     if (current >= target) {
       current = target
@@ -486,7 +387,7 @@ const animateNumber = (target, setter, animatingFlag) => {
   }, stepTime)
 }
 
-const mounted = ref(false)
+const mounted: Ref<boolean> = ref(false)
 </script>
 
 <style lang="scss">
