@@ -48,22 +48,35 @@ class BookkeepingController {
       const { month } = req.query;
       const userId = '1';
       
+      // 使用 dayjs 计算准确的月份范围
+      const startDate = dayjs(`${month}-01`).format('YYYY-MM-DD');
+      const endDate = dayjs(`${month}-01`).endOf('month').format('YYYY-MM-DD');
+      
       const records = await db.miniBookkeepingRecord.findAll({
         where: {
           userId,
           recordDate: {
-            [Op.between]: [`${month}-01`, `${month}-31`]
+            [Op.between]: [startDate, endDate]
           }
         },
-        include: [{
-          model: db.miniBookkeepingCategory,
-          as: 'category',
-          attributes: ['name', 'icon', 'color']
-        }],
+        include: [
+          {
+            model: db.miniBookkeepingCategory,
+            as: 'category',
+            attributes: ['name', 'icon', 'color'],
+            required: false
+          },
+          {
+            model: db.miniBookkeepingSystemCategory,
+            as: 'systemCategory',
+            attributes: ['name', 'icon', 'color'],
+            required: false
+          }
+        ],
         order: [['recordDate', 'DESC'], ['createdAt', 'DESC']]
       });
       
-      // 按日期分组
+      // 按日期分组，并处理分类数据
       const groupedRecords = records.reduce((acc, record) => {
         const date = record.recordDate;
         if (!acc[date]) {
@@ -74,7 +87,15 @@ class BookkeepingController {
             dayExpense: 0
           };
         }
-        acc[date].records.push(record);
+        
+        // 合并分类信息（优先使用用户分类，如果没有则使用系统分类）
+        const category = record.category || record.systemCategory;
+        const recordWithCategory = {
+          ...record.toJSON(),
+          category
+        };
+        
+        acc[date].records.push(recordWithCategory);
         if (record.type === 'income') {
           acc[date].dayIncome += parseFloat(record.amount);
         } else {
@@ -96,12 +117,16 @@ class BookkeepingController {
       const { month, type = 'expense' } = req.query;
       const userId = '1';
       
+      // 使用 dayjs 计算准确的月份范围
+      const startDate = dayjs(`${month}-01`).format('YYYY-MM-DD');
+      const endDate = dayjs(`${month}-01`).endOf('month').format('YYYY-MM-DD');
+      
       const dailyStats = await db.miniBookkeepingRecord.findAll({
         where: {
           userId,
           type,
           recordDate: {
-            [Op.between]: [`${month}-01`, `${month}-31`]
+            [Op.between]: [startDate, endDate]
           }
         },
         attributes: [
@@ -123,7 +148,9 @@ class BookkeepingController {
       
       res.json({ code: 200, data: chartData });
     } catch (error) {
+      console.error('getMonthlyChartData error:', error);
       res.status(500).json({ code: 500, message: error.message });
+      next(error);
     }
   }
 
@@ -173,6 +200,25 @@ class BookkeepingController {
       
       let finalUpdateData = { ...otherUpdateData };
       
+      // 如果有categoryId，需要验证分类是否存在并添加到更新数据中
+      if (categoryId) {
+        // 检查分类是否存在（先查用户分类，再查系统分类）
+        let category = await db.miniBookkeepingCategory.findByPk(categoryId);
+        
+        if (!category) {
+          // 如果用户分类不存在，检查是否为系统分类
+          category = await db.miniBookkeepingSystemCategory.findByPk(categoryId);
+          if (!category) {
+            return res.status(400).json({ code: 400, message: '分类不存在' });
+          }
+        }
+        
+        finalUpdateData.categoryId = categoryId;
+        // 如果没有传title，使用分类名称作为title
+        if (!finalUpdateData.title) {
+          finalUpdateData.title = category.name;
+        }
+      }
       
       const [updatedRows] = await db.miniBookkeepingRecord.update(finalUpdateData, {
         where: { id, userId }
