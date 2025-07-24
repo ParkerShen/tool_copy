@@ -1,11 +1,11 @@
-import { Request, Response } from 'express';
+import { Request, Response,NextFunction } from 'express';
 import db from '../../models/mini';
 import { Op, fn, col } from 'sequelize';
 import dayjs from 'dayjs';
 
 class BookkeepingController {
   // 1. 获取月度统计数据
-  async getMonthlyStats(req:Request, res:Response) {
+  async getMonthlyStats(req:Request, res:Response,next:NextFunction) {
     try {
       const { month } = req.query; // 格式: 2025-07
       const userId = '1';
@@ -38,11 +38,12 @@ class BookkeepingController {
     } catch (error) {
       console.error('getMonthlyStats error:', error);
       res.status(500).json({ code: 500, message: error.message });
+      next(error);
     }
   } 
 
   // 2. 获取每日记录列表（按日期分组）
-  async getDailyRecords(req:Request, res:Response) {
+  async getDailyRecords(req:Request, res:Response,next:NextFunction) {
     try {
       const { month } = req.query;
       const userId = '1';
@@ -85,11 +86,12 @@ class BookkeepingController {
       res.json({ code: 200, data: Object.values(groupedRecords) });
     } catch (error) {
       res.status(500).json({ code: 500, message: error.message });
+      next(error);
     }
   }
 
   // 3. 获取月度图表数据（每日统计）
-  async getMonthlyChartData(req:Request, res:Response) {
+  async getMonthlyChartData(req:Request, res:Response,next:NextFunction) {
     try {
       const { month, type = 'expense' } = req.query;
       const userId = '1';
@@ -126,36 +128,53 @@ class BookkeepingController {
   }
 
   // 4. 创建记账记录
-  async createRecord(req:Request, res:Response) {
+  async createRecord(req: Request, res: Response, next: NextFunction) {
     try {
       const { categoryId, type, amount, title, remark, recordDate, recordTime } = req.body;
       const userId = '1';
       
+      console.log('创建记录参数:', { categoryId, type, amount, title, remark, recordDate, recordTime, userId });
+      
+      // 检查分类是否存在（先查用户分类，再查系统分类）
+      let category = await db.miniBookkeepingCategory.findByPk(categoryId);
+      
+      if (!category) {
+        // 如果用户分类不存在，检查是否为系统分类
+        category = await db.miniBookkeepingSystemCategory.findByPk(categoryId);
+        if (!category) {
+          return res.status(400).json({ code: 400, message: '分类不存在' });
+        }
+      }
+      
       const record = await db.miniBookkeepingRecord.create({
         userId,
-        categoryId,
+        categoryId, // 直接使用传入的categoryId，不管是系统分类还是用户分类
         type,
-        amount,
-        title,
-        remark,
+        amount: parseFloat(amount),
+        title: title || category.name,
+        remark: remark || '',
         recordDate,
         recordTime: recordTime || dayjs().format('HH:mm:ss')
       });
       
       res.json({ code: 200, data: record });
     } catch (error) {
-      res.status(500).json({ code: 500, message: error.message });
+      console.error('创建记录错误:', error);
+      next(error);
     }
   }
 
   // 5. 更新记账记录
-  async updateRecord(req:Request, res:Response) {
+  async updateRecord(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const userId = '1';
-      const updateData = req.body;
+      const { categoryId, ...otherUpdateData } = req.body;
       
-      const [updatedRows] = await db.miniBookkeepingRecord.update(updateData, {
+      let finalUpdateData = { ...otherUpdateData };
+      
+      
+      const [updatedRows] = await db.miniBookkeepingRecord.update(finalUpdateData, {
         where: { id, userId }
       });
       
@@ -165,12 +184,12 @@ class BookkeepingController {
       
       res.json({ code: 200, message: '更新成功' });
     } catch (error) {
-      res.status(500).json({ code: 500, message: error.message });
+      next(error);
     }
   }
 
   // 6. 删除记账记录
-  async deleteRecord(req:Request, res:Response) {
+  async deleteRecord(req:Request, res:Response,next:NextFunction) {
     try {
       const { id } = req.params;
       const userId = '1';
@@ -186,11 +205,12 @@ class BookkeepingController {
       res.json({ code: 200, message: '删除成功' });
     } catch (error) {
       res.status(500).json({ code: 500, message: error.message });
+      next(error);
     }
   }
 
   // 7. 获取用户所有分类（系统分类 + 自定义分类）
-  async getCategories(req: Request, res: Response) {
+  async getCategories(req: Request, res: Response,next:NextFunction) {
     try {
       const { type } = req.query;
       const userId = '1';
@@ -229,11 +249,12 @@ class BookkeepingController {
       res.json({ code: 200, data: allCategories });
     } catch (error) {
       res.status(500).json({ code: 500, message: error.message });
+      next(error);
     }
   }
 
   // 8. 获取可用图标列表
-  async getAvailableIcons(req: Request, res: Response) {
+  async getAvailableIcons(req: Request, res: Response,next:NextFunction) {
     try {
       const { type } = req.query;
       
@@ -259,11 +280,12 @@ class BookkeepingController {
       res.json({ code: 200, data: groupedIcons });
     } catch (error) {
       res.status(500).json({ code: 500, message: error.message });
+      next(error);
     }
   }
 
   // 9. 创建自定义分类
-  async createCategory(req: Request, res: Response) {
+  async createCategory(req: Request, res: Response,next:NextFunction) {
     try {
       const { name, type, icon, color } = req.body;
       const userId = '1';
@@ -290,11 +312,12 @@ class BookkeepingController {
       res.json({ code: 200, data: category });
     } catch (error) {
       res.status(500).json({ code: 500, message: error.message });
+      next(error);
     }
   }
 
   // 10. 更新自定义分类
-  async updateCategory(req: Request, res: Response) {
+  async updateCategory(req: Request, res: Response,next:NextFunction) {
     try {
       const { id } = req.params;
       const { name, icon, color, sortOrder } = req.body;
@@ -317,11 +340,12 @@ class BookkeepingController {
       res.json({ code: 200, message: '更新成功' });
     } catch (error) {
       res.status(500).json({ code: 500, message: error.message });
+      next(error);
     }
   }
 
   // 11. 删除自定义分类
-  async deleteCategory(req: Request, res: Response) {
+  async deleteCategory(req: Request, res: Response,next:NextFunction) {
     try {
       const { id } = req.params;
       const userId = '1';
@@ -346,11 +370,12 @@ class BookkeepingController {
       res.json({ code: 200, message: '删除成功' });
     } catch (error) {
       res.status(500).json({ code: 500, message: error.message });
+      next(error);
     }
   }
 
   // 12. 初始化新用户默认分类（注册时调用）
-  async initUserDefaultCategories(req: Request, res: Response) {
+  async initUserDefaultCategories(req: Request, res: Response,next:NextFunction) {
     try {
       const userId = '1';
       
@@ -374,6 +399,7 @@ class BookkeepingController {
       res.json({ code: 200, message: '初始化成功' });
     } catch (error) {
       res.status(500).json({ code: 500, message: error.message });
+      next(error);
     }
   }
 }

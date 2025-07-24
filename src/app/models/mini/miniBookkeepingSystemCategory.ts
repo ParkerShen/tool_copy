@@ -1,7 +1,7 @@
 /*
  * @Date: 2025-07-23 13:42:45
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-23 13:43:29
+ * @LastEditTime: 2025-07-24 15:47:05
  * @FilePath: \serveradmin\src\app\models\mini\miniBookkeepingSystemCategory.ts
  */
 import { DataTypes, Model, Sequelize } from 'sequelize';
@@ -9,7 +9,7 @@ import timestamps from '../timestamps';
 import modelConfig from '../modelConfig';
 
 interface SystemCategoryAttributes {
-  id: number;
+  id: string;
   name: string;
   type: string;
   icon: string;
@@ -20,7 +20,7 @@ interface SystemCategoryAttributes {
 
 export default (sequelize: Sequelize) => {
   class miniBookkeepingSystemCategory extends Model<SystemCategoryAttributes> implements SystemCategoryAttributes {
-    public id!: number;
+    public id!: string;
     public name!: string;
     public type!: string;
     public icon!: string;
@@ -35,9 +35,9 @@ export default (sequelize: Sequelize) => {
 
   miniBookkeepingSystemCategory.init({
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true
     },
     name: {
       type: DataTypes.STRING(50),
