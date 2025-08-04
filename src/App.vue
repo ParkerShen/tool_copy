@@ -42,16 +42,15 @@ const wxLogin = () => {
   wx.login({
     async success(res) {
       if (res.code) {
-        loginWxApi({ wx_mini_id: 1, code: res.code }).then(({ data }) => {
-          if (data.openid) userStore.setOpenId(data.openid)
-
-          if (data.phone_flag) {
-            userStore.setToken(data.token || "")
-          } else {
-            userStore.clearToken()
-            userStore.clearUserInfo()
-          }
-        })
+        // loginWxApi({ wx_mini_id: 1, code: res.code }).then(({ data }) => {
+        //   if (data.openid) userStore.setOpenId(data.openid)
+        //   if (data.phone_flag) {
+        //     userStore.setToken(data.token || "")
+        //   } else {
+        //     userStore.clearToken()
+        //     userStore.clearUserInfo()
+        //   }
+        // })
       }
     },
   })
@@ -81,9 +80,9 @@ onLaunch(() => {
   // #endif
   // #ifdef H5
   // getH5UserPosition()
-  const script = document.createElement('script');
-  script.src = '/static/iconfont/iconfont.js';
-  document.body.appendChild(script);
+  const script = document.createElement("script")
+  script.src = "/static/iconfont/iconfont.js"
+  document.body.appendChild(script)
   // #endif
   // getLangList()
   // getCaptchaSettings()

@@ -72,10 +72,10 @@
     <wd-popup
       v-model="showDatePicker"
       position="bottom"
-      custom-style="height: 300px;padding-bottom:40rpx"
+      custom-style="height: 400px;padding-bottom:40rpx"
       @close="showDatePicker = false"
     >
-      <wd-calendar-view v-model="date" type="datetime" @change="onDateChange" />
+      <wd-datetime-picker-view v-model="dateValue" type="date" @change="onDateChange" />
     </wd-popup>
   </view>
 </template>
@@ -143,7 +143,12 @@ watch(
       // 每次显示时重置
       input.value = ""
       note.value = ""
-      date.value = dayjs().format("YYYY-MM-DD")
+      // 如果不是编辑模式，将日期置空
+      if (!isEditMode.value) {
+        date.value = ""
+      } else {
+        date.value = dayjs().format("YYYY-MM-DD")
+      }
     }
   },
 )
@@ -152,7 +157,7 @@ watch(
 const resetForm = () => {
   input.value = ""
   note.value = ""
-  date.value = dayjs().format("YYYY-MM-DD")
+  date.value = "" // 创建模式下置空
   showDatePicker.value = false
 }
 
@@ -262,9 +267,10 @@ function onTagSelect() {
 }
 
 function onDateChange(val: { value: string }) {
-  date.value = moment(val.value).format("YYYY-MM-DD")
-  showDatePicker.value = false
-  uni.showToast({ title: `日期：${val}`, icon: "none" })
+  date.value = dayjs(val.value).format("YYYY-MM-DD")
+  // 移除这行，不要立即关闭弹窗
+  // showDatePicker.value = false
+  uni.showToast({ title: `日期：${dayjs(val.value).format("YYYY-MM-DD")}`, icon: "none" })
 }
 
 // 编辑模式状态
@@ -331,6 +337,15 @@ const handleComplete = async () => {
     uni.showToast({ title: isEditMode.value ? "更新失败" : "保存失败", icon: "error" })
   }
 }
+
+const dateValue = computed({
+  get() {
+    return date.value ? new Date(date.value) : new Date()
+  },
+  set(val) {
+    date.value = dayjs(val).format("YYYY-MM-DD")
+  },
+})
 </script>
 
 <style scoped>

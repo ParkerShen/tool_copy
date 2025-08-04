@@ -100,6 +100,12 @@ export default (options: CommandOptions) => {
       postcss: {
         plugins: [],
       },
+      preprocessorOptions: {
+        // 去除sass警告
+        scss: {
+          silenceDeprecations: ["legacy-js-api", "import", "global-builtin"],
+        },
+      },
     },
 
     resolve: {

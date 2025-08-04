@@ -34,7 +34,8 @@
           :class="{ selected: selectedCategory === item }"
           :style="{ backgroundColor: selectedCategory === item ? item.color : '#f8f8f8' }"
         >
-          <IconFont :name="item.icon" size="36" color="#f60" />
+          <!-- <IconFont :name="item.icon" size="36" color="#f60" /> -->
+          <wd-icon :name="item.icon" :color="item.color" />
         </view>
         <!-- 配置按钮 -->
         <view v-else class="icon-circle config-button">+</view>

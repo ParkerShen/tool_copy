@@ -1,7 +1,7 @@
 <!--
  * @Date: 2025-07-11 16:18:38
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-07-24 21:52:26
+ * @LastEditTime: 2025-08-04 13:10:48
  * @FilePath: \mobile\src\pages\BookKeeping\index.vue
 -->
 <route lang="json5" type="page">
@@ -807,7 +807,7 @@ const onTagSelect = () => {
   }
 }
 
-.icon * {
+.icon {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;

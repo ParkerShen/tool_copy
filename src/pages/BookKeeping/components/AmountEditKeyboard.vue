@@ -52,7 +52,7 @@
       custom-style="height: 300px;padding-bottom:40rpx"
       @close="showDatePicker = false"
     >
-      <wd-calendar-view v-model="date" type="datetime" @change="onDateChange" />
+      <wd-datetime-picker-view v-model="dateValue" type="date" @change="onDateChange" />
     </wd-popup>
   </view>
 </template>
@@ -161,7 +161,9 @@ function onKeyPress(key: any) {
 
 function onDateChange(val: { value: string }) {
   date.value = dayjs(val.value).format("YYYY-MM-DD")
-  showDatePicker.value = false
+  // 移除这行，不要立即关闭弹窗
+  // showDatePicker.value = false
+  uni.showToast({ title: `日期：${dayjs(val.value).format("YYYY-MM-DD")}`, icon: "none" })
 }
 
 const handleComplete = async () => {
@@ -192,6 +194,14 @@ const handleComplete = async () => {
     uni.hideLoading()
   }
 }
+const dateValue = computed({
+  get() {
+    return date.value ? new Date(date.value) : new Date()
+  },
+  set(val) {
+    date.value = dayjs(val).format("YYYY-MM-DD")
+  },
+})
 </script>
 
 <style scoped>

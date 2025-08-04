@@ -8,21 +8,21 @@ const loadingMap: Record<string, string> = {
   zh_CN: "加载中...",
   zh_HK: "加載中…",
   en_US: "loading...",
-  th_TH: "กำลังโหลด...",
+  th_TH: "โหลด...",
 }
 
 const loginTipsMap: Record<string, string> = {
   zh_CN: "请登录",
   zh_HK: "請登入",
   en_US: "Please login",
-  th_TH: "กรุณาเข้าสู่ระบบ",
+  th_TH: "เข้า ่ระบบ",
 }
 
 export const http = <T>(options: CustomRequestOptions) => {
   const langStore = useLangStore()
   if (options.method === "GET" && !options.url.includes("language_doc")) {
     uni.showToast({
-      title: loadingMap[langStore.lang],
+      title: loadingMap[langStore.lang] || "Loading...",
       icon: "loading",
       duration: 30000,
     })
@@ -62,7 +62,7 @@ export const http = <T>(options: CustomRequestOptions) => {
             icon: "error",
             duration: 2000,
             position: "top",
-            title: loginTipsMap[langStore.lang],
+            title: loginTipsMap[langStore.lang] || "Please login",
             success() {
               // #ifdef H5
               setTimeout(() => {
