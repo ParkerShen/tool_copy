@@ -1,7 +1,7 @@
 <template>
   <!-- 使用uniapp的popup组件实现模态框效果 -->
-  <uni-popup ref="popup" type="bottom" :mask-click="false">
-    <view class="add-category-modal" :style="{ height: '70vh' }">
+  <uni-popup ref="popup" type="bottom" :mask-click="false" :z-index="10003">
+    <view class="add-category-modal" :style="{ height: '70vh', zIndex: '10003' }">
       <!-- 模态框顶部导航 -->
       <view class="modal-header">
         <view class="modal-left" @click="closeModal">
@@ -117,12 +117,12 @@ const existingCategories = computed(() => {
 
 <style scoped>
 .add-category-modal {
-  background-color: #ffffff;
-  border-top-left-radius: 20rpx;
-  border-top-right-radius: 20rpx;
-  padding: 30rpx;
   display: flex;
   flex-direction: column;
+  padding: 30rpx;
+  background-color: #fff;
+  border-top-left-radius: 20rpx;
+  border-top-right-radius: 20rpx;
 }
 
 .modal-header {
@@ -151,11 +151,11 @@ const existingCategories = computed(() => {
 }
 
 .done-btn {
+  display: block;
+  width: 100%;
   font-size: 34rpx;
   font-weight: 500;
   text-align: right;
-  width: 100%;
-  display: block;
 }
 
 .icon-preview {
@@ -165,13 +165,13 @@ const existingCategories = computed(() => {
 }
 
 .preview-icon {
-  width: 150rpx;
-  height: 150rpx;
-  border-radius: 50%;
-  background-color: #ffc000;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 150rpx;
+  height: 150rpx;
+  background-color: #ffc000;
+  border-radius: 50%;
 }
 
 .icon-emoji {
@@ -185,24 +185,24 @@ const existingCategories = computed(() => {
 .name-input {
   width: 100%;
   height: 80rpx;
-  background-color: #f5f5f5;
-  border-radius: 10rpx;
   padding: 0 20rpx;
   font-size: 32rpx;
   text-align: center;
+  background-color: #f5f5f5;
+  border-radius: 10rpx;
 }
 
 .existing-categories {
-  margin-top: 30rpx;
   flex-grow: 1;
+  margin-top: 30rpx;
   overflow-y: auto;
 }
 
 .section-title {
-  font-size: 32rpx;
-  color: #666;
   display: block;
   margin-bottom: 20rpx;
+  font-size: 32rpx;
+  color: #666;
 }
 
 .categories-list {
@@ -219,8 +219,8 @@ const existingCategories = computed(() => {
 }
 
 .category-icon {
-  font-size: 50rpx;
   margin-bottom: 10rpx;
+  font-size: 50rpx;
 }
 
 .category-name {

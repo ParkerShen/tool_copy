@@ -73,9 +73,10 @@
       v-model="showDatePicker"
       position="bottom"
       custom-style="height: 400px;padding-bottom:40rpx"
+      :z-index="10000"
       @close="showDatePicker = false"
     >
-      <wd-datetime-picker-view v-model="dateValue" type="date" @change="onDateChange" />
+      <wd-datetime-picker-view :value="datePickerValue" type="date" @change="onDateChange" />
     </wd-popup>
   </view>
 </template>
@@ -105,32 +106,58 @@ const note = ref("")
 const showDatePicker = ref(false)
 const date = ref("")
 
+// 监听日期选择器状态变化
+watch(showDatePicker, (newVal) => {
+  if (newVal) {
+    uni.$emit("childPopupShow")
+  } else {
+    uni.$emit("childPopupHide")
+  }
+})
+
+// 监听组件的visible属性变化
+watch(
+  () => props.visible,
+  (newVal) => {
+    if (newVal) {
+      // 金额键盘显示时，隐藏图表
+      uni.$emit("childPopupShow")
+    } else {
+      // 金额键盘隐藏时，显示图表
+      uni.$emit("childPopupHide")
+    }
+  },
+  { immediate: true },
+)
+
 const formattedDate = computed(() => {
   if (!date.value) return ""
   return dayjs(date.value).format("YYYY/MM/DD")
 })
 
-watch(
-  () => date.value,
-  (val) => {
-    if (val === dayjs().format("YYYY-MM-DD")) {
-      date.value = ""
-    }
-  },
-  {
-    immediate: true,
-  },
-)
+// 移除可能导致递归的 watch 监听器
+// watch(
+//   () => date.value,
+//   (val) => {
+//     if (val === dayjs().format("YYYY-MM-DD")) {
+//       date.value = ""
+//     }
+//   },
+//   {
+//     immediate: true,
+//   },
+// )
 
 // 监听组件显示状态，每次显示时重置数据
 watch(
   () => props.categoryId,
-  (newVal) => {
-    if (newVal) {
+  (newVal, oldVal) => {
+    // 只有当 categoryId 真正改变且不是初始化时才重置
+    if (newVal && newVal !== oldVal && oldVal !== undefined) {
       // 重置输入数据
       input.value = ""
       note.value = ""
-      date.value = dayjs().format("YYYY-MM-DD")
+      date.value = ""
     }
   },
 )
@@ -138,17 +165,16 @@ watch(
 // 监听可见性变化
 watch(
   () => props.visible,
-  (newVisible) => {
-    if (newVisible) {
-      // 每次显示时重置
-      input.value = ""
-      note.value = ""
-      // 如果不是编辑模式，将日期置空
+  (newVisible, oldVisible) => {
+    // 只有当从不可见变为可见时才重置
+    if (newVisible && !oldVisible) {
+      // 如果不是编辑模式，重置所有数据
       if (!isEditMode.value) {
+        input.value = ""
+        note.value = ""
         date.value = ""
-      } else {
-        date.value = dayjs().format("YYYY-MM-DD")
       }
+      // 编辑模式下不重置，让 editRecord 的 watch 来处理
     }
   },
 )
@@ -266,11 +292,25 @@ function onTagSelect() {
   uni.showToast({ title: "选择标签", icon: "none" })
 }
 
-function onDateChange(val: { value: string }) {
-  date.value = dayjs(val.value).format("YYYY-MM-DD")
-  // 移除这行，不要立即关闭弹窗
-  // showDatePicker.value = false
-  uni.showToast({ title: `日期：${dayjs(val.value).format("YYYY-MM-DD")}`, icon: "none" })
+function onDateChange(val: any) {
+  try {
+    // 处理不同格式的日期值
+    let dateStr = ""
+    if (val && val.value) {
+      dateStr = dayjs(val.value).format("YYYY-MM-DD")
+    } else if (val) {
+      dateStr = dayjs(val).format("YYYY-MM-DD")
+    } else {
+      dateStr = dayjs().format("YYYY-MM-DD")
+    }
+
+    date.value = dateStr
+    showDatePicker.value = false
+    uni.showToast({ title: `日期：${dateStr}`, icon: "none" })
+  } catch (error) {
+    console.error("日期选择错误:", error)
+    uni.showToast({ title: "日期选择失败", icon: "error" })
+  }
 }
 
 // 编辑模式状态
@@ -279,12 +319,18 @@ const isEditMode = computed(() => !!props.editRecord)
 // 监听编辑记录变化
 watch(
   () => props.editRecord,
-  (newRecord) => {
-    if (newRecord) {
+  (newRecord, oldRecord) => {
+    // 只有当编辑记录真正改变时才更新
+    if (newRecord && newRecord !== oldRecord) {
       // 初始化编辑数据
-      input.value = String(newRecord.amount)
+      input.value = String(newRecord.amount || "")
       note.value = newRecord.remark || ""
-      date.value = newRecord.recordDate || dayjs().format("YYYY-MM-DD")
+      date.value = newRecord.recordDate || ""
+    } else if (!newRecord && oldRecord) {
+      // 当编辑记录被清空时，重置表单
+      input.value = ""
+      note.value = ""
+      date.value = ""
     }
   },
   { immediate: true },
@@ -338,12 +384,24 @@ const handleComplete = async () => {
   }
 }
 
+// 修复日期选择器的值绑定
+const datePickerValue = computed(() => {
+  if (date.value) {
+    return new Date(date.value)
+  }
+  return new Date()
+})
+
 const dateValue = computed({
   get() {
-    return date.value ? new Date(date.value) : new Date()
+    // 返回字符串格式的日期，避免类型错误
+    return date.value || dayjs().format("YYYY-MM-DD")
   },
   set(val) {
-    date.value = dayjs(val).format("YYYY-MM-DD")
+    // 确保 val 是有效的日期值
+    if (val) {
+      date.value = dayjs(val).format("YYYY-MM-DD")
+    }
   },
 })
 </script>

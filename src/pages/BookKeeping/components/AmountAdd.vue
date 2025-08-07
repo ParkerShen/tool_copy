@@ -32,7 +32,6 @@
           v-if="item.type !== 'config'"
           class="icon-circle"
           :class="{ selected: selectedCategory === item }"
-          :style="{ backgroundColor: selectedCategory === item ? item.color : '#f8f8f8' }"
         >
           <!-- <IconFont :name="item.icon" size="36" color="#f60" /> -->
           <wd-icon :name="item.icon" :color="item.color" />
@@ -50,7 +49,7 @@
       @close="showAddModal = false"
       @add="handleAddCategory"
     />
-    <wd-popup :modal="false" v-model="showAmountKeyboard" position="bottom" round>
+    <wd-popup :modal="false" v-model="showAmountKeyboard" position="bottom" round :z-index="10001">
       <AmountKeyboard
         :category-id="selectedCategory?.id"
         :category-type="activeTab"
@@ -94,13 +93,14 @@ const isEditMode = computed(() => !!props.editRecord)
 // 监听编辑记录变化，初始化编辑数据
 watch(
   () => props.editRecord,
-  (newRecord) => {
-    if (newRecord) {
+  (newRecord, oldRecord) => {
+    // 防止递归更新：只有当记录真正改变时才处理
+    if (newRecord && newRecord !== oldRecord) {
       // 保存原始编辑记录
       originalEditRecord.value = { ...newRecord }
 
       // 进入编辑模式，初始化数据
-      activeTab.value = newRecord.type
+      activeTab.value = newRecord.type || "expense"
       selectedCategory.value = {
         id: newRecord.categoryId,
         name: newRecord.category?.name || newRecord.title,
@@ -113,7 +113,7 @@ watch(
       } else {
         showAmountKeyboard.value = false
       }
-    } else {
+    } else if (!newRecord && oldRecord) {
       // 完全退出编辑模式时才清空
       originalEditRecord.value = null
       activeTab.value = "expense"
@@ -413,7 +413,6 @@ const handleRecordSuccess = () => {
 }
 /* 添加选中状态样式 */
 .icon-circle.selected {
-  background-color: #ffc000; /* 黄色背景 */
   box-shadow: 0 4rpx 12rpx rgb(255 192 0 / 30%);
   transform: scale(1.05); /* 稍微放大 */
 }

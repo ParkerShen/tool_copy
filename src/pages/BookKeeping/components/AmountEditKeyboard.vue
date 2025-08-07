@@ -50,6 +50,7 @@
       v-model="showDatePicker"
       position="bottom"
       custom-style="height: 300px;padding-bottom:40rpx"
+      :z-index="10002"
       @close="showDatePicker = false"
     >
       <wd-datetime-picker-view v-model="dateValue" type="date" @change="onDateChange" />
@@ -75,6 +76,30 @@ const emit = defineEmits(["close", "success"])
 const input = ref("")
 const showDatePicker = ref(false)
 const date = ref("")
+
+// 监听日期选择器状态变化
+watch(showDatePicker, (newVal) => {
+  if (newVal) {
+    uni.$emit("childPopupShow")
+  } else {
+    uni.$emit("childPopupHide")
+  }
+})
+
+// 监听组件的visible属性变化
+watch(
+  () => props.visible,
+  (newVal) => {
+    if (newVal) {
+      // 金额编辑键盘显示时，隐藏图表
+      uni.$emit("childPopupShow")
+    } else {
+      // 金额编辑键盘隐藏时，显示图表
+      uni.$emit("childPopupHide")
+    }
+  },
+  { immediate: true },
+)
 
 const formattedDate = computed(() => {
   if (!date.value) return ""
@@ -186,6 +211,7 @@ const handleComplete = async () => {
 
     setTimeout(() => {
       emit("success")
+      emit("close")
     }, 1000)
   } catch (error) {
     console.error("更新失败:", error)

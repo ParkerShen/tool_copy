@@ -18,6 +18,7 @@ declare module '@vue/runtime-core' {
     FlyHeader: typeof import('./../components/fly-header/fly-header.vue')['default']
     FlyNavbar: typeof import('./../components/fly-navbar/fly-navbar.vue')['default']
     IconFont: typeof import('./../components/IconFont.vue')['default']
+    LEchart: typeof import('./../components/l-echart/l-echart.vue')['default']
     WxECharts: typeof import('./../components/WxECharts.vue')['default']
   }
 }
