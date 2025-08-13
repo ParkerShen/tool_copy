@@ -1,7 +1,7 @@
 <!--
  * @Date: 2025-07-11 16:18:38
  * @LastEditors: parker 960822987@qq.com
- * @LastEditTime: 2025-08-07 18:49:59
+ * @LastEditTime: 2025-08-13 18:13:58
  * @FilePath: \mobile\src\pages\BookKeeping\index.vue
 -->
 <route lang="json5" type="page">
@@ -34,7 +34,7 @@
       </view>
     </view>
     <!-- 图表区域 -->
-    <view class="chart-container">
+    <!-- <view class="chart-container">
       <view class="chart-header">
         <view class="chart-title">本月统计</view>
         <view class="chart-toggle">
@@ -53,35 +53,31 @@
             支出
           </wd-button>
         </view>
-      </view>
-      <!-- 修复图表容器，添加条件渲染 -->
-      <view
-        v-if="!showPopup && !showAmountEditPopup && !hasChildPopup"
-        class="chart-scroll-container"
-      >
+      </view> -->
+    <!-- 修复图表容器，添加条件渲染 -->
+    <!-- <view class="chart-scroll-container">
         <scroll-view class="chart-scroll" scroll-x :enable-flex="true">
-          <view class="chart-wrapper">
-            <!-- #ifdef H5 -->
-            <BaseChart v-if="chartOption" :option="chartOption" />
-            <!-- #endif -->
-            <!-- #ifdef MP-WEIXIN -->
-            <!-- 只有在没有弹窗时才显示图表 -->
-            <lEchart
+          <view class="chart-wrapper"> -->
+    <!-- #ifdef H5 -->
+    <!-- <BaseChart v-if="chartOption" :option="chartOption" /> -->
+    <!-- #endif -->
+    <!-- #ifdef MP-WEIXIN -->
+    <!-- 只有在没有弹窗时才显示图表 -->
+    <!-- <lEchart
               ref="barChartRef"
               :custom-style="`height: 300px; width: 100%; background: transparent; z-index: 1; position: relative;`"
-            ></lEchart>
-            <!-- #endif -->
-            <!-- 无数据提示 -->
-            <view v-if="!chartOption" class="no-data">暂无数据</view>
+            ></lEchart> -->
+    <!-- #endif -->
+    <!-- 无数据提示 -->
+    <!-- <view v-if="!chartOption" class="no-data">暂无数据</view>
           </view>
         </scroll-view>
       </view>
-    </view>
+    </view> -->
     <!-- 调试信息 -->
     <!-- <view style="padding: 20rpx; background: #f0f0f0; margin: 10rpx;">
       <text>调试信息：dailyRecords.length = {{ dailyRecords?.length || 0 }}</text>
     </view> -->
-
     <view class="bills-container" v-if="dailyRecords && dailyRecords.length > 0">
       <view v-for="dayGroup in dailyRecords" :key="dayGroup.date" class="day-group">
         <view class="day-header">
@@ -327,7 +323,7 @@ watch(
               console.log("图表更新成功")
             } else if (barChartRef.value && chartOption.value) {
               // 如果图表还未初始化，重新初始化
-              initChart()
+              // initChart()
             }
           } catch (chartError) {
             console.error("更新图表失败:", chartError)
@@ -541,11 +537,11 @@ const handleCloseAmountEdit = () => {
 
   // #ifdef MP-WEIXIN
   // 弹窗关闭后重新初始化图表
-  nextTick(() => {
-    setTimeout(() => {
-      initChart()
-    }, 100)
-  })
+  // nextTick(() => {
+  //   setTimeout(() => {
+  //     initChart()
+  //   }, 100)
+  // })
   // #endif
 }
 
@@ -565,11 +561,11 @@ const handleClosePopup = (): void => {
 
   // #ifdef MP-WEIXIN
   // 弹窗关闭后重新初始化图表
-  nextTick(() => {
-    setTimeout(() => {
-      initChart()
-    }, 100)
-  })
+  // nextTick(() => {
+  //   setTimeout(() => {
+  //     initChart()
+  //   }, 100)
+  // })
   // #endif
 }
 
@@ -726,7 +722,7 @@ const getChartData = async (month: string, type: "income" | "expense"): Promise<
       } else if (!myChart && barChartRef.value) {
         // 如果图表还未初始化，重新初始化
         console.log("图表未初始化，重新初始化")
-        initChart()
+        // initChart()
       }
     })
     // #endif
@@ -886,10 +882,10 @@ onMounted(async () => {
 
   // #ifdef MP-WEIXIN
   // 延迟初始化图表，确保数据已加载
-  setTimeout(() => {
-    console.log("开始初始化图表")
-    initChart()
-  }, 800)
+  // setTimeout(() => {
+  //   console.log("开始初始化图表")
+  //   initChart()
+  // }, 800)
   // #endif
 
   // 监听数据刷新事件

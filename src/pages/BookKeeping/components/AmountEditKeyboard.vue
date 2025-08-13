@@ -59,9 +59,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue"
+import { ref, computed, watch, onMounted, onUnmounted } from "vue"
 import dayjs from "dayjs"
 import { updateRecord } from "@/api/bookkeeping"
+import { useTabbarStore } from "@/store/tabbar"
+
+const tabbarStore = useTabbarStore()
 
 const props = defineProps({
   record: {
@@ -93,6 +96,7 @@ watch(
     if (newVal) {
       // 金额编辑键盘显示时，隐藏图表
       uni.$emit("childPopupShow")
+      oneInput.value = false
     } else {
       // 金额编辑键盘隐藏时，显示图表
       uni.$emit("childPopupHide")
@@ -106,21 +110,40 @@ const formattedDate = computed(() => {
   return dayjs(date.value).format("MM/DD")
 })
 
-// 监听组件显示状态，每次显示时初始化数据
+// 监听组件显示状态，每次显示时初始化数据并控制tabbar按钮
 watch(
   () => props.visible,
   (newVisible) => {
-    if (newVisible && props.record) {
-      input.value = String(props.record.amount)
-      date.value = props.record.recordDate || dayjs().format("YYYY-MM-DD")
+    if (newVisible) {
+      // 隐藏tabbar加号按钮
+      tabbarStore.addButtonVisible = false
+      if (props.record) {
+        input.value = String(props.record.amount)
+        date.value = props.record.recordDate || dayjs().format("YYYY-MM-DD")
+      }
+    } else {
+      // 显示tabbar加号按钮
+      tabbarStore.addButtonVisible = true
     }
   },
   { immediate: true },
 )
 
-const expression = computed(() => input.value)
-const isFormula = computed(() => /[\+\-]/.test(input.value))
-const isCalculationMode = computed(() => /[\+\-]/.test(input.value))
+// 兜底：挂载/卸载时也控制一次
+onMounted(() => (tabbarStore.addButtonVisible = false))
+
+onUnmounted(() => (tabbarStore.addButtonVisible = true))
+
+const expression = computed({
+  get() {
+    return input.value
+  },
+  set(val) {
+    input.value = val
+  },
+})
+const isFormula = computed(() => /[+-]/.test(input.value))
+const isCalculationMode = computed(() => /[+-]/.test(input.value))
 
 // 键盘布局
 const keyboard = [
@@ -135,16 +158,90 @@ const keyboard = [
   ],
 ]
 
+const oneInput = ref(false)
+
 function onKeyPress(key: any) {
+  if (!oneInput.value && /^[1-9]$/.test(key.text)) {
+    input.value = key.text
+    oneInput.value = true
+    return
+  }
+  oneInput.value = true
   if (key.text === "=") {
     if (isFormula.value) {
       try {
-        input.value = String(parseFloat(eval(input.value).toFixed(2)))
+        // 1. 检查末尾是否是运算符
+        if (/[+\-]$/.test(input.value)) {
+          uni.showToast({ title: "请输入完整公式", icon: "none" })
+          return
+        }
+
+        // 2. 移除开头多余的运算符
+        const sanitizedInput = input.value.replace(/^[+\-]/, "")
+
+        // 3. 检查是否为空
+        if (!sanitizedInput) {
+          uni.showToast({ title: "请输入有效公式", icon: "none" })
+          return
+        }
+
+        // 4. 检查只包含允许的字符
+        if (!/^[\d.+-]+$/.test(sanitizedInput)) {
+          uni.showToast({ title: "公式包含非法字符", icon: "none" })
+          return
+        }
+
+        // 5. 手动解析公式（只支持 + 和 -）
+        let result = 0
+        let currentNumber = ""
+        let currentSign = 1 // 1 表示加，-1 表示减
+
+        for (let i = 0; i < sanitizedInput.length; i++) {
+          const char = sanitizedInput[i]
+          if (char === "+" || char === "-") {
+            if (currentNumber !== "") {
+              result += currentSign * parseFloat(currentNumber)
+              currentNumber = ""
+            }
+            currentSign = char === "+" ? 1 : -1
+          } else {
+            currentNumber += char
+          }
+        }
+
+        // 最后一个数
+        if (currentNumber !== "") {
+          result += currentSign * parseFloat(currentNumber)
+        }
+
+        // 保留两位小数
+        input.value = String(parseFloat(result.toFixed(2)))
       } catch (e) {
+        console.error("公式错误:", e)
         uni.showToast({ title: "公式错误", icon: "none" })
       }
     } else {
       handleComplete()
+    }
+    return
+  }
+
+  // 避免运算符作为第一个字符（除非是负数）
+  if ((key.text === "+" || key.text === "-") && input.value === "") {
+    if (key.text === "-") {
+      input.value = "-" // 允许负数
+    }
+    return
+  }
+
+  // 避免连续运算符
+  if ((key.text === "+" || key.text === "-") && /[+\-]$/.test(input.value)) {
+    // 如果是减号且前一个字符是运算符，允许（用于负数）
+    if (key.text === "-" && /[+\-]$/.test(input.value)) {
+      input.value += key.text
+    } else {
+      // 否则替换前一个运算符
+      input.value = input.value.slice(0, -1) + key.text
     }
     return
   }
@@ -177,6 +274,7 @@ function onKeyPress(key: any) {
   // 限制两位小数
   const parts = input.value.split(/[\+\-]/)
   const last = parts[parts.length - 1]
+
   if (last.includes(".") && last.split(".")[1].length >= 2 && !isNaN(+key.text)) {
     return
   }
@@ -202,7 +300,7 @@ const handleComplete = async () => {
 
     const recordData = {
       ...props.record,
-      amount: parseFloat(input.value),
+      amount: String(parseFloat(input.value)), // 更新接口要求字符串
       recordDate: date.value || dayjs().format("YYYY-MM-DD"),
     }
 
