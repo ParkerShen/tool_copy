@@ -1,0 +1,8 @@
+{
+  "restartable": "rs",
+  "verbose": true,
+  "ext": "js,json",
+  "exec": "node server.js",
+  "watch": ["src"],
+  "ignore": ["src/**/*.spec.ts", "node_modules"]
+}
