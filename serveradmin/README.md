@@ -9,3 +9,7 @@
 启动生产环境：pm2 start ecosystem.config.js --env production
 查看状态：pm2 status
 查看日志：pm2 logs
+
+pm2 start ecosystem.config.js --env development
+pm2 start ecosystem.config.js --env test
+pm2 start ecosystem.config.js --env production

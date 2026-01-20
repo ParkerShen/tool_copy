@@ -155,17 +155,17 @@ const logger: winston.Logger & {
     }),
     
     // MongoDB 存储 - 使用127.0.0.1而不是::1
-    // new winston.transports.MongoDB({
-    //   db: process.env.MONGO_LOG_URI || 'mongodb://127.0.0.1:27017/logs',
-    //   collection: 'app_logs',
-    //   options: { 
-    //     useUnifiedTopology: true,
-    //     serverSelectionTimeoutMS: 5000 // 5秒超时
-    //   },
-    //   metaKey: 'metadata',
-    //   decolorize: true,
-    //   level: 'warn'
-    // }),
+    new winston.transports.MongoDB({
+      db: process.env.MONGO_LOG_URI || 'mongodb://127.0.0.1:27017/logs',
+      collection: 'app_logs',
+      options: { 
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 5000 // 5秒超时
+      },
+      metaKey: 'metadata',
+      decolorize: true,
+      level: 'warn'
+    }),
     
     // 文件轮转存储
     new winston.transports.DailyRotateFile({

@@ -1,4 +1,4 @@
-import express, { Application, Request, Response, NextFunction } from 'express';
+﻿import express, { Application, Request, Response, NextFunction } from 'express';
 import session from 'express-session';
 import cors from 'cors';
 import path from 'path';
@@ -9,7 +9,9 @@ import routeLogger from './middleware/routeLogger';
 import routes from './app/routes';
 import db from './app/models/platform';
 import fs from 'fs';
-dotenv.config();
+
+const env = process.env.NODE_ENV || 'development';
+dotenv.config({ path: path.resolve(process.cwd(), `.env.${env}`) });
 
 const app: Application = express();
 

@@ -1,4 +1,4 @@
-module.exports = {
+﻿module.exports = {
   apps: [{
     name: 'xin-server',
     script: 'dist/server.js',
@@ -7,6 +7,14 @@ module.exports = {
     env: {
       NODE_ENV: 'development',
       PORT: 3001
+    },
+    env_development: {
+      NODE_ENV: 'development',
+      PORT: 3001
+    },
+    env_test: {
+      NODE_ENV: 'test',
+      PORT: 3002
     },
     env_production: {
       NODE_ENV: 'production',
