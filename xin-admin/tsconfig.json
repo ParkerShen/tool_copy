@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "importHelpers": true,
+    "jsx": "preserve",
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "baseUrl": "./",
+    "skipLibCheck": true,
+    "experimentalDecorators": true,
+    "strict": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    // 增加以下两行配置
+    "forceConsistentCasingInFileNames": true, // 强制文件名大小写一致
+    "preserveSymlinks": true, // 解决符号链接问题
+
+    "paths": {
+      "@/*": ["./src/*"],
+      "@@/*": ["./src/.umi/*"],
+      "@@test/*": ["./src/.umi-test/*"]
+    }
+  },
+  "include": ["./**/*.d.ts", "./**/*.ts", "./**/*.tsx"]
+}

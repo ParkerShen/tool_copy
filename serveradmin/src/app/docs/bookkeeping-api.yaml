@@ -1,0 +1,418 @@
+openapi: 3.0.0
+info:
+  title: 记账小程序 API
+  version: 1.0.0
+  description: 记账小程序后端接口文档
+servers:
+  - url: http://localhost:3001
+    description: 开发环境
+paths:
+  # 统计相关
+  /api/bookkeepings/monthly-stats:
+    get:
+      summary: 获取月度统计
+      tags: [统计]
+      parameters:
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "2025-07"
+          description: 月份格式 YYYY-MM
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 200
+                  data:
+                    type: object
+                    properties:
+                      income:
+                        type: number
+                        example: 5000
+                      expense:
+                        type: number
+                        example: 3000
+
+  /api/bookkeepings/daily-records:
+    get:
+      summary: 获取每日记录列表
+      tags: [统计]
+      parameters:
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "2025-07"
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        records:
+                          type: array
+                        dayIncome:
+                          type: number
+                        dayExpense:
+                          type: number
+
+  /api/bookkeepings/chart-data:
+    get:
+      summary: 获取月度图表数据
+      tags: [统计]
+      parameters:
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "2025-07"
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [income, expense]
+            default: expense
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: array
+                    items:
+                      type: number
+
+  # 记账记录 CRUD
+  /api/bookkeepings/records:
+    post:
+      summary: 创建记账记录
+      tags: [记账记录]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [categoryId, type, amount, title, recordDate]
+              properties:
+                categoryId:
+                  type: number
+                  example: 1
+                type:
+                  type: string
+                  enum: [income, expense]
+                  example: expense
+                amount:
+                  type: number
+                  example: 100.50
+                title:
+                  type: string
+                  example: 午餐
+                remark:
+                  type: string
+                  example: 备注信息
+                recordDate:
+                  type: string
+                  format: date
+                  example: "2025-07-21"
+                recordTime:
+                  type: string
+                  example: "12:30:00"
+      responses:
+        200:
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 200
+                  data:
+                    $ref: '#/components/schemas/BookkeepingRecord'
+
+  /api/bookkeepings/records/{id}:
+    put:
+      summary: 更新记账记录
+      tags: [记账记录]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                categoryId:
+                  type: number
+                type:
+                  type: string
+                  enum: [income, expense]
+                amount:
+                  type: number
+                title:
+                  type: string
+                remark:
+                  type: string
+                recordDate:
+                  type: string
+                  format: date
+                recordTime:
+                  type: string
+      responses:
+        200:
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    $ref: '#/components/schemas/BookkeepingRecord'
+
+    delete:
+      summary: 删除记账记录
+      tags: [记账记录]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 200
+                  message:
+                    type: string
+                    example: 删除成功
+
+  # 分类管理 CRUD
+  /api/bookkeepings/categories:
+    get:
+      summary: 获取分类列表
+      tags: [分类管理]
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [income, expense]
+          description: 分类类型
+      responses:
+        200:
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+
+    post:
+      summary: 创建分类
+      tags: [分类管理]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, type]
+              properties:
+                name:
+                  type: string
+                  example: 餐饮
+                type:
+                  type: string
+                  enum: [income, expense]
+                  example: expense
+                icon:
+                  type: string
+                  example: food
+                color:
+                  type: string
+                  example: "#ff6b6b"
+      responses:
+        200:
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    $ref: '#/components/schemas/Category'
+
+  /api/bookkeepings/categories/{id}:
+    put:
+      summary: 更新分类
+      tags: [分类管理]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                  enum: [income, expense]
+                icon:
+                  type: string
+                color:
+                  type: string
+      responses:
+        200:
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    $ref: '#/components/schemas/Category'
+
+    delete:
+      summary: 删除分类
+      tags: [分类管理]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                  message:
+                    type: string
+
+components:
+  schemas:
+    BookkeepingRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        categoryId:
+          type: integer
+        type:
+          type: string
+          enum: [income, expense]
+        amount:
+          type: number
+        title:
+          type: string
+        remark:
+          type: string
+        recordDate:
+          type: string
+          format: date
+        recordTime:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        category:
+          $ref: '#/components/schemas/Category'
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum: [income, expense]
+        icon:
+          type: string
+        color:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []

@@ -1,0 +1,117 @@
+/* #ifdef H5 */
+
+#app {
+  background-color: #fff;
+}
+
+#back {
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: none;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.fade-enter {
+  animation: pageFadeIn 400ms forwards;
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+/* 路由前进，进入 */
+
+.forward-enter {
+  box-shadow: -3px 0 5px rgb(0 0 0 / 10%);
+  animation: pageFromRightToCenter 400ms forwards;
+}
+/* 路由前进，退出 */
+
+.forward-leave {
+  z-index: -1;
+  display: block !important;
+  animation: pageFromCenterToLeft 400ms forwards;
+}
+/* 路由后退，进入 */
+
+.back-enter {
+  animation: pageFromLeftToCenter 400ms forwards;
+}
+/* 路由后退，退出 */
+.back-leave {
+  z-index: 1;
+  display: block !important;
+  box-shadow: -3px 0 5px rgb(0 0 0 / 10%);
+  animation: pageFromCenterToRight 400ms forwards;
+}
+/* ------------------------------- */
+/* 路由前进，进入 */
+
+@keyframes pageFromRightToCenter {
+  from {
+    opacity: 1;
+    /* left: 100%; */
+    transform: translateX(100%);
+  }
+
+  to {
+    opacity: 1;
+    /* left: 0; */
+    transform: translateX(0);
+  }
+}
+/* 路由前进，退出 */
+
+@keyframes pageFromCenterToLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+    /* left:0; */
+  }
+
+  to {
+    opacity: 0.5;
+    transform: translateX(-20%);
+    /* left:-20%; */
+  }
+}
+/* 路由后退，进入 */
+
+@keyframes pageFromLeftToCenter {
+  from {
+    opacity: 0.5;
+    transform: translateX(-20%);
+    /* left: -20%; */
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    /* left: 0; */
+  }
+}
+/* 路由后退，退出 */
+
+@keyframes pageFromCenterToRight {
+  from {
+    opacity: 1;
+    /* left: 0; */
+    transform: translateX(0);
+  }
+
+  to {
+    opacity: 1;
+    /* left: 100%; */
+    transform: translateX(100%);
+  }
+}
+/* #endif */
