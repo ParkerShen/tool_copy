@@ -9,6 +9,7 @@ export {}
 
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
+    AppNavbar: typeof import('./../components/app-navbar/app-navbar.vue')['default']
     AppTest: typeof import('./../components/AppTest.vue')['default']
     AppTest2: typeof import('./../components/app-test-dir/AppTest2.vue')['default']
     BaseChart: typeof import('./../components/BaseChart.vue')['default']
@@ -20,6 +21,7 @@ declare module '@vue/runtime-core' {
     FlyNavbar: typeof import('./../components/fly-navbar/fly-navbar.vue')['default']
     IconFont: typeof import('./../components/IconFont.vue')['default']
     LEchart: typeof import('./../components/l-echart/l-echart.vue')['default']
+    PageState: typeof import('./../components/page-state/page-state.vue')['default']
     WxECharts: typeof import('./../components/WxECharts.vue')['default']
   }
 }

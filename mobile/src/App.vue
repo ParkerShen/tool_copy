@@ -151,6 +151,8 @@ onHide(() => {
 </script>
 
 <style lang="scss">
+@import "./styles/bookkeeping.scss";
+
 /* stylelint-disable selector-type-no-unknown */
 button::after {
   border: none;

@@ -109,9 +109,7 @@ export function getCategories(type?: "income" | "expense"): Promise<ApiResult<Ca
 /**
  * 新增自定义分类
  */
-export function createCategory(
-  data: CreateCategoryRequest,
-): Promise<ApiResult<Category>> {
+export function createCategory(data: CreateCategoryRequest): Promise<ApiResult<Category>> {
   return http<Category>({
     url: "/api/miniapp/bookkeepings/categories",
     method: "POST",

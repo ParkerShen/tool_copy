@@ -356,10 +356,7 @@ export async function importSqliteFile(bytes: Uint8Array): Promise<void> {
         tables.add(String(row[0]))
       }
     }
-    if (
-      !tables.has("mini_bookkeeping_record") ||
-      !tables.has("mini_bookkeeping_category")
-    ) {
+    if (!tables.has("mini_bookkeeping_record") || !tables.has("mini_bookkeeping_category")) {
       throw new Error("不是有效的本地记账数据库")
     }
   } catch (error) {

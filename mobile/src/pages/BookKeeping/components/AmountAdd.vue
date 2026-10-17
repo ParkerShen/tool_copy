@@ -65,12 +65,7 @@
 </template>
 <script setup>
 import { ref, computed, onMounted, watch } from "vue"
-import {
-  createCategory,
-  deleteCategory,
-  getCategories,
-  updateRecord,
-} from "@/api/bookkeeping"
+import { createCategory, deleteCategory, getCategories, updateRecord } from "@/api/bookkeeping"
 import AddCategoryModal from "@/pages/BookKeeping/components/AddCategoryModal.vue"
 import AmountKeyboard from "@/pages/BookKeeping/components/AmountKeyboard.vue"
 import IconFont from "@/components/IconFont.vue"

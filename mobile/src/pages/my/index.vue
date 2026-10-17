@@ -95,7 +95,7 @@
     <view class="section">
       <text class="section-title">危险操作</text>
       <view class="danger-btn" @click="handleClear">清空所有记账数据</view>
-      <text class="danger-tip">清空后只保留默认分类，建议先导出备份。</text>
+      <text class="danger-tip">清空后只保留默认分类和默认账户，建议先导出备份。</text>
     </view>
 
     <view class="section about">

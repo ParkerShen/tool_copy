@@ -71,12 +71,52 @@
       }
     },
     {
+      "path": "pages/BookKeeping/accounts",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "账户管理",
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/BookKeeping/categories",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "分类管理",
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/BookKeeping/edit",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "记一笔"
+      }
+    },
+    {
       "path": "pages/BookKeeping/index",
       "type": "page",
       "layout": "default",
       "style": {
         "navigationBarTitleText": "记账",
-        "navigationBarBackgroundColor": "#FFFFFF"
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/BookKeeping/stats",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "统计",
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "enablePullDownRefresh": true
       }
     },
     {

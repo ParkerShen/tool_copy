@@ -41,7 +41,7 @@
     <view class="tools-section">
       <view class="section-header">
         <text class="section-title">工具</text>
-        <view class="quick-add" @click="goBookkeeping(true)">
+        <view class="quick-add" @click="goQuickAdd">
           <wd-icon name="add" size="13px" color="#ff9f00" />
           <text class="quick-add-text">记一笔</text>
         </view>
@@ -112,7 +112,7 @@ import { computed, onMounted, onUnmounted, ref } from "vue"
 import { onShow } from "@dcloudio/uni-app"
 import dayjs from "dayjs"
 import "dayjs/locale/zh-cn"
-import { getMonthlyStats } from "@/api/bookkeeping"
+import { getMonthlyStats, isLocalDataMode } from "@/api/bookkeeping"
 import type { MonthlyStatsResult } from "@/api/bookkeeping/types"
 import { getDiaryStats, type DiaryStats } from "@/api/diary"
 import { useBookkeepingStore, useTabbarStore } from "@/store"
@@ -183,6 +183,15 @@ function goBookkeeping(openAdd: boolean): void {
   uni.switchTab({
     url: "/pages/BookKeeping/index",
   })
+}
+
+/** 本地模式直接进入新录入页；远程模式沿用旧弹窗流程 */
+function goQuickAdd(): void {
+  if (isLocalDataMode) {
+    uni.navigateTo({ url: "/pages/BookKeeping/edit?type=expense" })
+    return
+  }
+  goBookkeeping(true)
 }
 
 function goDiary(): void {
