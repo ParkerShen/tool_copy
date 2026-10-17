@@ -5,6 +5,18 @@ import { useLangStore, useUserStore } from "@/store"
 import { getCaptchaConfig, loginWxApi } from "./api/user"
 import i18n from "@/locale/index"
 import { getH5UserPosition } from "./utils/chinaBounds"
+import { isLocalDataMode } from "@/api/bookkeeping"
+// #ifdef H5
+import { getDatabaseStats } from "@/api/bookkeeping"
+import { preloadLocalDb } from "@/api/bookkeeping/db"
+import {
+  BACKUP_INTERVAL_DAYS,
+  daysSinceLastExport,
+  isBackupSnoozed,
+  snoozeBackup,
+} from "@/utils/backupReminder"
+import { registerServiceWorker } from "@/utils/serviceWorker"
+// #endif
 
 const langStore = useLangStore()
 
@@ -59,6 +71,8 @@ const wxLogin = () => {
 watch(
   () => langStore.lang,
   (lang) => {
+    // 本地模式下不请求远程语言包，避免离线时发起无效请求
+    if (isLocalDataMode) return
     if (lang) {
       getLanguagePackage(lang).then((data) => {
         i18n.global.setLocaleMessage(langMap[lang], data as any)
@@ -74,6 +88,38 @@ watch(
   },
 )
 
+// #ifdef H5
+function scheduleBackupReminder(): void {
+  setTimeout(async () => {
+    try {
+      if (!isLocalDataMode || isBackupSnoozed()) return
+      const stats = await getDatabaseStats()
+      if (stats.recordCount <= 0) return
+      const days = daysSinceLastExport()
+      if (days !== null && days < BACKUP_INTERVAL_DAYS) return
+      uni.showModal({
+        title: "该备份了",
+        content:
+          days === null
+            ? "还没有导出过备份。数据只保存在这台手机上，建议现在导出一份 .sqlite 放到「文件」或 iCloud。"
+            : `已经 ${days} 天没有导出备份了。建议现在导出一份 .sqlite 放到「文件」或 iCloud。`,
+        confirmText: "去备份",
+        cancelText: "稍后",
+        success: (result) => {
+          if (result.confirm) {
+            uni.switchTab({ url: "/pages/my/index" })
+          } else {
+            snoozeBackup()
+          }
+        },
+      })
+    } catch (error) {
+      console.warn("[backup] 检查备份提醒失败:", error)
+    }
+  }, 4000)
+}
+// #endif
+
 onLaunch(() => {
   // #ifdef MP-WEIXIN
   wxLogin()
@@ -83,6 +129,12 @@ onLaunch(() => {
   const script = document.createElement("script")
   script.src = "/static/iconfont/iconfont.js"
   document.body.appendChild(script)
+  // 提前加载 SQLite，避免首次进入记账页等待 WASM
+  preloadLocalDb()
+  // HTTPS 下注册 Service Worker，支持离线打开
+  registerServiceWorker()
+  // 每周提醒导出一次真正离开手机本地的备份
+  scheduleBackupReminder()
   // #endif
   // getLangList()
   // getCaptchaSettings()

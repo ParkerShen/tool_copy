@@ -84,10 +84,10 @@
           <text>{{ dayjs(dayGroup.date).format("MM月DD日 dddd") }}</text>
           <view>
             <text v-if="dayGroup.dayIncome > 0" class="income-label">
-              收入：{{ parseFloat(dayGroup.dayIncome).toFixed(2) }}
+              收入：{{ Number(dayGroup.dayIncome).toFixed(2) }}
             </text>
             <text v-if="dayGroup.dayExpense > 0" class="expense-label">
-              支出：{{ parseFloat(dayGroup.dayExpense).toFixed(2) }}
+              支出：{{ Number(dayGroup.dayExpense).toFixed(2) }}
             </text>
           </view>
         </view>
@@ -109,8 +109,8 @@
               <view class="record-item" @longpress="showDeleteOptions(record)">
                 <view class="icon default" @click.stop="editCategory(record)">
                   <wd-icon
-                    :name="record.systemCategory.icon"
-                    :color="record.systemCategory.color"
+                    :name="record.systemCategory?.icon || record.category?.icon || 'star'"
+                    :color="record.systemCategory?.color || record.category?.color || '#409eff'"
                   />
                 </view>
                 <view class="record-info">
@@ -144,8 +144,7 @@
                     </text>
                   </view>
                   <text class="amount" :class="record.type" @click.stop="editAmount(record)">
-                    {{ record.type === "expense" ? "-" : ""
-                    }}{{ parseFloat(record.amount).toFixed(2) }}
+                    {{ formatRecordAmount(record) }}
                   </text>
                 </view>
               </view>
@@ -162,7 +161,10 @@
               @longpress="showDeleteOptions(record)"
             >
               <view class="icon default" @click.stop="editCategory(record)">
-                <wd-icon :name="record.systemCategory.icon" :color="record.systemCategory.color" />
+                <wd-icon
+                  :name="record.systemCategory?.icon || record.category?.icon || 'star'"
+                  :color="record.systemCategory?.color || record.category?.color || '#409eff'"
+                />
               </view>
               <view class="record-info">
                 <view class="record-left">
@@ -195,8 +197,7 @@
                   </text>
                 </view>
                 <text class="amount" :class="record.type" @click.stop="editAmount(record)">
-                  {{ record.type === "expense" ? "-" : ""
-                  }}{{ parseFloat(record.amount).toFixed(2) }}
+                  {{ formatRecordAmount(record) }}
                 </text>
               </view>
             </view>
@@ -233,7 +234,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, type Ref } from "vue"
 import type { Dayjs } from "dayjs"
-import BaseChart from "@/components/BaseChart.vue"
 import AmountAdd from "@/pages/BookKeeping/components/AmountAdd.vue"
 import AmountEditKeyboard from "@/pages/BookKeeping/components/AmountEditKeyboard.vue"
 import { onReady, onShow } from "@dcloudio/uni-app"
@@ -249,11 +249,6 @@ import {
   deleteRecord,
 } from "@/api/bookkeeping"
 import type { MonthlyStatsResult, DailyRecordGroup } from "@/api/bookkeeping/types"
-import lEchart from "@/components/l-echart/l-echart.vue"
-
-// #ifdef H5
-import * as echarts from "echarts"
-// #endif
 
 // #ifdef MP-WEIXIN
 // @ts-ignore
@@ -357,6 +352,8 @@ onShow(() => {
     showPopup.value = true
     bookkeepingStore.setShouldShowAdd(false) // 重置标志
   }
+  // 每次回到记账页都刷新，保证新增/编辑后的数据与首页同步
+  init()
 })
 
 // 监听子组件弹窗状态
@@ -696,6 +693,13 @@ const formatNumber = (num: number): string => {
   return num.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")
 }
 
+// 记录金额：支出显示负号，负数（退款/冲正）保留原符号，避免出现 "--" 前缀
+const formatRecordAmount = (record: any): string => {
+  const value = Number(record?.amount || 0)
+  const sign = value < 0 ? "-" : record?.type === "expense" ? "-" : ""
+  return `${sign}${Math.abs(value).toFixed(2)}`
+}
+
 // 数据结构重构成按月份存储
 const monthlyData: Ref<Record<string, any>> = ref({})
 
@@ -876,10 +880,8 @@ const changeMonth = (direction: number): void => {
   // #endif
 }
 
-// 初始化模拟数据（实际应用需替换为API请求）
+// 初始化（数据加载已移到 onShow，保证每次进入页面都刷新）
 onMounted(async () => {
-  await init()
-
   // #ifdef MP-WEIXIN
   // 延迟初始化图表，确保数据已加载
   // setTimeout(() => {

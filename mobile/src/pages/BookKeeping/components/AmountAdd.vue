@@ -46,6 +46,7 @@
     <add-category-modal
       :visible="showAddModal"
       :category-type="activeTab"
+      :existing-categories="currentCategories.filter((item) => item.type !== 'config')"
       @close="showAddModal = false"
       @add="handleAddCategory"
     />
@@ -64,7 +65,12 @@
 </template>
 <script setup>
 import { ref, computed, onMounted, watch } from "vue"
-import { getCategories, updateRecord } from "@/api/bookkeeping"
+import {
+  createCategory,
+  deleteCategory,
+  getCategories,
+  updateRecord,
+} from "@/api/bookkeeping"
 import AddCategoryModal from "@/pages/BookKeeping/components/AddCategoryModal.vue"
 import AmountKeyboard from "@/pages/BookKeeping/components/AmountKeyboard.vue"
 import IconFont from "@/components/IconFont.vue"
@@ -150,7 +156,7 @@ const loadCategories = async (type) => {
   } catch (error) {
     console.error("获取分类失败:", error)
     uni.showToast({
-      title: "获取分类失败",
+      title: error?.message || "获取分类失败",
       icon: "error",
     })
   }
@@ -235,30 +241,40 @@ const showConfigModal = (action) => {
   })
 }
 
-// 添加新分类处理
-const handleAddCategory = (newCategory) => {
-  const categories = currentCategories.value
-  const lastIndex = categories.findIndex((item) => item.type === "config")
-
-  if (lastIndex > -1) {
-    // 在设置按钮前插入新分类
-    categories.splice(lastIndex, 0, {
-      ...newCategory,
-      type: "category",
+// 添加新分类处理：写入 SQLite 后重新加载分类
+const handleAddCategory = async (newCategory) => {
+  try {
+    uni.showLoading({ title: "保存中..." })
+    await createCategory({
+      name: newCategory.name,
+      type: activeTab.value,
+      icon: newCategory.icon,
+      color: newCategory.color,
     })
+    await loadCategories(activeTab.value)
+    uni.hideLoading()
     uni.showToast({
       title: "添加成功",
       icon: "success",
     })
+  } catch (error) {
+    uni.hideLoading()
+    console.error("添加分类失败:", error)
+    uni.showToast({
+      title: error?.message || "添加失败",
+      icon: "none",
+    })
   }
 }
 
-// 删除分类
+// 删除分类（仅自定义分类可删）
 const removeCategory = () => {
-  const categories = currentCategories.value.filter((item) => item.type === "category")
+  const categories = currentCategories.value.filter(
+    (item) => item.type !== "config" && item.isSystem === false,
+  )
   if (categories.length === 0) {
     uni.showToast({
-      title: "没有可删除的分类",
+      title: "没有可删除的自定义分类",
       icon: "none",
     })
     return
@@ -269,26 +285,30 @@ const removeCategory = () => {
     title: "选择要删除的分类",
     itemList: categoryNames,
     success: (res) => {
-      const index = res.tapIndex
-      const name = categoryNames[index]
+      const category = categories[res.tapIndex]
+      if (!category) return
 
       uni.showModal({
         title: "确认删除",
-        content: `确定要删除"${name}"分类吗？`,
-        success: (confirmRes) => {
-          if (confirmRes.confirm) {
-            // 从当前数组中删除选中的分类
-            const currentIndex = currentCategories.value.findIndex(
-              (item) => item.type === "category" && item.name === name,
-            )
-
-            if (currentIndex > -1) {
-              currentCategories.value.splice(currentIndex, 1)
-              uni.showToast({
-                title: "删除成功",
-                icon: "success",
-              })
-            }
+        content: `确定要删除"${category.name}"分类吗？`,
+        success: async (confirmRes) => {
+          if (!confirmRes.confirm) return
+          try {
+            uni.showLoading({ title: "删除中..." })
+            await deleteCategory(category.id)
+            await loadCategories(activeTab.value)
+            uni.hideLoading()
+            uni.showToast({
+              title: "删除成功",
+              icon: "success",
+            })
+          } catch (error) {
+            uni.hideLoading()
+            console.error("删除分类失败:", error)
+            uni.showToast({
+              title: error?.message || "删除失败",
+              icon: "none",
+            })
           }
         },
       })

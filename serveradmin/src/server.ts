@@ -1,17 +1,13 @@
-﻿import express, { Application, Request, Response, NextFunction } from 'express';
+﻿import './config/env';
+import express, { Application } from 'express';
 import session from 'express-session';
 import cors from 'cors';
-import path from 'path';
-import dotenv from 'dotenv';
-import connectMongo from './db/mongo'; // MongoDB 连接
 import logger from './util/logger'; // 日志模块
 import routeLogger from './middleware/routeLogger';
 import routes from './app/routes';
 import db from './app/models/platform';
 import fs from 'fs';
-
-const env = process.env.NODE_ENV || 'development';
-dotenv.config({ path: path.resolve(process.cwd(), `.env.${env}`) });
+import path from 'path';
 
 const app: Application = express();
 
@@ -21,9 +17,6 @@ app.use(routeLogger);
 // 解析请求体中的 JSON 数据
 app.use(express.json());
 app.use(cors());
-
-// 连接 MongoDB
-connectMongo();
 
 // 使用请求日志中间件
 app.use(logger.logRequest);
@@ -99,14 +92,18 @@ app.get('/*', (req, res, next) => {
 // 启动服务器
 const port = process.env.PORT || 3001;
 db.sequelize
-  .sync({
-    force: false,
-  })
+  .authenticate()
+  .then(() => db.sequelize.sync({ force: false }))
   .then(() => {
     app.listen(port, () => {
       console.log(`服务器已启动，正在监听端口 ${port}`);
     });
   })
   .catch((error: Error) => {
-    console.error('数据库同步失败:', error);
+    console.error(
+      `数据库同步失败（${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}）。` +
+        '请确认 MySQL 服务已启动、数据库已创建且账号密码正确。',
+      error
+    );
+    process.exitCode = 1;
   });

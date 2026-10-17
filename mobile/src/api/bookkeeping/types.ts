@@ -5,6 +5,20 @@
  * @FilePath: \mobile\src\api\bookkeeping\types.ts
  */
 /**
+ * 接口响应（与 serveradmin 保持一致）
+ */
+export interface ApiResult<T> {
+  code: number
+  data: T
+  message?: string
+}
+
+export interface ApiMessageResult {
+  code: number
+  message: string
+}
+
+/**
  * 月度统计结果
  */
 export interface MonthlyStatsResult {
@@ -14,16 +28,25 @@ export interface MonthlyStatsResult {
   expense: number
 }
 
+export interface RecordCategory {
+  /** 分类名称 */
+  name: string
+  /** 分类图标 */
+  icon: string
+  /** 分类颜色 */
+  color: string
+}
+
 /**
  * 每日记录
  */
 export interface DailyRecord {
   /** 记录ID */
-  id: number
+  id: string | number
   /** 用户ID */
   userId: string
   /** 分类ID */
-  categoryId: number
+  categoryId: string | number
   /** 记录类型 */
   type: "income" | "expense"
   /** 金额 */
@@ -41,14 +64,9 @@ export interface DailyRecord {
   /** 更新时间 */
   updatedAt: string
   /** 分类信息 */
-  category: {
-    /** 分类名称 */
-    name: string
-    /** 分类图标 */
-    icon: string
-    /** 分类颜色 */
-    color: string
-  }
+  category: RecordCategory
+  /** 系统分类信息（本地模式下与 category 相同，兼容旧模板读取） */
+  systemCategory?: RecordCategory
 }
 
 /**
@@ -78,11 +96,11 @@ export interface ChartDataResult {
  */
 export interface CreateRecordRequest {
   /** 分类ID */
-  categoryId: number
+  categoryId: string | number
   /** 记录类型 */
   type?: "income" | "expense"
-  /** 金额 */
-  amount: number
+  /** 金额（服务端接受数字或字符串） */
+  amount: number | string
   /** 标题 */
   title?: string
   /** 备注 */
@@ -92,6 +110,11 @@ export interface CreateRecordRequest {
   /** 记录时间 */
   recordTime?: string
 }
+
+/**
+ * 更新记录请求参数（允许携带页面上的附加字段）
+ */
+export type UpdateRecordRequest = Partial<CreateRecordRequest> & { [key: string]: any }
 
 /**
  * 分类信息
@@ -121,4 +144,31 @@ export interface Category {
   deletedAt?: string
   /** 来源标识 */
   source: "system" | "custom"
+}
+
+/**
+ * 创建分类请求参数
+ */
+export interface CreateCategoryRequest {
+  name: string
+  type: "income" | "expense"
+  icon?: string
+  color?: string
+}
+
+/**
+ * 本地数据库概览
+ */
+export interface LocalDatabaseStats {
+  recordCount: number
+  categoryCount: number
+  customCategoryCount: number
+  firstRecordDate: string | null
+  lastRecordDate: string | null
+  totalIncome: number
+  totalExpense: number
+  /** .sqlite 文件字节数 */
+  size: number
+  /** 是否因 IndexedDB 不可用而只能保存在内存中 */
+  memoryOnly: boolean
 }

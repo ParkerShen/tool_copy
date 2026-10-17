@@ -4,10 +4,9 @@
  * @LastEditTime: 2025-07-21 18:05:51
  * @FilePath: \serveradmin\src\util\logger.ts
  */
-import winston, { format, Logger as WinstonLogger } from 'winston';
+import winston, { format } from 'winston';
 import 'winston-mongodb';
 import 'winston-daily-rotate-file';
-import dotenv from 'dotenv';
 import { Request, Response, NextFunction } from 'express';
 
 // 扩展 Winston 的 Logger 接口
@@ -22,8 +21,6 @@ declare module 'winston' {
 }
 
 const { combine, timestamp, json, errors } = format;
-
-dotenv.config();
 
 // 详细日志元数据接口
 interface DetailedLogMetadata {
@@ -69,6 +66,26 @@ export interface RequestWithUser extends Request {
     username?: string;
   };
 }
+
+const mongoLogEnabled = process.env.MONGO_LOG_ENABLED === 'true';
+const mongoLogUri = process.env.MONGO_LOG_URI;
+
+if (mongoLogEnabled && !mongoLogUri) {
+  console.error('MongoDB log persistence is enabled, but MONGO_LOG_URI is not configured.');
+}
+
+const mongoLogTransport = mongoLogEnabled && mongoLogUri
+  ? new winston.transports.MongoDB({
+      db: mongoLogUri,
+      collection: 'app_logs',
+      options: {
+        serverSelectionTimeoutMS: 5000 // 5秒超时
+      },
+      metaKey: 'metadata',
+      decolorize: true,
+      level: 'warn'
+    })
+  : null;
 
 // 创建带详细元数据支持的日志器
 const logger: winston.Logger & {
@@ -154,19 +171,9 @@ const logger: winston.Logger & {
       )
     }),
     
-    // MongoDB 存储 - 使用127.0.0.1而不是::1
-    new winston.transports.MongoDB({
-      db: process.env.MONGO_LOG_URI || 'mongodb://127.0.0.1:27017/logs',
-      collection: 'app_logs',
-      options: { 
-        useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 5000 // 5秒超时
-      },
-      metaKey: 'metadata',
-      decolorize: true,
-      level: 'warn'
-    }),
-    
+    // MongoDB 存储（通过 MONGO_LOG_ENABLED=true 显式启用）
+    ...(mongoLogTransport ? [mongoLogTransport] : []),
+
     // 文件轮转存储
     new winston.transports.DailyRotateFile({
       filename: 'logs/application-%DATE%.log',

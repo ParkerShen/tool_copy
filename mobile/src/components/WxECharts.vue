@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps } from "vue"
+import { ref } from "vue"
 import * as echarts from "echarts"
 import { ECOption } from "./echartsConfig"
 

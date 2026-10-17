@@ -33,10 +33,12 @@ export default (options: CommandOptions) => {
   console.log("process.env.UNI_PLATFORM: ", process.env.UNI_PLATFORM)
   console.log("isH5: ", process.env.UNI_PLATFORM === "h5")
 
-  let baseUrl = "https://innoai-01.oss-cn-shenzhen.aliyuncs.com"
+  const defaultOssUrl = "https://innoai-01.oss-cn-shenzhen.aliyuncs.com"
+  const ossApiUrl = env.VITE_BASE_OSS_API || env.VITE_BASE_OSS || defaultOssUrl
+  let baseUrl = defaultOssUrl
 
   if (process.env.UNI_PLATFORM === "h5") {
-    baseUrl = mode === "development" ? env.VITE_BASE_OSS : env.VITE_BASE_OSS_API
+    baseUrl = mode === "development" ? env.VITE_BASE_OSS || ossApiUrl : ossApiUrl
   }
 
   return defineConfig({
@@ -47,7 +49,7 @@ export default (options: CommandOptions) => {
         dts: "src/types/uni-pages.d.ts",
         exclude: ["**/components/**/**.*"],
         routeBlockLang: "json5",
-        homePage: "pages/coupon/index",
+        homePage: "pages/index/index",
         subPackages: ["src/pages-sub"],
       }),
       UniLayouts(),
@@ -136,8 +138,9 @@ export default (options: CommandOptions) => {
           drop_debugger: env.VITE_DELETE_CONSOLE === "true",
         },
       },
+      // standalone 是一次性构建，必须关闭 watch 否则命令不会退出
       watch:
-        process.platform === "win32"
+        process.platform === "win32" && mode !== "standalone"
           ? {
               exclude: ["node_modules/**", "/__uno.css"],
             }

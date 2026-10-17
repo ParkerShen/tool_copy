@@ -14,6 +14,7 @@ import MiniBookkeepingIconModel from './miniBookkeepingIcon'
 
 const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   host: dbConfig.HOST,
+  port: dbConfig.port,
   dialect: dbConfig.dialect,
   logging: false,
   sync: false as any,

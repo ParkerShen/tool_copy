@@ -290,7 +290,8 @@ function onDateChange(val: { value: string }) {
 }
 
 const handleComplete = async () => {
-  if (!input.value || parseFloat(input.value) <= 0) {
+  const parsedAmount = parseFloat(input.value)
+  if (!input.value || !Number.isFinite(parsedAmount) || parsedAmount === 0) {
     uni.showToast({ title: "请输入有效金额", icon: "none" })
     return
   }

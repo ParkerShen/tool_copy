@@ -89,7 +89,7 @@ import { createRecord, updateRecord } from "@/api/bookkeeping"
 
 // 接收父组件传递的数据
 const props = defineProps({
-  categoryId: String,
+  categoryId: [String, Number],
   categoryType: String,
   categoryName: String,
   visible: Boolean,

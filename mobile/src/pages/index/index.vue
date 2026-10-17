@@ -1,347 +1,451 @@
+<route lang="json5" type="page">
+{
+  layout: "default",
+  style: {
+    navigationBarTitleText: "首页",
+    navigationBarBackgroundColor: "#FFFFFF",
+  },
+}
+</route>
+
 <template>
   <view class="home-page">
-    <!-- 财务/倒数日/备忘卡片 -->
-    <view class="card-group">
-      <view class="card">
-        <view class="card-header">
-          <view class="icon-circle bg-blue">
-            <wd-icon name="money-circle" size="25px" color="white"></wd-icon>
-          </view>
-          <view class="title">
-            今日收支
-            <view class="sub-title">查看今日财务状况</view>
-          </view>
-          <view class="value text-blue">
-            收入128
-            <!-- <view class="unit">净收入</view> -->
-          </view>
+    <!-- 本月总览 -->
+    <view class="hero">
+      <view class="hero-top">
+        <view>
+          <view class="hero-greeting">{{ greeting }}</view>
+          <view class="hero-date">{{ today.format("YYYY年MM月DD日 dddd") }}</view>
         </view>
-        <view class="detail-list">
-          <view class="item">
-            <view class="label">午餐支出</view>
-            <view class="amount minus">-¥25</view>
-          </view>
-          <view class="item">
-            <view class="label">交通费</view>
-            <view class="amount minus">-¥15</view>
-          </view>
-          <view class="item">
-            <view class="label">工资收入</view>
-            <view class="amount plus">+¥3000</view>
-          </view>
-        </view>
+        <view class="hero-badge">本地数据</view>
       </view>
 
-      <view class="card">
-        <view class="card-header">
-          <view class="icon-circle bg-orange">
-            <wd-icon name="dashboard" size="25px" color="white"></wd-icon>
-          </view>
-          <view class="title">
-            最近倒数日
-            <view class="sub-title">春节还有</view>
-          </view>
-          <view class="value text-orange">
-            42天
-            <!-- <view class="unit">剩余时间</view> -->
-          </view>
-        </view>
-        <view class="detail-list">
-          <view class="item">
-            <view class="label">期末考试已经</view>
-            <view class="amount minus">10天</view>
-          </view>
-          <view class="item">
-            <view class="label">项目结束已经</view>
-            <view class="amount minus">2天</view>
-          </view>
-          <view class="item">
-            <view class="label">面试还有</view>
-            <view class="amount plus">10天</view>
-          </view>
-        </view>
+      <view class="hero-balance">
+        <text class="hero-label">本月结余</text>
+        <text class="hero-value">¥{{ money(monthStats.income - monthStats.expense) }}</text>
       </view>
 
-      <view class="card">
-        <view class="card-header">
-          <view class="icon-circle bg-green">
-            <wd-icon name="list" size="25px" color="white"></wd-icon>
-          </view>
-          <view class="title">
-            我的备忘录
-            <view class="sub-title">代办事项管理</view>
-          </view>
-          <view class="value text-green">
-            8条
-            <!-- <view class="unit">未完成</view> -->
-          </view>
+      <view class="hero-row">
+        <view class="hero-item">
+          <text class="hero-item-label">本月收入</text>
+          <text class="hero-item-value plus">+{{ money(monthStats.income) }}</text>
         </view>
-        <view class="detail-list">
-          <view class="item">
-            <view class="label">需要写日记</view>
-            <!-- <view class="amount">
-              <wd-icon name="check" size="15px"></wd-icon>
-            </view> -->
-          </view>
-          <view class="item">
-            <view class="label">需要养马</view>
-            <view class="amount"></view>
-          </view>
-          <view class="item">
-            <view class="label">需要上墙</view>
-            <view class="amount plus"></view>
-          </view>
+        <view class="hero-item">
+          <text class="hero-item-label">本月支出</text>
+          <text class="hero-item-value minus">-{{ money(monthStats.expense) }}</text>
         </view>
       </view>
     </view>
 
-    <!-- 精选动态 -->
-    <view class="section-title">精选动态</view>
-    <view class="section-description">发现社区的精彩内容</view>
-
-    <scroll-view class="waterfall" scroll-y>
-      <view class="columns">
-        <view class="column">
-          <view
-            v-for="(item, index) in leftPosts"
-            :key="'left' + index"
-            class="post-card"
-            @click="viewPost(item)"
-          >
-            <image v-if="item.img" :src="item.img" class="post-img" mode="aspectFill" />
-            <view class="post-text">{{ item.text }}</view>
-            <view class="post-meta">
-              <text class="post-user">
-                <image
-                  :src="item.head"
-                  style="width: 30rpx; height: 30rpx; border-radius: 50%; margin-right: 8rpx"
-                  mode="aspectFill"
-                  @error="handleImageError(item)"
-                />
-                {{ item.user }}
-              </text>
-              <text class="post-like">❤️ {{ item.like }}</text>
-            </view>
-          </view>
+    <!-- 今日收支 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">今日收支</text>
+        <text class="section-link" @click="goBookkeeping(true)">去记一笔</text>
+      </view>
+      <view class="today-row">
+        <view class="today-item">
+          <text class="today-label">收入</text>
+          <text class="today-value plus">¥{{ money(todayStats.income) }}</text>
         </view>
-
-        <view class="column">
-          <view
-            v-for="(item, index) in rightPosts"
-            :key="'right' + index"
-            class="post-card"
-            @click="viewPost(item)"
-          >
-            <image v-if="item.img" :src="item.img" class="post-img" mode="aspectFill" />
-            <view class="post-text">{{ item.text }}</view>
-            <view class="post-meta">
-              <text class="post-user">
-                <image
-                  :src="item.head"
-                  style="width: 30rpx; height: 30rpx; border-radius: 50%; margin-right: 8rpx"
-                  mode="aspectFill"
-                />
-                {{ item.user }}
-              </text>
-              <text class="post-like">❤️ {{ item.like }}</text>
-            </view>
-          </view>
+        <view class="today-divider" />
+        <view class="today-item">
+          <text class="today-label">支出</text>
+          <text class="today-value minus">¥{{ money(todayStats.expense) }}</text>
         </view>
       </view>
-    </scroll-view>
+    </view>
 
-    <!-- 悬浮发布按钮 -->
-    <!-- <wd-button class="fab" type="primary" icon="add" shape="circle" @click="createPost"></wd-button> -->
+    <!-- 最近记录 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">最近记录</text>
+        <text class="section-link" @click="goBookkeeping(false)">查看全部</text>
+      </view>
+
+      <view v-if="recentRecords.length === 0" class="empty">
+        <wd-icon name="money-circle" size="42px" color="#ddd" />
+        <text class="empty-text">还没有记账，去记第一笔吧</text>
+        <view class="empty-btn" @click="goBookkeeping(true)">去记一笔</view>
+      </view>
+
+      <view v-else class="record-list">
+        <view
+          v-for="record in recentRecords"
+          :key="record.id"
+          class="record-item"
+          @click="goBookkeeping(false)"
+        >
+          <view
+            class="record-icon"
+            :style="{ backgroundColor: (record.category?.color || '#409eff') + '22' }"
+          >
+            <wd-icon
+              :name="record.systemCategory?.icon || record.category?.icon || 'star'"
+              size="20px"
+              :color="record.systemCategory?.color || record.category?.color || '#409eff'"
+            />
+          </view>
+          <view class="record-info">
+            <text class="record-title">{{ record.title || record.category?.name || "未分类" }}</text>
+            <text class="record-sub">
+              {{ formatDate(record.recordDate) }}{{ record.remark ? ` · ${record.remark}` : "" }}
+            </text>
+          </view>
+          <text class="record-amount" :class="record.type">
+            {{ formatRecordAmount(record) }}
+          </text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 数据说明 -->
+    <view class="section tip-section">
+      <text class="tip-title">数据保存在本机</text>
+      <text class="tip-text">
+        接口、页面与数据库都运行在这台手机上，不依赖线上服务。你可以在「我的」页导出
+        SQLite / JSON 备份。
+      </text>
+    </view>
   </view>
 </template>
 
-<script setup>
-import { ref, onMounted } from "vue"
+<script setup lang="ts">
+import { computed, onMounted, onUnmounted, ref } from "vue"
+import { onShow } from "@dcloudio/uni-app"
+import dayjs from "dayjs"
+import "dayjs/locale/zh-cn"
+import { getDailyRecords, getMonthlyStats } from "@/api/bookkeeping"
+import type { DailyRecord, DailyRecordGroup, MonthlyStatsResult } from "@/api/bookkeeping/types"
+import { useBookkeepingStore, useTabbarStore } from "@/store"
 
-const leftPosts = ref([])
-const rightPosts = ref([])
+dayjs.locale("zh-cn")
 
-onMounted(() => {
-  const posts = [
-    {
-      user: "小明",
-      text: "今天看到了超美的日落，心情顿时变好了！",
-      img: "https://via.placeholder.com/300x200",
-      like: 12,
-      head: "https://iknow-pic.cdn.bcebos.com/c83d70cf3bc79f3d8b7aedb5a8a1cd11738b299f",
-    },
-    { user: "旅行者", text: "刚完成了一次说走就走的旅行，收获满满！", img: "", like: 15 },
-    {
-      user: "书虫",
-      text: "读书让人静下心来，享受当下。",
-      img: "https://via.placeholder.com/300x250",
-      like: 9,
-    },
-    {
-      user: "摄影控",
-      text: "拍到了超美银河星空。",
-      img: "https://via.placeholder.com/300x450",
-      like: 21,
-    },
-  ]
-  posts.forEach((item, index) => {
-    if (index % 2 === 0) {
-      leftPosts.value.push(item)
-    } else {
-      rightPosts.value.push(item)
-    }
-  })
+const tabbarStore = useTabbarStore()
+const bookkeepingStore = useBookkeepingStore()
+
+const today = ref(dayjs())
+const monthStats = ref<MonthlyStatsResult>({ income: 0, expense: 0 })
+const dailyRecords = ref<DailyRecordGroup[]>([])
+
+const month = computed(() => today.value.format("YYYY-MM"))
+
+const todayStats = computed(() => {
+  const group = dailyRecords.value.find((item) => item.date === today.value.format("YYYY-MM-DD"))
+  return {
+    income: group?.dayIncome || 0,
+    expense: group?.dayExpense || 0,
+  }
 })
 
-const createPost = () => uni.navigateTo({ url: "/pages/post/create" })
-const viewPost = (item) => {
-  console.log("查看动态", item)
+const recentRecords = computed<DailyRecord[]>(() =>
+  dailyRecords.value.flatMap((group) => group.records).slice(0, 6),
+)
+
+const greeting = computed(() => {
+  const hour = dayjs().hour()
+  if (hour < 6) return "夜深了，早点休息"
+  if (hour < 12) return "早上好"
+  if (hour < 14) return "中午好"
+  if (hour < 18) return "下午好"
+  return "晚上好"
+})
+
+function money(value: number): string {
+  return Number(value || 0).toFixed(2)
 }
 
-const handleImageError = (item) => {
-  console.error("头像加载失败:", item.head)
-  // 设置默认头像
-  item.head = "https://via.placeholder.com/40" // 使用默认图片
+function formatDate(date: string): string {
+  return dayjs(date).format("MM-DD")
+}
+
+function formatRecordAmount(record: any): string {
+  const value = Number(record?.amount || 0)
+  const sign = value < 0 ? "-" : record?.type === "expense" ? "-" : "+"
+  return `${sign}${Math.abs(value).toFixed(2)}`
+}
+
+async function loadData(): Promise<void> {
+  const monthKey = month.value
+  try {
+    const [statsResponse, recordsResponse] = await Promise.all([
+      getMonthlyStats(monthKey),
+      getDailyRecords(monthKey),
+    ])
+    monthStats.value = statsResponse.data || { income: 0, expense: 0 }
+    dailyRecords.value = Array.isArray(recordsResponse.data) ? recordsResponse.data : []
+  } catch (error) {
+    console.error("首页数据加载失败:", error)
+  }
+}
+
+onShow(() => {
+  today.value = dayjs()
+  loadData()
+})
+
+onMounted(() => {
+  uni.$on("refreshBookkeepingData", loadData)
+})
+
+onUnmounted(() => {
+  uni.$off("refreshBookkeepingData", loadData)
+})
+
+function goBookkeeping(openAdd: boolean): void {
+  if (openAdd) {
+    bookkeepingStore.setShouldShowAdd(true)
+  }
+  tabbarStore.setActiveByPath("pages/BookKeeping/index")
+  uni.switchTab({
+    url: "/pages/BookKeeping/index",
+  })
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .home-page {
-  padding: 20rpx;
-  background: #f7f8fa;
   min-height: 100vh;
+  padding: 30rpx 30rpx 140rpx;
+  background: #f6f7f9;
 }
-.card-group {
-  margin-bottom: 30rpx;
+
+.hero {
+  padding: 36rpx;
+  color: #fff;
+  background: linear-gradient(135deg, #ffc000, #ff9f00);
+  border-radius: 28rpx;
+  box-shadow: 0 12rpx 30rpx rgb(255 192 0 / 25%);
 }
-.card {
-  background: #fff;
-  border-radius: 15rpx;
-  padding: 24rpx;
-  box-shadow: 0 8rpx 16rpx rgba(0, 0, 0, 0.05);
-  margin-bottom: 30rpx;
-}
-.card-header {
+
+.hero-top {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 20rpx;
 }
-.icon-circle {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-right: 5px;
-}
-.bg-blue {
-  background-color: #409eff;
-}
-.bg-orange {
-  background-color: #ffae4c;
-}
-.bg-green {
-  background-color: #43d2cd;
-}
-.title {
-  flex: 1;
-  font-size: 30rpx;
-  font-weight: bold;
-  color: #333;
-}
-.sub-title {
-  font-size: 22rpx;
-  color: gray;
-  font-weight: 100;
-}
-.value {
-  font-size: 48rpx;
-  font-weight: bold;
-  text-align: right;
-}
-.text-blue {
-  color: #409eff;
-}
-.text-orange {
-  color: #ffae4c;
-}
-.text-green {
-  color: #43d2cd;
-}
-.unit {
-  font-size: 20rpx;
-  color: gray;
-  font-weight: 100;
-}
-.detail-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-}
-.item {
-  display: flex;
-  justify-content: space-between;
-  font-size: 26rpx;
-  color: #666;
-}
-.amount {
-  font-size: 26rpx;
-}
-.minus {
-  color: #f56c6c;
-}
-.plus {
-  color: #67c23a;
-}
-.section-title {
+
+.hero-greeting {
   font-size: 34rpx;
   font-weight: 600;
-  margin: 30rpx 0 0rpx;
 }
-.section-description {
-  font-size: 25rpx;
-  font-weight: 300;
-  margin-bottom: 20px;
-  color: gray;
-}
-.waterfall {
-  max-height: 900rpx;
-  overflow: hidden;
-}
-.columns {
-  display: flex;
-  justify-content: space-between;
-}
-.column {
-  width: 48%;
-}
-.post-card {
-  background: #fff;
-  border-radius: 20rpx;
-  padding: 16rpx;
-  margin-bottom: 20rpx;
-  box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.05);
-  transition: all 0.25s ease;
-}
-.post-card:active {
-  transform: scale(0.97);
-}
-.post-img {
-  width: 100%;
-  border-radius: 12rpx;
-  margin-bottom: 16rpx;
-}
-.post-text {
-  font-size: 28rpx;
-  line-height: 38rpx;
-  margin-bottom: 14rpx;
-}
-.post-meta {
-  display: flex;
-  justify-content: space-between;
+
+.hero-date {
+  margin-top: 8rpx;
   font-size: 24rpx;
-  color: #888;
+  opacity: 0.85;
+}
+
+.hero-badge {
+  padding: 6rpx 16rpx;
+  font-size: 22rpx;
+  background: rgb(255 255 255 / 25%);
+  border-radius: 999rpx;
+}
+
+.hero-balance {
+  display: flex;
+  flex-direction: column;
+  margin: 40rpx 0 30rpx;
+}
+
+.hero-label {
+  font-size: 26rpx;
+  opacity: 0.85;
+}
+
+.hero-value {
+  margin-top: 6rpx;
+  font-size: 60rpx;
+  font-weight: 700;
+  letter-spacing: 1rpx;
+}
+
+.hero-row {
+  display: flex;
+  gap: 20rpx;
+}
+
+.hero-item {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 18rpx 22rpx;
+  background: rgb(255 255 255 / 18%);
+  border-radius: 16rpx;
+}
+
+.hero-item-label {
+  font-size: 22rpx;
+  opacity: 0.85;
+}
+
+.hero-item-value {
+  margin-top: 6rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.section {
+  padding: 30rpx;
+  margin-top: 28rpx;
+  background: #fff;
+  border-radius: 24rpx;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #222;
+}
+
+.section-link {
+  font-size: 26rpx;
+  color: #ff9f00;
+}
+
+.today-row {
+  display: flex;
+  align-items: center;
+}
+
+.today-item {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+}
+
+.today-divider {
+  width: 1rpx;
+  height: 60rpx;
+  background: #eee;
+}
+
+.today-label {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.today-value {
+  margin-top: 8rpx;
+  font-size: 38rpx;
+  font-weight: 600;
+}
+
+.plus {
+  color: #52c41a;
+}
+
+.minus {
+  color: #ff4d4f;
+}
+
+.record-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.record-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f5f5f5;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.record-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 50%;
+}
+
+.record-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  margin-left: 20rpx;
+}
+
+.record-title {
+  font-size: 30rpx;
+  color: #333;
+}
+
+.record-sub {
+  margin-top: 6rpx;
+  overflow: hidden;
+  font-size: 24rpx;
+  color: #999;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.record-amount {
+  margin-left: 20rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+
+  &.income {
+    color: #52c41a;
+  }
+
+  &.expense {
+    color: #333;
+  }
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40rpx 0 20rpx;
+}
+
+.empty-text {
+  margin-top: 16rpx;
+  font-size: 26rpx;
+  color: #999;
+}
+
+.empty-btn {
+  padding: 14rpx 44rpx;
+  margin-top: 24rpx;
+  font-size: 28rpx;
+  color: #fff;
+  background: #ffc000;
+  border-radius: 999rpx;
+}
+
+.tip-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.tip-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #666;
+}
+
+.tip-text {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  line-height: 1.7;
+  color: #999;
 }
 </style>
