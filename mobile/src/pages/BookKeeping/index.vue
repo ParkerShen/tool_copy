@@ -228,6 +228,11 @@
         @success="handleAmountEditSuccess"
       />
     </wd-popup>
+
+    <!-- 记一笔 -->
+    <view class="fab" @click="showPopup = true">
+      <wd-icon name="add" size="26px" color="#fff" />
+    </view>
   </view>
 </template>
 
@@ -1012,7 +1017,7 @@ const onTagSelect = () => {
   position: relative;
   z-index: 0; /* 设置页面基础层级 */
   width: 93%;
-  padding: 15px;
+  padding: 15px 15px 140px;
   background-color: #f7f8fa;
 }
 
@@ -1206,11 +1211,17 @@ const onTagSelect = () => {
 
 .fab {
   position: fixed;
-  right: 10rpx;
-  bottom: 200rpx;
-  width: 100rpx;
-  height: 100rpx;
-  box-shadow: 0 8rpx 24rpx rgb(0 0 0 / 25%);
+  right: 40rpx;
+  bottom: calc(40rpx + env(safe-area-inset-bottom));
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 104rpx;
+  height: 104rpx;
+  background: linear-gradient(135deg, #ffc000, #ff9f00);
+  border-radius: 50%;
+  box-shadow: 0 8rpx 24rpx rgb(255 159 0 / 35%);
 }
 /* 容器样式 */
 .bills-container {

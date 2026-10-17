@@ -89,11 +89,38 @@
       }
     },
     {
+      "path": "pages/Diary/detail",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "日记详情",
+        "navigationBarBackgroundColor": "#FFFFFF"
+      }
+    },
+    {
+      "path": "pages/Diary/edit",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "写日记",
+        "navigationBarBackgroundColor": "#FFFFFF"
+      }
+    },
+    {
       "path": "pages/Diary/index",
       "type": "page",
       "layout": "default",
       "style": {
         "navigationBarTitleText": "日记",
+        "navigationBarBackgroundColor": "#FFFFFF"
+      }
+    },
+    {
+      "path": "pages/Diary/recycle",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "回收站",
         "navigationBarBackgroundColor": "#FFFFFF"
       }
     },

@@ -91,7 +91,8 @@ export default (options: CommandOptions) => {
       mode === "production" &&
         visualizer({
           filename: "./node_modules/.cache/visualizer/stats.html",
-          open: true,
+          // 构建后不自动打开浏览器；需要分析包体积时手动打开该文件
+          open: false,
           gzipSize: true,
           brotliSize: true,
         }),

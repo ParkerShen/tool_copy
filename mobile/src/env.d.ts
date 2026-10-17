@@ -14,6 +14,10 @@ interface ImportMetaEnv {
   readonly VITE_SERVER_BASEURL: string
   readonly VITE_DELETE_CONSOLE: string
   readonly VITE_BASE_OSS_API: string
+  readonly VITE_DIARY_MAIL_SERVICE_ID: string
+  readonly VITE_DIARY_MAIL_TEMPLATE_ID: string
+  readonly VITE_DIARY_MAIL_PUBLIC_KEY: string
+  readonly VITE_DIARY_MAIL_TO: string
   // 更多环境变量...
 }
 

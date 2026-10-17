@@ -18,46 +18,8 @@
     </view>
 
     <view v-if="stats?.memoryOnly" class="warning">
-      当前浏览器无法使用 IndexedDB，数据只保存在内存中，刷新页面后会丢失。请更换浏览器或关闭无痕模式。
-    </view>
-
-    <view class="section">
-      <view class="section-header">
-        <text class="section-title">数据库概览</text>
-        <text class="section-link" @click="loadStats">刷新</text>
-      </view>
-      <view class="stat-grid">
-        <view class="stat-item">
-          <text class="stat-value">{{ stats?.recordCount ?? "-" }}</text>
-          <text class="stat-label">记录数</text>
-        </view>
-        <view class="stat-item">
-          <text class="stat-value">{{ stats?.categoryCount ?? "-" }}</text>
-          <text class="stat-label">分类数</text>
-        </view>
-        <view class="stat-item">
-          <text class="stat-value">{{ stats?.customCategoryCount ?? "-" }}</text>
-          <text class="stat-label">自定义分类</text>
-        </view>
-        <view class="stat-item">
-          <text class="stat-value">{{ formatSize(stats?.size) }}</text>
-          <text class="stat-label">数据库大小</text>
-        </view>
-      </view>
-      <view class="stat-line">
-        <text class="stat-line-label">累计收入</text>
-        <text class="stat-line-value plus">¥{{ money(stats?.totalIncome) }}</text>
-      </view>
-      <view class="stat-line">
-        <text class="stat-line-label">累计支出</text>
-        <text class="stat-line-value minus">¥{{ money(stats?.totalExpense) }}</text>
-      </view>
-      <view class="stat-line">
-        <text class="stat-line-label">记录日期</text>
-        <text class="stat-line-value">
-          {{ stats?.firstRecordDate || "暂无" }} ~ {{ stats?.lastRecordDate || "暂无" }}
-        </text>
-      </view>
+      当前浏览器无法使用
+      IndexedDB，数据只保存在内存中，刷新页面后会丢失。请更换浏览器或关闭无痕模式。
     </view>
 
     <view class="section">
@@ -168,11 +130,7 @@ import {
   restoreLocalSnapshot,
 } from "@/api/bookkeeping"
 import type { LocalDatabaseStats, SnapshotInfo } from "@/api/bookkeeping"
-import {
-  BACKUP_INTERVAL_DAYS,
-  daysSinceLastExport,
-  markExported,
-} from "@/utils/backupReminder"
+import { BACKUP_INTERVAL_DAYS, daysSinceLastExport, markExported } from "@/utils/backupReminder"
 
 const stats = ref<LocalDatabaseStats | null>(null)
 const snapshots = ref<SnapshotInfo[]>([])
@@ -189,17 +147,6 @@ const exportStatus = computed(() => {
 function errorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message) return error.message
   return fallback
-}
-
-function money(value?: number): string {
-  return Number(value || 0).toFixed(2)
-}
-
-function formatSize(bytes?: number): string {
-  const size = Number(bytes || 0)
-  if (size < 1024) return `${size} B`
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
-  return `${(size / 1024 / 1024).toFixed(2)} MB`
 }
 
 function formatSnapshotTime(snapshot: SnapshotInfo): string {
@@ -431,11 +378,7 @@ async function handleDeleteSnapshot(snapshot: SnapshotInfo): Promise<void> {
 }
 
 async function handleClear(): Promise<void> {
-  const first = await confirmModal(
-    "清空数据",
-    "确定要清空所有记账记录吗？默认分类会保留。",
-    "清空",
-  )
+  const first = await confirmModal("清空数据", "确定要清空所有记账记录吗？默认分类会保留。", "清空")
   if (!first) return
 
   const second = await confirmModal(
@@ -463,7 +406,7 @@ async function handleClear(): Promise<void> {
 <style scoped lang="scss">
 .my-page {
   min-height: 100vh;
-  padding: 30rpx 30rpx 150rpx;
+  padding: 30rpx 30rpx 180rpx;
   background: #f6f7f9;
 }
 

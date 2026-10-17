@@ -7,7 +7,10 @@ interface NavigateToOptions {
   url: "/pages/index/index" |
        "/pages/BookKeeping/index" |
        "/pages/DayMaster/index" |
+       "/pages/Diary/detail" |
+       "/pages/Diary/edit" |
        "/pages/Diary/index" |
+       "/pages/Diary/recycle" |
        "/pages/index/transfer" |
        "/pages/login/change-password" |
        "/pages/login/country-code" |

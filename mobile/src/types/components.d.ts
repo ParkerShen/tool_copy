@@ -14,6 +14,7 @@ declare module '@vue/runtime-core' {
     BaseChart: typeof import('./../components/BaseChart.vue')['default']
     CustomTabbar: typeof import('./../components/custom-tabbar/index.vue')['default']
     CustomTabBar: typeof import('./../components/CustomTabBar.vue')['default']
+    DiaryNavbar: typeof import('./../components/diary-navbar/diary-navbar.vue')['default']
     FlyContent: typeof import('./../components/fly-content/fly-content.vue')['default']
     FlyHeader: typeof import('./../components/fly-header/fly-header.vue')['default']
     FlyNavbar: typeof import('./../components/fly-navbar/fly-navbar.vue')['default']

@@ -6,48 +6,32 @@
 -->
 <template>
   <view class="layout-container">
-    <view class="content" :style="{ paddingBottom: isTabBarPage ? '100rpx' : '0' }">
+    <view class="content">
       <slot />
     </view>
-    <custom-tabbar
-      v-if="isTabBarPage"
-      :activeIndex="currentTabIndex"
-      @tabChange="handleTabChange"
-    />
+    <!-- 工具页不再显示底部导航，用左下角悬浮按钮返回首页 -->
+    <view v-if="showHomeButton" class="home-btn" @click="goHome">
+      <wd-icon name="home" size="20px" color="#fff" />
+    </view>
   </view>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue"
+import { computed } from "vue"
 import { getIsTabbar } from "@/utils/index"
 
-const currentTabIndex = ref(0)
 const isTabBarPage = computed(() => getIsTabbar())
 
-// tabBar页面路径映射
-const tabBarPages = [
-  "pages/index/index",
-  "pages/chart/index",
-  "", // 记账按钮
-  "pages/account/index",
-  "pages/my/index",
-]
-
-const handleTabChange = (index) => {
-  currentTabIndex.value = index
-}
-
-onMounted(() => {
-  // 根据当前页面设置activeIndex
+const showHomeButton = computed(() => {
+  if (!isTabBarPage.value) return false
   const pages = getCurrentPages()
-  const currentPage = pages[pages.length - 1]
-  const currentRoute = currentPage.route
-
-  const index = tabBarPages.findIndex((path) => path === currentRoute)
-  if (index !== -1) {
-    currentTabIndex.value = index
-  }
+  const current = pages[pages.length - 1]
+  return !!current && current.route !== "pages/index/index"
 })
+
+function goHome() {
+  uni.switchTab({ url: "/pages/index/index" })
+}
 </script>
 
 <style scoped>
@@ -58,5 +42,24 @@ onMounted(() => {
 
 .content {
   min-height: 100vh;
+}
+
+.home-btn {
+  position: fixed;
+  bottom: calc(40rpx + env(safe-area-inset-bottom));
+  left: 32rpx;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 88rpx;
+  height: 88rpx;
+  background: rgb(40 40 40 / 70%);
+  border-radius: 50%;
+  box-shadow: 0 8rpx 24rpx rgb(0 0 0 / 15%);
+}
+
+.home-btn:active {
+  transform: scale(0.94);
 }
 </style>

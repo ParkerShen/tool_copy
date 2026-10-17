@@ -99,10 +99,8 @@ const handleActionSelect = (action) => {
       })
       break
     case "diary":
-      // TODO: 跳转到添加日记页面
-      uni.showToast({
-        title: "添加日记功能开发中",
-        icon: "none",
+      uni.navigateTo({
+        url: "/pages/Diary/edit",
       })
       break
   }
