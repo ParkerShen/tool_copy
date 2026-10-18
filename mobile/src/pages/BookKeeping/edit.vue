@@ -87,7 +87,13 @@
 
       <view
         class="entry-bottom"
-        :style="noteFocused ? { paddingBottom: `${keyboardOffset + 8}px` } : undefined"
+        :style="
+          noteFocused
+            ? {
+                paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + ${keyboardOffset + 8}px)`,
+              }
+            : undefined
+        "
       >
         <view v-if="form.images.length > 0" class="image-strip">
           <view v-for="(image, index) in form.images" :key="index" class="image-item">
@@ -645,7 +651,9 @@ onShow(() => {
 .entry-page {
   display: flex;
   flex-direction: column;
+  /* iOS Safari 的 100vh 会大于可见区域，底部键盘会被裁掉；优先用动态视口高度 */
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background: #fff;
 }
@@ -779,7 +787,8 @@ onShow(() => {
 
 .entry-bottom {
   flex-shrink: 0;
-  padding-bottom: env(safe-area-inset-bottom);
+  /* 给底部键盘留出 iPhone 的 Home 指示条高度，避免最后一行按键贴边/被遮住 */
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8rpx);
   background: #fff;
 }
 
@@ -868,7 +877,8 @@ onShow(() => {
 .note-row {
   display: flex;
   align-items: center;
-  padding: 14rpx 20rpx;
+  min-height: 88rpx;
+  padding: 8rpx 16rpx 8rpx 20rpx;
   margin: 8rpx 24rpx;
   background: #f7f8fa;
   border-radius: 14rpx;
@@ -883,8 +893,9 @@ onShow(() => {
 .note-input {
   flex: 1;
   min-width: 0;
-  height: 52rpx;
-  font-size: 28rpx;
+  height: 60rpx;
+  /* 小于 16px 时 iOS 聚焦输入框会自动放大整个页面 */
+  font-size: 16px;
   color: var(--bk-text);
 }
 
@@ -896,8 +907,8 @@ onShow(() => {
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  gap: 30rpx;
-  padding-left: 12rpx;
+  gap: 16rpx;
+  padding-left: 8rpx;
 }
 
 .note-tool {
@@ -905,8 +916,13 @@ onShow(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44rpx;
-  height: 44rpx;
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 12rpx;
+}
+
+.note-tool:active {
+  background: #eceef1;
 }
 
 .tool-count {

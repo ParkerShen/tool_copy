@@ -17,6 +17,12 @@ import {
 } from "./db"
 import * as sql from "./sql"
 import type { BackupPayload } from "./sql"
+import {
+  isTagDiaryData,
+  readTagDiaryData,
+  writeTagDiaryData,
+  type TagDiaryData,
+} from "@/utils/toolData"
 import type {
   Account,
   AccountBalance,
@@ -237,10 +243,30 @@ export function exportSqliteBackup(): Promise<Uint8Array> {
   return exportSqliteFile()
 }
 
-/** 导出 JSON 备份 */
-export async function exportJsonBackup(): Promise<BackupPayload> {
+export type UnifiedBackupPayload = BackupPayload & {
+  tools?: { tagDiary?: TagDiaryData }
+}
+
+/** 导出 JSON 备份：记账数据 + 标签日记（不含 API Key） */
+export async function exportJsonBackup(): Promise<UnifiedBackupPayload> {
   const db = await getDb()
-  return sql.exportJson(db)
+  const payload: UnifiedBackupPayload = sql.exportJson(db)
+  const tagDiary = readTagDiaryData()
+  if (tagDiary) payload.tools = { tagDiary }
+  return payload
+}
+
+/** 从统一 JSON 备份中取出标签日记；没有则返回 undefined */
+function extractTagDiary(payload: unknown): TagDiaryData | undefined {
+  if (!payload || typeof payload !== "object") return undefined
+  const tools = (payload as { tools?: unknown }).tools
+  if (!tools || typeof tools !== "object") return undefined
+  const tagDiary = (tools as { tagDiary?: unknown }).tagDiary
+  if (tagDiary === undefined || tagDiary === null) return undefined
+  if (!isTagDiaryData(tagDiary)) {
+    throw new Error("备份中的标签日记格式不正确")
+  }
+  return tagDiary
 }
 
 /** 从 .sqlite 文件恢复 */
@@ -252,15 +278,24 @@ export async function importSqliteBackup(bytes: Uint8Array): Promise<void> {
   }
 }
 
-/** 从 JSON 备份恢复 */
+/** 从 JSON 备份恢复：先校验标签日记，再整体替换记账数据 */
 export async function importJsonBackup(payload: unknown): Promise<void> {
   try {
+    const tagDiary = extractTagDiary(payload)
     try {
       await createSnapshot("safety")
     } catch (error) {
       console.warn("[local] 导入前创建快照失败:", error)
     }
     await runWrite((db) => sql.importJson(db, payload))
+    if (tagDiary) {
+      try {
+        writeTagDiaryData(tagDiary)
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : "未知错误"
+        throw new Error(`记账数据已恢复，但标签日记恢复失败：${reason}`)
+      }
+    }
   } catch (error) {
     throw toError(error)
   }

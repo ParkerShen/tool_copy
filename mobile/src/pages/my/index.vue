@@ -31,7 +31,7 @@
           </view>
           <view class="action-info">
             <text class="action-title">导出 SQLite 数据库</text>
-            <text class="action-sub">完整备份，可原样恢复</text>
+            <text class="action-sub">全部工具数据，可原样恢复</text>
           </view>
           <wd-icon name="arrow-right" size="18px" color="#ccc" />
         </view>
@@ -41,7 +41,7 @@
           </view>
           <view class="action-info">
             <text class="action-title">导出 JSON 备份</text>
-            <text class="action-sub">可读文本，方便查看</text>
+            <text class="action-sub">全部工具数据，可读文本</text>
           </view>
           <wd-icon name="arrow-right" size="18px" color="#ccc" />
         </view>
@@ -62,6 +62,9 @@
           建议每 {{ BACKUP_INTERVAL_DAYS }} 天导出一次
         </text>
       </view>
+      <text class="backup-scope">
+        一次导出即包含记账数据和标签日记；DeepSeek API Key 不会写入备份。
+      </text>
     </view>
 
     <view class="section">
@@ -86,7 +89,7 @@
         还没有快照。记一笔后每天首次打开会自动生成，也可以点「立即快照」。
       </text>
       <text class="snapshot-tip">
-        快照保存在同一台手机、同一个浏览器里，最多保留 7 份每日快照和最近 3
+        快照会同时保存记账数据和标签日记，最多保留 7 份每日快照和最近 3
         份操作前快照。它能防止误删、误导入，但无法防止清理 Safari
         网站数据或删除主屏幕图标，所以仍建议定期导出 .sqlite 到「文件」或 iCloud。
       </text>
@@ -95,7 +98,9 @@
     <view class="section">
       <text class="section-title">危险操作</text>
       <view class="danger-btn" @click="handleClear">清空所有记账数据</view>
-      <text class="danger-tip">清空后只保留默认分类和默认账户，建议先导出备份。</text>
+      <text class="danger-tip">
+        清空后只保留默认分类和默认账户；标签日记不会被清空。建议先导出备份。
+      </text>
     </view>
 
     <view class="section about">
@@ -275,7 +280,7 @@ async function importFile(file: File): Promise<void> {
   const name = (file.name || "").toLowerCase()
   const confirmed = await confirmModal(
     "导入备份",
-    "导入会整体替换当前数据库。当前数据会被清空，建议先导出备份。确定继续吗？",
+    "导入会整体替换当前记账数据；如果备份中包含标签日记，也会一并覆盖。建议先导出备份，确定继续吗？",
     "导入",
   )
   if (!confirmed) return
@@ -511,6 +516,17 @@ async function handleClear(): Promise<void> {
   margin-top: 6rpx;
   font-size: 22rpx;
   color: #ff4d4f;
+}
+
+.backup-scope {
+  display: block;
+  padding: 16rpx 18rpx;
+  margin-top: 16rpx;
+  font-size: 22rpx;
+  line-height: 1.65;
+  color: #ad6800;
+  background: #fffbe6;
+  border-radius: 12rpx;
 }
 
 .snapshot-list {

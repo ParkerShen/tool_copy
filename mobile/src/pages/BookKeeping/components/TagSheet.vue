@@ -190,7 +190,7 @@ function addTag(): void {
 .tag-input {
   flex: 1;
   min-width: 0;
-  font-size: 28rpx;
+  font-size: 16px;
   color: var(--bk-text);
 }
 

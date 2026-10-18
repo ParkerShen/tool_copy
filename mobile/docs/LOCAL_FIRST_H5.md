@@ -16,7 +16,7 @@ iPhone Safari / 主屏幕 PWA
 - 数据库使用 SQLite（通过 WebAssembly 运行），文件保存在浏览器的 IndexedDB 中。
 - `serveradmin` 不参与手机端运行。iOS 不允许普通 App 在后台长期运行 Node/MySQL，
   因此把接口逻辑移植进页面、把 MySQL 换成 SQLite 是能真正“只带手机”的方案。
-- 除了记账外，首页为本地总览；倒数日、日记仍是占位页。
+- 除了记账外，首页为本地总览，并提供「标签日记」入口（静态页随 H5 一起打包）；倒数日仍是占位页。
 
 ### 记账录入与列表快捷编辑
 
@@ -30,6 +30,18 @@ iPhone Safari / 主屏幕 PWA
   长按记录仍是「编辑 / 删除」菜单，点行的其他位置进入完整编辑页；
 - 默认账户可切换：在「账户管理」点某个账户 →「设为默认账户」，
   也可以在新建页直接换账户（会自动记住）；系统账户「现金」不能归档或删除。
+
+### 标签日记入口
+
+首页「工具」区最后一张卡片是「标签日记」，点击后打开随 H5 打包的
+`/static/tag-diary/index.html?from=mobile`：
+
+- 与主应用同源，数据保存在同一个 localStorage（key：`tag-diary:data:v1`）；
+- 页面按手机 App 重做：白色主题，底部「记录 / 时间线 / 日志 / 日历」四个标签页，
+  按钮和日历格不小于 44px，输入框 16px 字号（避免 iPhone 聚焦时自动放大）；
+- 顶部右侧提供「← 返回应用」按钮；
+- 标签日记源码在 `daylife/tag-diary/`，构建时由 `scripts/copy-tag-diary.mjs`
+  自动复制到 `src/static/tag-diary/`；也可以单独执行 `pnpm sync:tag-diary`。
 
 ## 一、编译
 
@@ -45,6 +57,7 @@ pnpm build:h5:standalone
 - `manifest.webmanifest`（PWA 清单）
 - `sw.js`（Service Worker，HTTPS 下可离线）
 - `static/sql/sql-wasm.js`、`static/sql/sql-wasm.wasm`（SQLite WASM）
+- `static/tag-diary/`（标签日记静态页）
 
 > `pnpm prepare:sqljs` 会把 sql.js 的浏览器运行时复制到 `src/static/sql/`，
 > `build:h5:standalone` 会自动执行，一般不需要手动运行。
@@ -54,10 +67,11 @@ pnpm build:h5:standalone
 `build:h5:standalone` 现在会依次执行：
 
 1. 复制 sql.js 运行时；
-2. 运行 SQL 层单元测试（失败则停止，不产出半成品）；
-3. 构建 H5；
-4. 生成 PWA manifest 和 Service Worker；
-5. **上传前自检**。
+2. 复制标签日记静态页；
+3. 运行 SQL 层单元测试（失败则停止，不产出半成品）；
+4. 构建 H5；
+5. 生成 PWA manifest 和 Service Worker；
+6. **上传前自检**。
 
 自检会检查：
 
@@ -185,12 +199,18 @@ mobile/dist/bookkeeping-import-from-xin.json
 
 入口：「我的」→ 数据备份。
 
-- **导出 SQLite 数据库**：生成 `.sqlite` 文件，是最完整的备份，可原样恢复。
-  iPhone 上会优先调起系统分享（存到「文件」或发给自己）；不支持时自动下载。
-- **导出 JSON 备份**：可读文本，适合查看或手工处理；记录里包含备注、图片（data URL）和标签。
-- **导入备份**：支持 `.sqlite`、`.db`、`.json`。导入会**整体替换**当前数据库，
-  建议先导出备份（导入前会自动生成快照）。
-- **清空所有记账数据**：二次确认后清空记录，保留默认分类（清空前自动生成快照）。
+**一次导出就包含所有工具的数据**，不需要每个工具分开导出：
+
+- **导出 SQLite 数据库**：生成 `.sqlite` 文件，包含记账数据库和标签日记
+  （标签日记存放在 `app_tool_data` 表），可原样恢复。iPhone 上会优先调起系统分享
+  （存到「文件」或发给自己）；不支持时自动下载。
+- **导出 JSON 备份**：可读文本，包含记账数据和 `tools.tagDiary`；
+  记录里还包含备注、图片（data URL）和标签。
+- 两种格式都**不包含 DeepSeek API Key**。
+- **导入备份**：支持 `.sqlite`、`.db`、`.json`。导入会**整体替换**当前记账数据库；
+  如果备份中包含标签日记，也会一并恢复。建议先导出备份（导入前会自动生成快照）。
+- **清空所有记账数据**：二次确认后清空记录，保留默认分类（清空前自动生成快照）；
+  标签日记不受影响。
 
 ### 本机自动快照
 
@@ -198,7 +218,8 @@ mobile/dist/bookkeeping-import-from-xin.json
 
 - 每天第一次打开且已有记录时，保存一份「每日自动快照」，最多保留最近 7 天；
 - 导入、恢复、清空等危险操作前，保存一份「操作前自动快照」，最多保留 3 份；
-- 也可以点「立即快照」手动保存，最多保留 5 份。
+- 也可以点「立即快照」手动保存，最多保留 5 份；
+- 快照同样会带上当时的标签日记，恢复快照时一起恢复。
 
 快照能防止误删、误导入，但它和主数据库在**同一个浏览器**里，
 无法防止清理 Safari 网站数据、删除主屏幕图标或 iOS 回收存储。

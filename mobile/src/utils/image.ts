@@ -78,7 +78,7 @@ export async function compressImage(file: File): Promise<string> {
   return output
 }
 
-function chooseFiles(count: number): Promise<File[]> {
+function chooseFilesByUni(count: number): Promise<File[]> {
   return new Promise((resolve, reject) => {
     uni.chooseImage({
       count,
@@ -126,6 +126,119 @@ function chooseFiles(count: number): Promise<File[]> {
       },
     })
   })
+}
+
+/*
+ * H5 不经过 uni.chooseImage，自己维护一个常驻的 file input。
+ *
+ * uni 的 H5 实现在每次选择时新建 input，而且用户点「取消」时不会触发
+ * change / fail，调用方的 Promise 会一直挂着，图片按钮的防重复状态也就
+ * 永远解不开——表现就是第一次能打开相册，之后怎么点都没反应。
+ * iOS 还要求 input 被复用并在每次点击前清空 value，否则第二次选择同
+ * 一张照片不会触发 change。
+ */
+let nativeImageInput: HTMLInputElement | null = null
+let cancelActivePicker: (() => void) | null = null
+
+function ensureNativeImageInput(): HTMLInputElement {
+  if (nativeImageInput) return nativeImageInput
+
+  const input = document.createElement("input")
+  input.type = "file"
+  input.accept = "image/*"
+  input.tabIndex = -1
+  input.setAttribute("aria-hidden", "true")
+  // 不能用 display:none / visibility:hidden，部分 iOS 版本会因此忽略 click()
+  input.style.cssText =
+    "position:fixed;left:-2000px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;"
+  document.body.appendChild(input)
+  nativeImageInput = input
+  return input
+}
+
+function chooseFilesFromInput(count: number): Promise<File[]> {
+  cancelActivePicker?.()
+
+  return new Promise((resolve) => {
+    const input = ensureNativeImageInput()
+    let settled = false
+    let focusTimer = 0
+    let timeoutTimer = 0
+
+    const cleanup = (): void => {
+      input.removeEventListener("change", onChange)
+      input.removeEventListener("cancel", onCancel as EventListener)
+      window.removeEventListener("focus", onWindowFocus)
+      window.removeEventListener("pageshow", onWindowFocus)
+      document.removeEventListener("visibilitychange", onVisibilityChange)
+      window.clearTimeout(focusTimer)
+      window.clearTimeout(timeoutTimer)
+      if (cancelActivePicker === cancel) cancelActivePicker = null
+    }
+
+    const finish = (files: File[]): void => {
+      if (settled) return
+      settled = true
+      cleanup()
+      // 必须清空，否则再次选择同一张图片不会触发 change
+      input.value = ""
+      resolve(files.slice(0, count))
+    }
+
+    const cancel = (): void => finish([])
+
+    function onChange(): void {
+      finish(input.files ? Array.from(input.files) : [])
+    }
+
+    function onCancel(): void {
+      finish([])
+    }
+
+    function onWindowFocus(): void {
+      // 从相册返回时先等 change 事件；没有 change 就当作取消，
+      // 让调用方可以继续响应下一次点击。
+      window.clearTimeout(focusTimer)
+      focusTimer = window.setTimeout(() => {
+        if (!settled) finish(input.files ? Array.from(input.files) : [])
+      }, 500)
+    }
+
+    function onVisibilityChange(): void {
+      if (document.visibilityState === "visible") onWindowFocus()
+    }
+
+    input.multiple = count > 1
+    input.value = ""
+    input.addEventListener("change", onChange)
+    input.addEventListener("cancel", onCancel as EventListener)
+    window.addEventListener("focus", onWindowFocus)
+    window.addEventListener("pageshow", onWindowFocus)
+    document.addEventListener("visibilitychange", onVisibilityChange)
+
+    // 兜底：长时间不返回也不要卡住按钮
+    timeoutTimer = window.setTimeout(() => finish([]), 180000)
+
+    cancelActivePicker = cancel
+    try {
+      input.click()
+    } catch {
+      finish([])
+    }
+  })
+}
+
+function canUseNativeFilePicker(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    typeof document !== "undefined" &&
+    typeof HTMLInputElement !== "undefined" &&
+    !(window as unknown as { plus?: unknown }).plus
+  )
+}
+
+function chooseFiles(count: number): Promise<File[]> {
+  return canUseNativeFilePicker() ? chooseFilesFromInput(count) : chooseFilesByUni(count)
 }
 
 /** 选择并压缩最多 count 张图片 */

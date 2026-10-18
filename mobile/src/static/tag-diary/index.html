@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="标签日记">
+  <meta name="description" content="本地优先的标签日记：点选标签记录一天，让 DeepSeek 整理成日志。">
+  <title>标签日记</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- ═══════════ App bar ═══════════ -->
+    <header class="app-bar">
+      <div class="app-bar-row">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="22" height="22" fill="none">
+              <path d="M16 2.5 28 9.3v13.4L16 29.5 4 22.7V9.3Z" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M16 9v14M10 12.5v7M22 12.5v7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <h1>标签日记</h1>
+            <div class="save-indicator">
+              <i class="status-dot" id="storageDot"></i>
+              <span id="storageState">本地存储 · 自动保存</span>
+            </div>
+          </div>
+        </div>
+        <div class="app-bar-actions">
+          <button class="icon-btn header-btn hidden" id="backToAppBtn" type="button" aria-label="返回应用" title="返回应用">
+            <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2"><path d="m14 6-6 6 6 6"/></svg>
+          </button>
+          <button class="icon-btn header-btn" id="archiveBtn" type="button" aria-label="日志归档" title="日志归档">
+            <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M4 7h16M6 7v12h12V7M9 7V4h6v3M9 11h6M9 15h4"/>
+            </svg>
+            <span class="count-pill" id="archiveCount">0</span>
+          </button>
+          <button class="icon-btn header-btn" id="settingsBtn" type="button" aria-label="设置" title="设置">
+            <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7">
+              <circle cx="12" cy="12" r="3.2"/>
+              <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.9 19.3a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.7 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.7 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.7a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15.1 4.7a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.12.45.44.83.86 1.06.26.14.56.22.87.22H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="date-nav">
+        <button class="day-nav" id="prevDay" type="button" aria-label="前一天">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <div class="date-title" id="dateTitle">
+          <input type="date" id="dateInput" aria-label="选择日期">
+          <span class="date-main" id="dateTitleText">2026.10.18</span>
+          <span class="date-week" id="dateWeekday">周日</span>
+        </div>
+        <button class="day-nav" id="nextDay" type="button" aria-label="后一天">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        <button class="today-chip" id="todayChip" type="button">今天</button>
+      </div>
+    </header>
+
+    <!-- ═══════════ Main ═══════════ -->
+    <main class="main">
+      <div class="content-grid">
+        <div class="column-main">
+          <!-- Record -->
+          <section class="card composer tab-panel tab-active" id="composer" data-panel="record">
+            <div class="card-head">
+              <div>
+                <span class="section-kicker">记录活动</span>
+                <h2>今天做了什么？</h2>
+              </div>
+              <button class="pill-btn" id="manageTagsBtn" type="button">
+                <span class="hash">#</span> 管理标签
+              </button>
+            </div>
+            <p class="hint" id="composerHint">先点选标签，再补充时间和备注</p>
+
+            <div class="tag-picker" id="tagPicker"></div>
+            <div class="composer-subline">
+              <button class="add-tag-inline" id="addTagInline" type="button">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+                新建标签
+              </button>
+              <span class="selection-count" id="selectionCount"></span>
+            </div>
+
+            <div class="composer-fields">
+              <div class="field field-time">
+                <span class="field-label">时间</span>
+                <div class="time-row">
+                  <input type="time" id="activityTime" aria-label="活动时间">
+                  <button class="mini-btn" id="nowBtn" type="button">现在</button>
+                </div>
+              </div>
+              <label class="field field-note">
+                <span class="field-label">备注 <em id="noteCount">0 / 300</em></span>
+                <textarea id="activityNote" rows="2" maxlength="300" placeholder="做了什么？想到了什么？"></textarea>
+              </label>
+            </div>
+
+            <div class="composer-actions">
+              <span class="edit-hint" id="editModeHint"></span>
+              <button class="btn btn-ghost hidden" id="cancelEditBtn" type="button">取消编辑</button>
+              <button class="btn btn-primary" id="saveActivityBtn" type="button">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+                <span id="saveActivityLabel">保存活动</span>
+              </button>
+            </div>
+          </section>
+
+          <!-- Timeline -->
+          <section class="card timeline-card tab-panel" data-panel="timeline">
+            <div class="card-head">
+              <div>
+                <span class="section-kicker">时间线</span>
+                <h2>当天记录</h2>
+              </div>
+              <span class="hint" id="timelineCount"></span>
+            </div>
+            <div class="timeline" id="timeline"></div>
+          </section>
+        </div>
+
+        <div class="column-ai">
+          <!-- AI diary -->
+          <section class="card ai-card tab-panel" id="aiCard" data-panel="diary">
+            <div class="card-head">
+              <div>
+                <span class="section-kicker">AI 日志</span>
+                <h2 id="diaryTitle">今日日志</h2>
+              </div>
+              <span class="badge is-empty" id="aiStatus">未生成</span>
+            </div>
+
+            <div class="ai-meta">
+              <span class="mono" id="aiModelLabel">deepseek-chat</span>
+              <span class="ai-updated" id="aiUpdated"></span>
+            </div>
+
+            <div class="ai-actions">
+              <button class="btn btn-ai" id="generateBtn" type="button">
+                <span class="spark" aria-hidden="true">✦</span>
+                <span id="generateLabel">AI 生成今日日志</span>
+              </button>
+              <button class="btn btn-ghost btn-sm hidden" id="copyDiaryBtn" type="button" title="复制日志到剪贴板">复制</button>
+            </div>
+
+            <div class="diary-mode-bar hidden" id="diaryModeBar">
+              <div class="diary-tabs" role="tablist" aria-label="日志视图">
+                <button type="button" data-mode="preview" class="active" role="tab">预览</button>
+                <button type="button" data-mode="edit" role="tab">编辑</button>
+              </div>
+              <span class="diary-wordcount mono" id="diaryWordCount"></span>
+            </div>
+
+            <div class="diary-empty" id="diaryEmpty">
+              <div class="ai-orb" aria-hidden="true">✦</div>
+              <p>记录几条活动后，让 DeepSeek 把这一天写成一篇日志。</p>
+              <ol class="flow-steps">
+                <li><b>01</b> 点选标签</li>
+                <li><b>02</b> 补时间和备注</li>
+                <li><b>03</b> 保存活动</li>
+                <li><b>04</b> 生成并确认</li>
+              </ol>
+              <button type="button" class="manual-diary-btn" id="manualDiaryBtn">或者，手动写一篇 →</button>
+            </div>
+
+            <div class="dirty-banner hidden" id="diaryDirtyBanner">
+              <span>有未保存的修改</span>
+              <div class="dirty-actions">
+                <button class="mini-btn" id="bannerEditBtn" type="button">继续编辑</button>
+                <button class="mini-btn accent" id="bannerSaveBtn" type="button">保存</button>
+              </div>
+            </div>
+
+            <div class="diary-preview hidden" id="diaryPreview"></div>
+
+            <div class="diary-editor-wrap hidden" id="diaryEditorWrap">
+              <textarea id="diaryEditor" rows="18" placeholder="日志内容…" spellcheck="false"></textarea>
+              <div class="editor-actions">
+                <span class="dirty-hint" id="diaryDirtyHint"></span>
+                <div class="editor-buttons">
+                  <button class="btn btn-danger-ghost btn-sm" id="deleteDiaryBtn" type="button" title="删除这一天的日志">删除</button>
+                  <button class="btn btn-ghost btn-sm" id="discardDiaryBtn" type="button">还原</button>
+                  <button class="btn btn-primary btn-sm" id="saveDiaryBtn" type="button">保存日志</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="ai-progress hidden" id="aiProgress">
+              <div class="progress-bar"><i></i></div>
+              <span id="aiProgressText">DeepSeek 正在整理这一天的记录…</span>
+            </div>
+
+            <div class="stale-note hidden" id="diaryStale">
+              <span>活动记录有变动，当前日志可能没有覆盖最新内容。</span>
+              <button class="link-btn accent" id="staleRegenerateBtn" type="button">重新生成</button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <!-- ═══════════ Calendar / stats / backup ═══════════ -->
+    <aside class="sidebar tab-panel" data-panel="calendar">
+      <section class="card calendar-panel">
+        <div class="panel-head">
+          <button class="cal-nav" id="calPrev" type="button" aria-label="上个月">‹</button>
+          <button class="cal-title" id="calTitle" type="button">2026 年 10 月</button>
+          <button class="cal-nav" id="calNext" type="button" aria-label="下个月">›</button>
+        </div>
+        <div class="weekdays" aria-hidden="true">
+          <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+        </div>
+        <div class="calendar-grid" id="calendarGrid" role="grid" aria-label="月历"></div>
+        <button class="btn btn-ghost cal-today-btn" id="todayBtn" type="button">回到今天</button>
+      </section>
+
+      <section class="card day-stats">
+        <div class="panel-title">
+          <span>本日概览</span>
+          <span class="mono dim" id="dayCounter">0 entries</span>
+        </div>
+        <div class="stat-row"><span>活动记录</span><strong id="statActivities">0</strong></div>
+        <div class="stat-row"><span>使用标签</span><strong id="statTags">0</strong></div>
+        <div class="stat-row"><span>记录跨度</span><strong id="statRange">—</strong></div>
+        <div class="tag-stats" id="dayTagStats"></div>
+      </section>
+
+      <section class="card backup-card">
+        <div class="panel-title">
+          <span>数据备份</span>
+          <span class="mono dim">本机</span>
+        </div>
+        <div class="foot-actions">
+          <button class="btn btn-ghost" id="exportBtnSide" type="button">导出备份</button>
+          <button class="btn btn-ghost" id="importBtnSide" type="button">导入备份</button>
+        </div>
+        <p class="backup-note">清理浏览器数据或更换网址前，请先导出一份备份。</p>
+      </section>
+    </aside>
+
+    <!-- ═══════════ Bottom navigation ═══════════ -->
+    <nav class="bottom-nav" role="tablist" aria-label="主导航">
+      <button class="nav-item active" type="button" data-tab="record" role="tab" aria-selected="true">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 5v14M5 12h14"/></svg>
+        <span>记录</span>
+      </button>
+      <button class="nav-item" type="button" data-tab="timeline" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M8 6h12M8 12h12M8 18h8"/><circle cx="4" cy="6" r="1.3" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.3" fill="currentColor" stroke="none"/></svg>
+        <span>时间线</span>
+      </button>
+      <button class="nav-item" type="button" data-tab="diary" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v20H7.5A2.5 2.5 0 0 1 5 19.5Z"/><path d="M5 19.5A2.5 2.5 0 0 1 7.5 17H19"/></svg>
+        <span>日志</span>
+      </button>
+      <button class="nav-item" type="button" data-tab="calendar" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/><circle cx="8" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="14" r="1.1" fill="currentColor" stroke="none"/></svg>
+        <span>日历</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ═══════════ Settings sheet ═══════════ -->
+  <div class="modal-mask hidden" id="settingsModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <header class="modal-head">
+        <div>
+          <span class="section-kicker">设置</span>
+          <h2 id="settingsTitle">DeepSeek 与备份</h2>
+        </div>
+        <button class="icon-btn modal-close" data-close="settings" aria-label="关闭">×</button>
+      </header>
+      <div class="modal-body">
+        <div class="settings-note">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          <p>API Key 只保存在本机浏览器，不会写进代码或备份文件。点击“生成日志”时，当天的活动与备注会发送给 DeepSeek。</p>
+        </div>
+
+        <label class="field">
+          <span class="field-label">DeepSeek API Key</span>
+          <div class="key-row">
+            <input type="password" id="apiKeyInput" placeholder="sk-…" autocomplete="off" spellcheck="false">
+            <button class="mini-btn" id="toggleKeyBtn" type="button">显示</button>
+          </div>
+          <span class="field-help">还没有 Key？到 <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener noreferrer">DeepSeek 开放平台</a> 创建，并确认账户有余额。</span>
+        </label>
+
+        <div class="settings-grid">
+          <label class="field">
+            <span class="field-label">模型</span>
+            <input type="text" id="modelInput" list="modelOptions" placeholder="deepseek-chat" spellcheck="false">
+          </label>
+          <label class="field">
+            <span class="field-label">API 地址</span>
+            <input type="text" id="baseUrlInput" placeholder="https://api.deepseek.com" spellcheck="false">
+          </label>
+        </div>
+        <datalist id="modelOptions">
+          <option value="deepseek-chat"></option>
+          <option value="deepseek-reasoner"></option>
+        </datalist>
+
+        <div class="settings-actions">
+          <button class="btn btn-ghost" id="testApiBtn" type="button">测试连接</button>
+          <button class="link-btn danger" id="clearKeyBtn" type="button">清除 Key</button>
+          <span class="test-status" id="testApiStatus"></span>
+          <button class="btn btn-primary" id="saveSettingsBtn" type="button">保存设置</button>
+        </div>
+
+        <hr class="rule">
+
+        <div class="settings-section-head">
+          <h3>数据与备份</h3>
+          <span class="mono dim" id="storageInfo"></span>
+        </div>
+        <div class="settings-actions wrap">
+          <button class="btn btn-ghost" id="exportBtn" type="button">导出 JSON 备份</button>
+          <button class="btn btn-ghost" id="importBtn" type="button">导入备份</button>
+          <button class="btn btn-danger-ghost" id="clearDataBtn" type="button">清空全部数据</button>
+        </div>
+        <p class="modal-desc">
+          所有标签、活动和日志都保存在这个浏览器里。清理浏览器数据、换域名或使用无痕模式都可能导致数据丢失，建议定期导出备份。
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ Tags sheet ═══════════ -->
+  <div class="modal-mask hidden" id="tagsModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tagsTitle">
+      <header class="modal-head">
+        <div>
+          <span class="section-kicker">标签库</span>
+          <h2 id="tagsTitle">管理标签</h2>
+        </div>
+        <button class="icon-btn modal-close" data-close="tags" aria-label="关闭">×</button>
+      </header>
+      <div class="modal-body">
+        <p class="modal-desc">标签是日记的主线。删除的标签会归档，历史活动里的标签名仍然保留。</p>
+        <div class="tag-manage-list" id="tagManageList"></div>
+
+        <div class="tag-create">
+          <h3>新建标签</h3>
+          <div class="tag-create-row">
+            <input class="input input-emoji" id="newTagEmoji" type="text" value="✦" maxlength="4" aria-label="标签图标">
+            <input class="input" id="newTagName" type="text" placeholder="标签名称，如：写作" maxlength="12">
+            <input class="color-input" id="newTagColor" type="color" value="#6b5cff" aria-label="标签颜色">
+            <button class="btn btn-primary" id="addTagBtn" type="button">添加标签</button>
+          </div>
+          <div class="palette" id="newTagPalette"></div>
+        </div>
+
+        <div class="archived hidden" id="archivedSection">
+          <h3>已归档标签</h3>
+          <div id="archivedList" class="archived-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ Diary archive sheet ═══════════ -->
+  <div class="modal-mask hidden" id="archiveModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="archiveTitle">
+      <header class="modal-head">
+        <div>
+          <span class="section-kicker">日志归档</span>
+          <h2 id="archiveTitle">已保存的日志</h2>
+        </div>
+        <button class="icon-btn modal-close" data-close="archive" aria-label="关闭">×</button>
+      </header>
+      <div class="modal-body">
+        <p class="modal-desc">按日期排列。点击任意一条跳转到当天，继续查看或编辑。</p>
+        <div class="archive-list" id="archiveList"></div>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="importFile" accept="application/json,.json" hidden>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

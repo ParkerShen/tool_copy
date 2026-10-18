@@ -93,6 +93,23 @@
           <text class="tool-value tool-value-sm">备份与设置</text>
           <text class="tool-sub">导出 SQLite / JSON</text>
         </view>
+
+        <view class="tool-card tool-card-featured" @click="goTagDiary">
+          <view class="tool-icon bg-purple">
+            <wd-icon name="edit-outline" size="22px" color="#7c5cfc" />
+          </view>
+          <view class="tool-feature-main">
+            <view class="tool-feature-title">
+              <text class="tool-name-featured">标签日记</text>
+              <text class="tool-feature-badge">AI</text>
+            </view>
+            <text class="tool-feature-desc">点选标签记录一天，DeepSeek 整理成日志</text>
+          </view>
+          <view class="tool-feature-side">
+            <text class="tool-feature-count">{{ tagDiaryCount }} 篇</text>
+            <wd-icon name="arrow-right" size="16px" color="#bbb" />
+          </view>
+        </view>
       </view>
     </view>
 
@@ -116,6 +133,7 @@ import { getMonthlyStats, isLocalDataMode } from "@/api/bookkeeping"
 import type { MonthlyStatsResult } from "@/api/bookkeeping/types"
 import { getDiaryStats, type DiaryStats } from "@/api/diary"
 import { useBookkeepingStore, useTabbarStore } from "@/store"
+import { countSavedTagDiaries, readTagDiaryData } from "@/utils/toolData"
 
 dayjs.locale("zh-cn")
 
@@ -131,6 +149,7 @@ const diaryStats = ref<Omit<DiaryStats, "heatmap" | "moodCounts" | "tagCounts">>
   monthCount: 0,
   deleted: 0,
 })
+const tagDiaryCount = ref(0)
 
 const month = computed(() => today.value.format("YYYY-MM"))
 
@@ -145,6 +164,11 @@ const greeting = computed(() => {
 
 function money(value: number): string {
   return Number(value || 0).toFixed(2)
+}
+
+/** 读取标签日记在 localStorage 中已保存的篇数 */
+function loadTagDiaryCount(): void {
+  tagDiaryCount.value = countSavedTagDiaries(readTagDiaryData())
 }
 
 async function loadData(): Promise<void> {
@@ -164,15 +188,22 @@ async function loadData(): Promise<void> {
 
 onShow(() => {
   today.value = dayjs()
+  loadTagDiaryCount()
   loadData()
 })
 
 onMounted(() => {
   uni.$on("refreshBookkeepingData", loadData)
+  // #ifdef H5
+  window.addEventListener("pageshow", loadTagDiaryCount)
+  // #endif
 })
 
 onUnmounted(() => {
   uni.$off("refreshBookkeepingData", loadData)
+  // #ifdef H5
+  window.removeEventListener("pageshow", loadTagDiaryCount)
+  // #endif
 })
 
 function goBookkeeping(openAdd: boolean): void {
@@ -207,6 +238,16 @@ function goDayMaster(): void {
 function goMy(): void {
   tabbarStore.setActiveByPath("pages/my/index")
   uni.switchTab({ url: "/pages/my/index" })
+}
+
+/** 标签日记是随 H5 一起打包的独立静态页 */
+function goTagDiary(): void {
+  // #ifdef H5
+  window.location.href = "/static/tag-diary/index.html?from=mobile"
+  // #endif
+  // #ifndef H5
+  uni.showToast({ title: "标签日记请在 H5 / 手机浏览器中使用", icon: "none" })
+  // #endif
 }
 </script>
 
@@ -410,6 +451,68 @@ function goMy(): void {
 
 .bg-green {
   background: #effaeb;
+}
+
+.bg-purple {
+  background: #f3efff;
+}
+
+.tool-card-featured {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  gap: 18rpx;
+}
+
+.tool-feature-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tool-feature-title {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.tool-name-featured {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.tool-feature-badge {
+  padding: 2rpx 10rpx;
+  font-size: 18rpx;
+  font-weight: 700;
+  color: #7c5cfc;
+  letter-spacing: 0.5rpx;
+  background: #f0ebff;
+  border-radius: 999rpx;
+}
+
+.tool-feature-desc {
+  margin-top: 6rpx;
+  overflow: hidden;
+  font-size: 22rpx;
+  color: #999;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tool-feature-side {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.tool-feature-count {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #222;
 }
 
 .plus {

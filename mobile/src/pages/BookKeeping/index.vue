@@ -1074,10 +1074,10 @@ onPullDownRefresh(async () => {
 .record-sub-input {
   box-sizing: border-box;
   width: 100%;
-  height: 46rpx;
+  height: 56rpx;
   padding: 0 10rpx;
   margin-top: 4rpx;
-  font-size: 24rpx;
+  font-size: 16px;
   color: var(--bk-text);
   background: #f2f3f5;
   border-radius: 8rpx;

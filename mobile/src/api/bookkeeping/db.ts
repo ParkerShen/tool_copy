@@ -8,6 +8,12 @@
  */
 import type { Database, SqlJsStatic } from "sql.js"
 import { idbDelete, idbGet, idbKeys, idbSet, isIndexedDbAvailable } from "@/utils/idb"
+import {
+  TAG_DIARY_TOOL_KEY,
+  parseTagDiaryRaw,
+  readTagDiaryRaw,
+  writeTagDiaryRaw,
+} from "@/utils/toolData"
 import { clearAll, initSchema, seedDefaults } from "./sql"
 
 const DB_KEY = "db"
@@ -16,6 +22,48 @@ const SNAPSHOT_PREFIX = "snapshot."
 const DAILY_SNAPSHOT_LIMIT = 7
 const SAFETY_SNAPSHOT_LIMIT = 3
 const MANUAL_SNAPSHOT_LIMIT = 5
+const TOOL_DATA_TABLE = "app_tool_data"
+
+/**
+ * 导出/快照前把标签日记写进 SQLite 的 app_tool_data 表，
+ * 这样 .sqlite 文件也能一次备份所有工具的数据。
+ */
+function injectToolData(db: Database): void {
+  const raw = readTagDiaryRaw()
+  if (!raw) return
+  db.run(
+    `CREATE TABLE IF NOT EXISTS ${TOOL_DATA_TABLE} (
+       key TEXT PRIMARY KEY,
+       value TEXT NOT NULL,
+       updated_at TEXT NOT NULL
+     )`,
+  )
+  const stmt = db.prepare(
+    `INSERT OR REPLACE INTO ${TOOL_DATA_TABLE} (key, value, updated_at) VALUES (?, ?, ?)`,
+  )
+  try {
+    stmt.run([TAG_DIARY_TOOL_KEY, raw, new Date().toISOString()])
+  } finally {
+    stmt.free()
+  }
+}
+
+function readToolData(db: Database, key: string): string | null {
+  try {
+    const stmt = db.prepare(`SELECT value FROM ${TOOL_DATA_TABLE} WHERE key = ?`)
+    try {
+      stmt.bind([key])
+      if (!stmt.step()) return null
+      const value = stmt.getAsObject().value
+      return typeof value === "string" ? value : null
+    } finally {
+      stmt.free()
+    }
+  } catch {
+    // 旧备份没有工具数据表
+    return null
+  }
+}
 
 let sqlJsPromise: Promise<SqlJsStatic> | null = null
 let dbInstance: Database | null = null
@@ -288,6 +336,7 @@ async function saveSnapshotBytes(bytes: Uint8Array, kind: SnapshotKind): Promise
 /** 立即创建一份快照；type 为 manual 时可由用户主动触发 */
 export async function createSnapshot(kind: SnapshotKind = "manual"): Promise<string> {
   const db = await getDb()
+  injectToolData(db)
   const key = await saveSnapshotBytes(db.export(), kind)
   if (!key) throw new Error("当前浏览器无法保存快照")
   return key
@@ -301,6 +350,7 @@ async function maybeCreateDailySnapshot(db: Database): Promise<void> {
     if (count <= 0) return
     const key = snapshotKey("daily")
     if (await idbGet(key)) return
+    injectToolData(db)
     await idbSet(key, db.export())
     await pruneSnapshots()
   } catch (error) {
@@ -336,6 +386,7 @@ export async function deleteSnapshot(key: string): Promise<void> {
 export async function exportSqliteFile(): Promise<Uint8Array> {
   const db = await getDb()
   await persistChain
+  injectToolData(db)
   return db.export()
 }
 
@@ -347,6 +398,7 @@ export async function importSqliteFile(bytes: Uint8Array): Promise<void> {
 
   const SQL = await loadSqlJs()
   let nextDb: Database
+  let incomingTagDiary: string | null = null
   try {
     nextDb = new SQL.Database(bytes)
     const result = nextDb.exec("SELECT name FROM sqlite_master WHERE type='table'")
@@ -359,8 +411,18 @@ export async function importSqliteFile(bytes: Uint8Array): Promise<void> {
     if (!tables.has("mini_bookkeeping_record") || !tables.has("mini_bookkeeping_category")) {
       throw new Error("不是有效的本地记账数据库")
     }
+    incomingTagDiary = readToolData(nextDb, TAG_DIARY_TOOL_KEY)
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : "备份文件无法读取")
+  }
+
+  // 先校验标签日记，避免数据库替换后才发现工具数据损坏
+  if (incomingTagDiary) {
+    try {
+      parseTagDiaryRaw(incomingTagDiary)
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : "标签日记备份格式不正确")
+    }
   }
 
   // 补齐可能缺失的表和默认分类
@@ -387,6 +449,15 @@ export async function importSqliteFile(bytes: Uint8Array): Promise<void> {
       previous.close()
     } catch {
       // 忽略关闭异常
+    }
+  }
+
+  if (incomingTagDiary) {
+    try {
+      writeTagDiaryRaw(incomingTagDiary)
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "未知错误"
+      throw new Error(`记账数据已恢复，但标签日记恢复失败：${reason}`)
     }
   }
 }
