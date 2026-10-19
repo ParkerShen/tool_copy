@@ -164,19 +164,6 @@
 
           <template v-if="form.mode === 'countdown' && useEndDate">
             <view class="dm-field sub-field">
-              <text class="dm-field-label">开始时间</text>
-              <picker
-                mode="time"
-                :value="form.anchorTime || '09:00'"
-                @change="handleStartTimeChange"
-              >
-                <view class="dm-field-value dm-field-tail dm-blue-text">
-                  <text>{{ form.anchorTime || "09:00" }}</text>
-                  <wd-icon name="chevron-right" size="15px" color="#b9bdc4" />
-                </view>
-              </picker>
-            </view>
-            <view class="dm-field sub-field">
               <text class="dm-field-label">结束日期</text>
               <picker
                 mode="date"
@@ -190,9 +177,7 @@
                 </view>
               </picker>
             </view>
-            <text class="dm-hint">
-              开始时间默认 09:00；结束日期按年月日选择，跨天会显示「进行中 / 还剩 N 天」。
-            </text>
+            <text class="dm-hint">结束日期按年月日选择，跨天会显示「进行中 / 还剩 N 天」。</text>
           </template>
 
           <view v-if="form.mode === 'countup'" class="dm-field">
@@ -301,10 +286,7 @@ const form = reactive({
   id: "",
   title: "",
   anchorDate: todayKey(),
-  anchorTime: null as string | null,
   anchorEndDate: null as string | null,
-  // 旧版「当天结束时间」，只在编辑旧数据时原样保留
-  anchorEndTime: null as string | null,
   countupIncludeStart: false,
   mode: "countdown" as CountdownMode,
   category: "custom" as CountdownCategory,
@@ -345,10 +327,8 @@ onLoad(async (options) => {
   form.id = event.id
   form.title = event.title
   form.anchorDate = event.anchorDate
-  form.anchorTime = event.anchorTime
-  form.anchorEndTime = event.anchorEndTime
   form.countupIncludeStart = event.countupIncludeStart
-  // 旧版只设置了开始时间时，也把区间开关打开，方便直接补结束日期
+  // 旧版时间段数据也打开结束日期开关，方便直接改成跨天日期
   useEndDate.value = !!(event.anchorEndDate || event.anchorEndTime || event.anchorTime)
   form.anchorEndDate = event.anchorEndDate || (useEndDate.value ? event.anchorDate : null)
   form.mode = event.mode
@@ -367,9 +347,7 @@ function selectMode(mode: CountdownMode): void {
     form.repeatRule = "none"
     // 正数日没有结束日期区间
     useEndDate.value = false
-    form.anchorTime = null
     form.anchorEndDate = null
-    form.anchorEndTime = null
   } else {
     form.countupIncludeStart = false
   }
@@ -400,19 +378,10 @@ function handleDateChange(event: { detail: { value: string } }): void {
 function handleEndDateToggle(event: { detail: { value: boolean } }): void {
   useEndDate.value = event.detail.value
   if (useEndDate.value) {
-    form.anchorTime = form.anchorTime || "09:00"
     form.anchorEndDate = form.anchorEndDate || form.anchorDate
   } else {
-    form.anchorTime = null
     form.anchorEndDate = null
-    form.anchorEndTime = null
   }
-}
-
-function handleStartTimeChange(event: { detail: { value: string } }): void {
-  form.anchorTime = event.detail.value
-  // 新版用结束日期；旧版当天结束时间不再参与
-  form.anchorEndTime = null
 }
 
 function handleEndDateChange(event: { detail: { value: string } }): void {
@@ -422,7 +391,6 @@ function handleEndDateChange(event: { detail: { value: string } }): void {
     return
   }
   form.anchorEndDate = end
-  form.anchorEndTime = null
 }
 
 function handlePinToggle(event: { detail: { value: boolean } }): void {
@@ -493,9 +461,10 @@ async function handleSave(): Promise<void> {
     const payload = {
       title: form.title,
       anchorDate: form.anchorDate,
-      anchorTime: useRange ? form.anchorTime || "09:00" : null,
+      // 新版只保留结束日期，不再写入具体开始时间
+      anchorTime: null,
       anchorEndDate: useRange ? form.anchorEndDate || form.anchorDate : null,
-      anchorEndTime: useRange ? form.anchorEndTime : null,
+      anchorEndTime: null,
       countupIncludeStart: form.mode === "countup" ? form.countupIncludeStart : false,
       mode: form.mode,
       category: form.category,
