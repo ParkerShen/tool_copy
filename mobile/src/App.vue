@@ -153,6 +153,7 @@ onHide(() => {
 <style lang="scss">
 @import "./styles/bookkeeping.scss";
 @import "./styles/countdown.scss";
+@import "./styles/inventory.scss";
 
 /* stylelint-disable selector-type-no-unknown */
 button::after {

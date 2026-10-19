@@ -90,11 +90,7 @@ function chooseFilesByUni(count: number): Promise<File[]> {
           tempFilePaths?: string[]
         }
         const maybeFiles = response.tempFiles || []
-        if (
-          typeof File !== "undefined" &&
-          maybeFiles.length > 0 &&
-          maybeFiles[0] instanceof File
-        ) {
+        if (typeof File !== "undefined" && maybeFiles.length > 0 && maybeFiles[0] instanceof File) {
           resolve((maybeFiles as File[]).slice(0, count))
           return
         }
@@ -239,6 +235,16 @@ function canUseNativeFilePicker(): boolean {
 
 function chooseFiles(count: number): Promise<File[]> {
   return canUseNativeFilePicker() ? chooseFilesFromInput(count) : chooseFilesByUni(count)
+}
+
+/** 从已压缩的 data URL 再生成一张列表用小图 */
+export async function makeThumbnail(
+  dataUrl: string,
+  maxEdge = 360,
+  quality = 0.6,
+): Promise<string> {
+  const image = await loadImage(dataUrl)
+  return renderJpeg(image, maxEdge, quality)
 }
 
 /** 选择并压缩最多 count 张图片 */

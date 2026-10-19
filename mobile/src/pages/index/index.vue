@@ -110,6 +110,23 @@
             <wd-icon name="arrow-right" size="16px" color="#bbb" />
           </view>
         </view>
+
+        <view class="tool-card tool-card-featured" @click="goInventory">
+          <view class="tool-icon bg-teal">
+            <wd-icon name="folder" size="22px" color="#2ba471" />
+          </view>
+          <view class="tool-feature-main">
+            <view class="tool-feature-title">
+              <text class="tool-name-featured">收纳</text>
+              <text v-if="inventoryWarrantyCount > 0" class="inventory-badge">保修提醒</text>
+            </view>
+            <text class="tool-feature-desc">{{ inventorySub }}</text>
+          </view>
+          <view class="tool-feature-side">
+            <text class="tool-feature-count">{{ inventoryValue }}</text>
+            <wd-icon name="arrow-right" size="16px" color="#bbb" />
+          </view>
+        </view>
       </view>
     </view>
 
@@ -133,6 +150,7 @@ import { getMonthlyStats, isLocalDataMode } from "@/api/bookkeeping"
 import type { MonthlyStatsResult } from "@/api/bookkeeping/types"
 import { getCountdownSummary, type CountdownSummary } from "@/api/countdown"
 import { getDiaryStats, type DiaryStats } from "@/api/diary"
+import { getInventorySummary, isInventoryAvailable, type InventorySummary } from "@/api/inventory"
 import { useBookkeepingStore, useTabbarStore } from "@/store"
 import { countSavedTagDiaries, readTagDiaryData } from "@/utils/toolData"
 
@@ -152,6 +170,7 @@ const diaryStats = ref<Omit<DiaryStats, "heatmap" | "moodCounts" | "tagCounts">>
 })
 const tagDiaryCount = ref(0)
 const countdownSummary = ref<CountdownSummary | null>(null)
+const inventorySummary = ref<InventorySummary | null>(null)
 
 const month = computed(() => today.value.format("YYYY-MM"))
 
@@ -167,6 +186,28 @@ const countdownSub = computed(() => {
   const summary = countdownSummary.value
   if (!summary || summary.total === 0) return "添加第一个重要日子"
   return summary.next?.event.title || "重要日子不错过"
+})
+
+const inventoryWarrantyCount = computed(() => inventorySummary.value?.warrantyExpiringCount || 0)
+
+const inventoryValue = computed(() => {
+  const summary = inventorySummary.value
+  if (!summary) return "—"
+  return `${summary.itemCount} 件`
+})
+
+const inventorySub = computed(() => {
+  const summary = inventorySummary.value
+  if (!summary || summary.itemCount === 0) return "建立家里的物品清单"
+  const parts = [`${summary.locationCount} 个位置`]
+  if (summary.warrantyExpiringCount > 0) {
+    parts.push(`${summary.warrantyExpiringCount} 个保修将到期`)
+  } else if (summary.maintenanceDueCount > 0) {
+    parts.push(`${summary.maintenanceDueCount} 项待维护`)
+  } else {
+    parts.push("物品都在记录中")
+  }
+  return parts.join(" · ")
 })
 
 const greeting = computed(() => {
@@ -206,6 +247,14 @@ async function loadData(): Promise<void> {
   } catch (error) {
     console.error("首页倒数日数据加载失败:", error)
   }
+
+  try {
+    if (isInventoryAvailable) {
+      inventorySummary.value = await getInventorySummary()
+    }
+  } catch (error) {
+    console.error("首页收纳数据加载失败:", error)
+  }
 }
 
 onShow(() => {
@@ -217,6 +266,7 @@ onShow(() => {
 onMounted(() => {
   uni.$on("refreshBookkeepingData", loadData)
   uni.$on("refreshCountdownData", loadData)
+  uni.$on("refreshInventoryData", loadData)
   // #ifdef H5
   window.addEventListener("pageshow", loadTagDiaryCount)
   // #endif
@@ -225,6 +275,7 @@ onMounted(() => {
 onUnmounted(() => {
   uni.$off("refreshBookkeepingData", loadData)
   uni.$off("refreshCountdownData", loadData)
+  uni.$off("refreshInventoryData", loadData)
   // #ifdef H5
   window.removeEventListener("pageshow", loadTagDiaryCount)
   // #endif
@@ -262,6 +313,10 @@ function goDayMaster(): void {
 function goMy(): void {
   tabbarStore.setActiveByPath("pages/my/index")
   uni.switchTab({ url: "/pages/my/index" })
+}
+
+function goInventory(): void {
+  uni.navigateTo({ url: "/pages/Storage/index" })
 }
 
 /** 标签日记是随 H5 一起打包的独立静态页 */
@@ -479,6 +534,19 @@ function goTagDiary(): void {
 
 .bg-purple {
   background: #f3efff;
+}
+
+.bg-teal {
+  background: #e8f7f0;
+}
+
+.inventory-badge {
+  padding: 2rpx 10rpx;
+  font-size: 18rpx;
+  font-weight: 700;
+  color: #b76b00;
+  background: #fff5e6;
+  border-radius: 999rpx;
 }
 
 .tool-card-featured {

@@ -1,0 +1,111 @@
+/* 收纳模块设计令牌：绿色系，和记账的黄色、日记的蓝色区分开 */
+page {
+  --inv-primary: #2ba471;
+  --inv-primary-dark: #1f8f5f;
+  --inv-primary-soft: #e8f7f0;
+  --inv-warn: #f7b731;
+  --inv-warn-soft: #fff8e6;
+  --inv-danger: #f54a45;
+  --inv-text: #1f2329;
+  --inv-text-secondary: #646a73;
+  --inv-text-tertiary: #8f959e;
+  --inv-border: #e5e6eb;
+  --inv-bg: #f6f7f9;
+}
+
+.inv-page {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100vh;
+  background: var(--inv-bg);
+}
+
+.inv-card {
+  box-sizing: border-box;
+  width: 100%;
+  background: #fff;
+  border-radius: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgb(31 35 41 / 4%);
+}
+
+.inv-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx 14rpx;
+  font-size: 20rpx;
+  color: var(--inv-primary-dark);
+  background: var(--inv-primary-soft);
+  border-radius: 999rpx;
+}
+
+.inv-amount {
+  font-variant-numeric: tabular-nums;
+}
+
+.inv-danger {
+  color: var(--inv-danger);
+}
+
+.inv-empty-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  padding: 0 48rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #fff;
+  background: var(--inv-primary);
+  border-radius: 999rpx;
+}
+
+.inv-sheet-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: flex-end;
+  background: rgb(0 0 0 / 40%);
+}
+
+.inv-sheet {
+  box-sizing: border-box;
+  width: 100%;
+  max-height: 88vh;
+  padding: 26rpx 28rpx calc(24rpx + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 28rpx 28rpx 0 0;
+  animation: inv-sheet-up 0.18s ease-out;
+}
+
+.inv-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 20rpx;
+}
+
+.inv-sheet-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--inv-text);
+}
+
+.inv-sheet-cancel {
+  min-height: 64rpx;
+  padding: 0 8rpx;
+  font-size: 26rpx;
+  line-height: 64rpx;
+  color: var(--inv-text-secondary);
+}
+
+@keyframes inv-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}

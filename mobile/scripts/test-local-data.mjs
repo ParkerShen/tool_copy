@@ -96,6 +96,17 @@ async function loadCountdownModules() {
   return { date, sql: countdownSql }
 }
 
+async function loadInventoryModule() {
+  return bundleModule("src/api/inventory/sql.ts", resolve(cacheDir, "inventory-sql.mjs"))
+}
+
+function dateOffset(days) {
+  const date = new Date()
+  date.setDate(date.getDate() + days)
+  const pad = (value) => String(value).padStart(2, "0")
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
 function countdownEvent(overrides = {}) {
   return {
     id: "countdown-test",
@@ -136,6 +147,7 @@ async function main() {
   })
   const sql = await loadSqlModule()
   const countdown = await loadCountdownModules()
+  const inventory = await loadInventoryModule()
 
   const newDb = () => {
     const db = new SQL.Database()
@@ -553,7 +565,7 @@ async function main() {
 
   await test("JSON 备份包含账户、金额分、图片与标签", () => {
     const backup = sql.exportJson(db)
-    assertEqual(backup.schemaVersion, 3, "备份版本")
+    assertEqual(backup.schemaVersion, 4, "备份版本")
     assert(Array.isArray(backup.accounts), "备份应包含 accounts")
     assert(
       backup.accounts.some((account) => account.id === bank.id),
@@ -709,7 +721,7 @@ async function main() {
     assert(afterColumns.has("account_id"), "迁移后新增 account_id")
     assert(afterColumns.has("images"), "迁移后新增 images")
     assert(afterColumns.has("tags"), "迁移后新增 tags")
-    assertEqual(sql.__internal.getUserVersion(oldDb), 3, "迁移后的 schema 版本")
+    assertEqual(sql.__internal.getUserVersion(oldDb), 4, "迁移后的 schema 版本")
 
     const oldRecord = sql.getRecord(oldDb, "old-1")
     assertEqual(oldRecord.amountCents, 1234, "旧记录金额回填为分")
@@ -1346,6 +1358,277 @@ async function main() {
   assertEqual(sql.listAccounts(db, true).length, 1, "删除账户后的账户数")
 
   db.close()
+
+  await test("收纳：位置树 / 路径 / 防环 / 深度", () => {
+    const invDb = newDb()
+    const room = inventory.createLocation(invDb, { name: "客厅" })
+    const cabinet = inventory.createLocation(invDb, { name: "电视柜", parentId: room.id })
+    const drawer = inventory.createLocation(invDb, { name: "抽屉", parentId: cabinet.id })
+
+    assertEqual(
+      inventory
+        .getLocationPath(invDb, drawer.id)
+        .map((part) => part.name)
+        .join("/"),
+      "客厅/电视柜/抽屉",
+      "位置路径",
+    )
+    assertThrows(
+      () => inventory.createLocation(invDb, { name: "客厅" }),
+      "同名",
+      "同层不允许重名",
+    )
+    assertThrows(
+      () => inventory.moveLocation(invDb, room.id, drawer.id),
+      "子位置",
+      "禁止移动到自己的后代",
+    )
+
+    const tree = inventory.buildLocationTree(invDb)
+    assertEqual(tree.length, 1, "树根数量")
+    assertEqual(tree[0].children[0].children[0].name, "抽屉", "树层级")
+
+    let parentId = drawer.id
+    for (let level = 4; level <= 6; level += 1) {
+      parentId = inventory.createLocation(invDb, { name: `第${level}层`, parentId }).id
+    }
+    assertThrows(
+      () => inventory.createLocation(invDb, { name: "第7层", parentId }),
+      "6 层",
+      "位置深度上限",
+    )
+
+    const item = inventory.createItem(invDb, { name: "遥控器", locationId: drawer.id })
+    inventory.deleteLocation(invDb, cabinet.id)
+    assertEqual(
+      inventory.getLocation(invDb, drawer.id).parentId,
+      null,
+      "删除位置后子位置移到顶层",
+    )
+    inventory.deleteLocation(invDb, drawer.id)
+    assertEqual(
+      inventory.getItem(invDb, item.id).locationId,
+      null,
+      "删除位置后物品变为未指定",
+    )
+    invDb.close()
+  })
+
+  await test("收纳：物品编号 / 档案 / 归档 / 删除清理", () => {
+    const invDb = newDb()
+    const room = inventory.createLocation(invDb, { name: "书房" })
+    const tag = inventory.createTag(invDb, { name: "工具", color: "#123456" })
+    const photo = {
+      dataUrl: "data:image/jpeg;base64,AAAA",
+      thumbUrl: "data:image/jpeg;base64,AA",
+    }
+    const item = inventory.createItem(invDb, {
+      name: "电钻",
+      description: "18V 无刷",
+      quantity: 1,
+      unit: "台",
+      locationId: room.id,
+      serialNumber: "SN-001",
+      modelNumber: "XPH12",
+      manufacturer: "Makita",
+      purchasePriceCents: 29900,
+      purchaseDate: "2026-01-10",
+      purchaseFrom: "京东",
+      warrantyExpiresOn: dateOffset(10),
+      warrantyNote: "一年保修",
+      photos: [photo],
+      tagIds: [tag.id],
+      fields: [{ name: "电压", value: "18V" }],
+    })
+    assertEqual(item.assetCode, "000-001", "首个物品编号")
+
+    const detail = inventory.getItemDetail(invDb, item.id)
+    assertEqual(detail.photos.length, 1, "照片数量")
+    assertEqual(detail.tags[0].name, "工具", "标签")
+    assertEqual(detail.fields[0].value, "18V", "自定义属性")
+    assertEqual(detail.locationText, "书房", "位置文本")
+    assertEqual(detail.purchasePriceCents, 29900, "购买价格（分）")
+
+    const second = inventory.createItem(invDb, { name: "螺丝刀" })
+    assertEqual(second.assetCode, "000-002", "编号自增")
+    assertEqual(inventory.findByAssetNo(invDb, "000-001").id, item.id, "按编号查找")
+    assertEqual(inventory.findByAssetNo(invDb, "1").id, item.id, "按纯数字编号查找")
+    assertEqual(inventory.findItemByIdOrCode(invDb, item.id).name, "电钻", "按 id 查找")
+
+    assertEqual(inventory.adjustQuantity(invDb, item.id, 2.5).quantity, 2.5, "数量调整")
+    assertThrows(() => inventory.adjustQuantity(invDb, item.id, -1), "负数", "数量不能为负")
+
+    inventory.setItemArchived(invDb, item.id, true)
+    assertEqual(inventory.listItems(invDb).total, 1, "归档后默认列表数量")
+    assertEqual(inventory.listItems(invDb, { includeArchived: true }).total, 2, "包含归档数量")
+    inventory.setItemArchived(invDb, item.id, false)
+
+    inventory.deleteItem(invDb, item.id)
+    assertEqual(inventory.getItem(invDb, item.id), null, "删除物品")
+    const photoCount = invDb.exec(
+      "SELECT COUNT(*) FROM mini_inventory_photo WHERE item_id = '" + item.id + "'",
+    )[0].values[0][0]
+    assertEqual(Number(photoCount), 0, "删除物品时清理照片")
+    assertEqual(inventory.listTags(invDb)[0].name, "工具", "删除物品不影响标签")
+    invDb.close()
+  })
+
+  await test("收纳：关键词 / 位置 / 标签 / 筛选 / 分页", () => {
+    const invDb = newDb()
+    const room = inventory.createLocation(invDb, { name: "客厅" })
+    const cabinet = inventory.createLocation(invDb, { name: "电视柜", parentId: room.id })
+    const drawer = inventory.createLocation(invDb, { name: "抽屉", parentId: cabinet.id })
+    const tool = inventory.createTag(invDb, { name: "工具" })
+    const photo = {
+      dataUrl: "data:image/jpeg;base64,AAAA",
+      thumbUrl: "data:image/jpeg;base64,AA",
+    }
+
+    const drill = inventory.createItem(invDb, {
+      name: "电钻",
+      locationId: drawer.id,
+      serialNumber: "SN-ABC",
+      photos: [photo],
+      tagIds: [tool.id],
+      fields: [{ name: "电压", value: "18V" }],
+    })
+    const cable = inventory.createItem(invDb, { name: "数据线", locationId: room.id })
+    const camera = inventory.createItem(invDb, { name: "旧相机", locationId: drawer.id })
+    inventory.setItemArchived(invDb, camera.id, true)
+    const towel = inventory.createItem(invDb, { name: "100%纯棉毛巾" })
+
+    assertEqual(inventory.listItems(invDb, { keyword: "电钻" }).total, 1, "名称搜索")
+    assertEqual(inventory.listItems(invDb, { keyword: "sn-abc" }).total, 1, "序列号搜索")
+    assertEqual(inventory.listItems(invDb, { keyword: "工具" }).total, 1, "标签名搜索")
+    assertEqual(inventory.listItems(invDb, { keyword: "18v" }).total, 1, "自定义属性搜索")
+    assertEqual(inventory.listItems(invDb, { keyword: "客厅" }).total, 1, "位置名搜索")
+    assertEqual(inventory.listItems(invDb, { keyword: "电钻 工具" }).total, 1, "多关键词 AND")
+    assertEqual(inventory.listItems(invDb, { keyword: "%" }).total, 1, "LIKE 通配符转义")
+    assertEqual(inventory.listItems(invDb, { keyword: "不存在的物品" }).total, 0, "无结果")
+
+    assertEqual(
+      inventory.listItems(invDb, { locationId: room.id }).total,
+      2,
+      "位置筛选包含后代",
+    )
+    assertEqual(
+      inventory.listItems(invDb, { locationId: room.id, includeArchived: true }).total,
+      3,
+      "位置筛选包含归档",
+    )
+    assertEqual(inventory.listItems(invDb, { tagIds: [tool.id] }).total, 1, "标签筛选")
+    assertEqual(inventory.listItems(invDb, { hasPhoto: true }).total, 1, "有照片筛选")
+    assertEqual(inventory.listItems(invDb, { onlyUnassigned: true }).total, 1, "未指定位置筛选")
+
+    const page = inventory.listItems(invDb, { pageSize: 2, sort: "assetNo" })
+    assertEqual(page.total, 3, "分页 total 不受 limit 影响")
+    assertEqual(page.items.length, 2, "分页数量")
+    assertEqual(page.items[0].id, drill.id, "按编号排序")
+    assertEqual(page.items[0].locationPath, "客厅 / 电视柜 / 抽屉", "列表位置路径")
+    assertEqual(page.items[0].tags[0].name, "工具", "列表标签")
+    assertEqual(page.items[0].thumbUrl, photo.thumbUrl, "列表缩略图")
+    assertEqual(
+      inventory.listItems(invDb).totalValueCents,
+      0,
+      "总价值（未填价格）",
+    )
+    invDb.close()
+  })
+
+  await test("收纳：维护记录与首页摘要", () => {
+    const invDb = newDb()
+    const room = inventory.createLocation(invDb, { name: "厨房" })
+    const item = inventory.createItem(invDb, {
+      name: "净水器",
+      locationId: room.id,
+      purchasePriceCents: 159900,
+      warrantyExpiresOn: dateOffset(10),
+    })
+    const maintenance = inventory.createMaintenance(invDb, item.id, {
+      name: "更换滤芯",
+      scheduledOn: dateOffset(5),
+      costCents: 5000,
+      description: "半年一次",
+    })
+    assertEqual(maintenance.name, "更换滤芯", "维护记录名称")
+    assertThrows(
+      () => inventory.createMaintenance(invDb, item.id, { name: "只有名称" }),
+      "至少填一个",
+      "维护日期校验",
+    )
+
+    const summary = inventory.getInventorySummary(invDb)
+    assertEqual(summary.itemCount, 1, "摘要物品数")
+    assertEqual(summary.locationCount, 1, "摘要位置数")
+    assertEqual(summary.totalValueCents, 159900, "摘要总价值")
+    assertEqual(summary.warrantyExpiringCount, 1, "保修将到期数")
+    assertEqual(summary.maintenanceDueCount, 1, "待维护数")
+
+    inventory.updateMaintenance(invDb, maintenance.id, {
+      name: "更换滤芯",
+      completedOn: dateOffset(0),
+    })
+    assertEqual(inventory.listMaintenance(invDb, item.id)[0].completedOn, dateOffset(0), "更新维护")
+    inventory.deleteMaintenance(invDb, maintenance.id)
+    assertEqual(inventory.listMaintenance(invDb, item.id).length, 0, "删除维护记录")
+    invDb.close()
+  })
+
+  await test("收纳：JSON / SQLite 备份与旧备份兼容", () => {
+    const invDb = newDb()
+    const room = inventory.createLocation(invDb, { name: "储物间" })
+    const tag = inventory.createTag(invDb, { name: "季节性" })
+    const item = inventory.createItem(invDb, {
+      name: "取暖器",
+      locationId: room.id,
+      tagIds: [tag.id],
+      purchasePriceCents: 49900,
+      photos: [{ dataUrl: "data:image/jpeg;base64,AAAA", thumbUrl: "data:image/jpeg;base64,AA" }],
+      fields: [{ name: "功率", value: "2000W" }],
+    })
+    inventory.createMaintenance(invDb, item.id, { name: "清灰", completedOn: "2026-01-01" })
+
+    const payload = sql.exportJson(invDb)
+    assertEqual(payload.schemaVersion, 4, "备份版本为 4")
+    assertEqual(payload.inventory.items.length, 1, "JSON 包含物品")
+    assertEqual(payload.inventory.items[0].photos.length, 1, "JSON 包含照片")
+    assertEqual(payload.inventory.items[0].fields[0].value, "2000W", "JSON 包含自定义属性")
+    assertEqual(payload.inventory.items[0].maintenance.length, 1, "JSON 包含维护记录")
+
+    const bytes = invDb.export()
+    const reopened = new SQL.Database(bytes)
+    assertEqual(inventory.listItems(reopened).total, 1, "SQLite 文件包含收纳数据")
+    assertEqual(inventory.listLocations(reopened).length, 1, "SQLite 文件包含位置")
+    reopened.close()
+
+    const target = newDb()
+    sql.importJson(target, payload)
+    assertEqual(inventory.listItems(target).total, 1, "JSON 导入物品")
+    assertEqual(inventory.listItems(target).items[0].name, "取暖器", "JSON 导入名称")
+    assertEqual(inventory.listLocations(target)[0].name, "储物间", "JSON 导入位置")
+    assertEqual(inventory.listTags(target)[0].name, "季节性", "JSON 导入标签")
+
+    const oldPayload = sql.exportJson(target)
+    delete oldPayload.inventory
+    sql.importJson(target, oldPayload)
+    assertEqual(inventory.listItems(target).total, 1, "旧备份保留现有收纳数据")
+
+    const badPayload = sql.exportJson(target)
+    badPayload.inventory.items[0].locationId = "missing-location"
+    assertThrows(
+      () => sql.importJson(target, badPayload),
+      "不存在的位置",
+      "非法收纳引用应拒绝",
+    )
+    assertEqual(inventory.listItems(target).total, 1, "失败后收纳数据不变")
+
+    inventory.clearInventoryAll(target)
+    assertEqual(inventory.listItems(target).total, 0, "清空收纳物品")
+    assertEqual(inventory.listLocations(target).length, 0, "清空收纳位置")
+    assertEqual(sql.listCategories(target).length, 9, "清空收纳不影响记账分类")
+    target.close()
+    invDb.close()
+  })
 
   console.log("")
   console.log(`测试完成：通过 ${passed} 项，失败 ${failed} 项`)

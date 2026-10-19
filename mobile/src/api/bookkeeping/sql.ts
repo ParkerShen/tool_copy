@@ -20,9 +20,17 @@ import {
   validateCountdownBackup,
 } from "../countdown/sql"
 import type { CountdownEvent } from "../countdown/types"
+import { initInventorySchema } from "../inventory/schema"
+import {
+  deleteInventoryRows,
+  exportInventoryJson,
+  insertImportedInventory,
+  validateInventoryBackup,
+} from "../inventory/sql"
+import type { InventoryBackup } from "../inventory/types"
 import { generateId } from "../../utils/id"
 
-export const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = 4
 
 /** 单条记录最多保存的图片数量 */
 export const MAX_RECORD_IMAGES = 3
@@ -223,6 +231,8 @@ export interface DatabaseStats {
   categoryCount: number
   customCategoryCount: number
   countdownCount: number
+  inventoryItemCount: number
+  inventoryLocationCount: number
   firstRecordDate: string | null
   lastRecordDate: string | null
   totalIncome: number
@@ -271,6 +281,8 @@ export interface BackupPayload {
   records: BackupRecord[]
   /** 旧备份没有该字段；导入时缺省表示「保留现有倒数日」 */
   countdownEvents?: CountdownEvent[]
+  /** 旧备份没有该字段；导入时缺省表示「保留现有收纳数据」 */
+  inventory?: InventoryBackup
 }
 
 const DEFAULT_CATEGORIES: Array<
@@ -635,8 +647,9 @@ export function initSchema(db: Database): void {
   // 旧库可能还没有 account_id，必须等迁移补列后再建账户索引
   migrateSchema(db)
 
-  // 倒数日和记账共用同一个数据库文件；再加一张表不影响原有迁移
+  // 倒数日和记账共用同一个数据库文件；再加表不影响原有迁移
   initCountdownSchema(db)
+  initInventorySchema(db)
 
   db.run(`
     CREATE INDEX IF NOT EXISTS idx_record_account ON mini_bookkeeping_record(account_id);
@@ -1735,11 +1748,18 @@ export function listTags(db: Database, limit = 200): TagUsage[] {
 /** 数据库概览（记录数、分类数、日期范围、累计收支） */
 export function getStats(db: Database): DatabaseStats {
   initCountdownSchema(db)
+  initInventorySchema(db)
   const recordCount = asNumber(
     queryOne(db, "SELECT COUNT(*) AS total FROM mini_bookkeeping_record")?.total,
   )
   const countdownCount = asNumber(
     queryOne(db, "SELECT COUNT(*) AS total FROM mini_countdown_event")?.total,
+  )
+  const inventoryItemCount = asNumber(
+    queryOne(db, "SELECT COUNT(*) AS total FROM mini_inventory_item")?.total,
+  )
+  const inventoryLocationCount = asNumber(
+    queryOne(db, "SELECT COUNT(*) AS total FROM mini_inventory_location")?.total,
   )
   const categoryCount = asNumber(
     queryOne(db, "SELECT COUNT(*) AS total FROM mini_bookkeeping_category")?.total,
@@ -1765,6 +1785,8 @@ export function getStats(db: Database): DatabaseStats {
     categoryCount,
     customCategoryCount,
     countdownCount,
+    inventoryItemCount,
+    inventoryLocationCount,
     firstRecordDate: range?.first_date ? asString(range.first_date) : null,
     lastRecordDate: range?.last_date ? asString(range.last_date) : null,
     totalIncome: roundMoney(asNumber(sums?.income) / 100),
@@ -1782,13 +1804,16 @@ export function exportJson(db: Database): BackupPayload {
      ORDER BY record_date ASC, created_at ASC, id ASC`,
   )
   initCountdownSchema(db)
+  initInventorySchema(db)
   const countdownEvents = listCountdownEvents(db, true)
+  const inventory = exportInventoryJson(db)
 
   return {
     app: APP_ID,
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
     countdownEvents,
+    inventory,
     accounts: accounts.map((account) => ({
       id: account.id,
       userId: account.userId,
@@ -1906,8 +1931,10 @@ function validateBackup(payload: unknown): BackupPayload {
     data.countdownEvents === undefined
       ? undefined
       : validateCountdownBackup(data.countdownEvents)
+  const inventory =
+    data.inventory === undefined ? undefined : validateInventoryBackup(data.inventory)
 
-  return { ...data, countdownEvents } as BackupPayload
+  return { ...data, countdownEvents, inventory } as BackupPayload
 }
 
 /** 导入 JSON 备份；事务内整体替换，失败时回滚且不影响原数据 */
@@ -1915,6 +1942,7 @@ export function importJson(db: Database, payload: unknown): void {
   const data = validateBackup(payload)
   const now = nowString()
   initCountdownSchema(db)
+  initInventorySchema(db)
 
   db.run("BEGIN TRANSACTION")
   try {
@@ -2022,6 +2050,11 @@ export function importJson(db: Database, payload: unknown): void {
     if (data.countdownEvents !== undefined) {
       db.run("DELETE FROM mini_countdown_event")
       insertImportedEvents(db, data.countdownEvents)
+    }
+
+    // 旧备份没有 inventory：保留现有收纳数据，不误删
+    if (data.inventory !== undefined) {
+      insertImportedInventory(db, data.inventory)
     }
 
     db.run("COMMIT")

@@ -246,6 +246,72 @@
       "style": {
         "navigationBarTitleText": ""
       }
+    },
+    {
+      "path": "pages/Storage/edit",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "物品",
+        "navigationBarBackgroundColor": "#FFFFFF"
+      }
+    },
+    {
+      "path": "pages/Storage/index",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "收纳",
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/Storage/item",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "物品详情",
+        "navigationBarBackgroundColor": "#FFFFFF"
+      }
+    },
+    {
+      "path": "pages/Storage/locations",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "位置管理",
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/Storage/qr",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "二维码标签",
+        "navigationBarBackgroundColor": "#FFFFFF"
+      }
+    },
+    {
+      "path": "pages/Storage/scan",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "扫码找物品",
+        "navigationBarBackgroundColor": "#FFFFFF"
+      }
+    },
+    {
+      "path": "pages/Storage/tags",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "标签管理",
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "enablePullDownRefresh": true
+      }
     }
   ],
   "subPackages": [

@@ -26,6 +26,13 @@ interface NavigateToOptions {
        "/pages/my/couponRecord" |
        "/pages/my/index" |
        "/pages/my/language" |
+       "/pages/Storage/edit" |
+       "/pages/Storage/index" |
+       "/pages/Storage/item" |
+       "/pages/Storage/locations" |
+       "/pages/Storage/qr" |
+       "/pages/Storage/scan" |
+       "/pages/Storage/tags" |
        "/pages-sub/demo/index";
 }
 interface RedirectToOptions extends NavigateToOptions {}
