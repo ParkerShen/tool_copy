@@ -79,8 +79,8 @@
             </view>
             <text class="tool-name">倒数日</text>
           </view>
-          <text class="tool-value tool-value-sm">即将上线</text>
-          <text class="tool-sub">重要日子不错过</text>
+          <text class="tool-value tool-value-sm">{{ countdownValue }}</text>
+          <text class="tool-sub">{{ countdownSub }}</text>
         </view>
 
         <view class="tool-card" @click="goMy">
@@ -131,6 +131,7 @@ import dayjs from "dayjs"
 import "dayjs/locale/zh-cn"
 import { getMonthlyStats, isLocalDataMode } from "@/api/bookkeeping"
 import type { MonthlyStatsResult } from "@/api/bookkeeping/types"
+import { getCountdownSummary, type CountdownSummary } from "@/api/countdown"
 import { getDiaryStats, type DiaryStats } from "@/api/diary"
 import { useBookkeepingStore, useTabbarStore } from "@/store"
 import { countSavedTagDiaries, readTagDiaryData } from "@/utils/toolData"
@@ -150,8 +151,23 @@ const diaryStats = ref<Omit<DiaryStats, "heatmap" | "moodCounts" | "tagCounts">>
   deleted: 0,
 })
 const tagDiaryCount = ref(0)
+const countdownSummary = ref<CountdownSummary | null>(null)
 
 const month = computed(() => today.value.format("YYYY-MM"))
+
+const countdownValue = computed(() => {
+  const summary = countdownSummary.value
+  if (!summary || summary.total === 0) return "还没有倒数日"
+  if (!summary.next) return `${summary.total} 个日子`
+  if (summary.next.isToday && !summary.next.occurrenceTime) return "就是今天"
+  return summary.next.statusLabel
+})
+
+const countdownSub = computed(() => {
+  const summary = countdownSummary.value
+  if (!summary || summary.total === 0) return "添加第一个重要日子"
+  return summary.next?.event.title || "重要日子不错过"
+})
 
 const greeting = computed(() => {
   const hour = dayjs().hour()
@@ -184,6 +200,12 @@ async function loadData(): Promise<void> {
   } catch (error) {
     console.error("首页日记数据加载失败:", error)
   }
+
+  try {
+    countdownSummary.value = await getCountdownSummary()
+  } catch (error) {
+    console.error("首页倒数日数据加载失败:", error)
+  }
 }
 
 onShow(() => {
@@ -194,6 +216,7 @@ onShow(() => {
 
 onMounted(() => {
   uni.$on("refreshBookkeepingData", loadData)
+  uni.$on("refreshCountdownData", loadData)
   // #ifdef H5
   window.addEventListener("pageshow", loadTagDiaryCount)
   // #endif
@@ -201,6 +224,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   uni.$off("refreshBookkeepingData", loadData)
+  uni.$off("refreshCountdownData", loadData)
   // #ifdef H5
   window.removeEventListener("pageshow", loadTagDiaryCount)
   // #endif

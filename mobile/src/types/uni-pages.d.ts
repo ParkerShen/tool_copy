@@ -10,6 +10,7 @@ interface NavigateToOptions {
        "/pages/BookKeeping/edit" |
        "/pages/BookKeeping/index" |
        "/pages/BookKeeping/stats" |
+       "/pages/DayMaster/edit" |
        "/pages/DayMaster/index" |
        "/pages/Diary/detail" |
        "/pages/Diary/edit" |

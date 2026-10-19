@@ -345,7 +345,12 @@ export async function createSnapshot(kind: SnapshotKind = "manual"): Promise<str
 async function maybeCreateDailySnapshot(db: Database): Promise<void> {
   if (memoryOnly || !isIndexedDbAvailable()) return
   try {
-    const result = db.exec("SELECT COUNT(*) FROM mini_bookkeeping_record")
+    // 只用倒数日的用户也要有每日快照
+    const result = db.exec(
+      `SELECT
+         (SELECT COUNT(*) FROM mini_bookkeeping_record) +
+         (SELECT COUNT(*) FROM mini_countdown_event)`,
+    )
     const count = Number(result[0]?.values?.[0]?.[0] || 0)
     if (count <= 0) return
     const key = snapshotKey("daily")

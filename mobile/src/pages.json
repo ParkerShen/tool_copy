@@ -120,12 +120,22 @@
       }
     },
     {
+      "path": "pages/DayMaster/edit",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "倒数日",
+        "navigationBarBackgroundColor": "#0B83D6"
+      }
+    },
+    {
       "path": "pages/DayMaster/index",
       "type": "page",
       "layout": "default",
       "style": {
         "navigationBarTitleText": "倒数日",
-        "navigationBarBackgroundColor": "#FFFFFF"
+        "navigationBarBackgroundColor": "#0B83D6"
       }
     },
     {

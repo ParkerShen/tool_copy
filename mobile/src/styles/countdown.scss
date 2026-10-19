@@ -1,0 +1,5 @@
+/* 倒数日通用视觉：数字对齐；页面样式在 DayMaster 页面内维护 */
+.cd-number {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}

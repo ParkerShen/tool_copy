@@ -13,6 +13,14 @@
  */
 import type { Database, SqlValue } from "sql.js"
 import { MAX_AMOUNT_CENTS, centsToAmount, decimalToCents, roundAmountToCents } from "./money"
+import { initCountdownSchema } from "../countdown/schema"
+import {
+  insertImportedEvents,
+  listEvents as listCountdownEvents,
+  validateCountdownBackup,
+} from "../countdown/sql"
+import type { CountdownEvent } from "../countdown/types"
+import { generateId } from "../../utils/id"
 
 export const SCHEMA_VERSION = 3
 
@@ -214,6 +222,7 @@ export interface DatabaseStats {
   recordCount: number
   categoryCount: number
   customCategoryCount: number
+  countdownCount: number
   firstRecordDate: string | null
   lastRecordDate: string | null
   totalIncome: number
@@ -260,6 +269,8 @@ export interface BackupPayload {
   accounts?: BackupAccount[]
   categories: CategoryRecord[]
   records: BackupRecord[]
+  /** 旧备份没有该字段；导入时缺省表示「保留现有倒数日」 */
+  countdownEvents?: CountdownEvent[]
 }
 
 const DEFAULT_CATEGORIES: Array<
@@ -423,23 +434,7 @@ function assertAccountType(type: unknown): asserts type is AccountType {
   }
 }
 
-/** 生成 UUID；局域网 HTTP 下 crypto.randomUUID 不可用，做降级处理 */
-export function generateId(): string {
-  const cryptoObj = (globalThis as any).crypto
-  if (cryptoObj && typeof cryptoObj.randomUUID === "function") {
-    return cryptoObj.randomUUID()
-  }
-  const bytes = new Uint8Array(16)
-  if (cryptoObj && typeof cryptoObj.getRandomValues === "function") {
-    cryptoObj.getRandomValues(bytes)
-  } else {
-    for (let i = 0; i < bytes.length; i += 1) {
-      bytes[i] = Math.floor(Math.random() * 256)
-    }
-  }
-  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
-}
+export { generateId }
 
 function pad2(value: number): string {
   return String(value).padStart(2, "0")
@@ -639,6 +634,9 @@ export function initSchema(db: Database): void {
 
   // 旧库可能还没有 account_id，必须等迁移补列后再建账户索引
   migrateSchema(db)
+
+  // 倒数日和记账共用同一个数据库文件；再加一张表不影响原有迁移
+  initCountdownSchema(db)
 
   db.run(`
     CREATE INDEX IF NOT EXISTS idx_record_account ON mini_bookkeeping_record(account_id);
@@ -1736,8 +1734,12 @@ export function listTags(db: Database, limit = 200): TagUsage[] {
 
 /** 数据库概览（记录数、分类数、日期范围、累计收支） */
 export function getStats(db: Database): DatabaseStats {
+  initCountdownSchema(db)
   const recordCount = asNumber(
     queryOne(db, "SELECT COUNT(*) AS total FROM mini_bookkeeping_record")?.total,
+  )
+  const countdownCount = asNumber(
+    queryOne(db, "SELECT COUNT(*) AS total FROM mini_countdown_event")?.total,
   )
   const categoryCount = asNumber(
     queryOne(db, "SELECT COUNT(*) AS total FROM mini_bookkeeping_category")?.total,
@@ -1762,6 +1764,7 @@ export function getStats(db: Database): DatabaseStats {
     recordCount,
     categoryCount,
     customCategoryCount,
+    countdownCount,
     firstRecordDate: range?.first_date ? asString(range.first_date) : null,
     lastRecordDate: range?.last_date ? asString(range.last_date) : null,
     totalIncome: roundMoney(asNumber(sums?.income) / 100),
@@ -1778,11 +1781,14 @@ export function exportJson(db: Database): BackupPayload {
     `SELECT * FROM mini_bookkeeping_record
      ORDER BY record_date ASC, created_at ASC, id ASC`,
   )
+  initCountdownSchema(db)
+  const countdownEvents = listCountdownEvents(db, true)
 
   return {
     app: APP_ID,
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
+    countdownEvents,
     accounts: accounts.map((account) => ({
       id: account.id,
       userId: account.userId,
@@ -1896,13 +1902,19 @@ function validateBackup(payload: unknown): BackupPayload {
     if (record.tags !== undefined) normalizeTags(record.tags)
   }
 
-  return data as BackupPayload
+  const countdownEvents =
+    data.countdownEvents === undefined
+      ? undefined
+      : validateCountdownBackup(data.countdownEvents)
+
+  return { ...data, countdownEvents } as BackupPayload
 }
 
 /** 导入 JSON 备份；事务内整体替换，失败时回滚且不影响原数据 */
 export function importJson(db: Database, payload: unknown): void {
   const data = validateBackup(payload)
   const now = nowString()
+  initCountdownSchema(db)
 
   db.run("BEGIN TRANSACTION")
   try {
@@ -2004,6 +2016,12 @@ export function importJson(db: Database, payload: unknown): void {
       }
     } finally {
       recordStmt.free()
+    }
+
+    // 旧备份没有 countdownEvents：保留现有倒数日，不误删
+    if (data.countdownEvents !== undefined) {
+      db.run("DELETE FROM mini_countdown_event")
+      insertImportedEvents(db, data.countdownEvents)
     }
 
     db.run("COMMIT")

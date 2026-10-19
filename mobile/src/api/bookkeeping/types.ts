@@ -301,6 +301,7 @@ export interface LocalDatabaseStats {
   recordCount: number
   categoryCount: number
   customCategoryCount: number
+  countdownCount: number
   firstRecordDate: string | null
   lastRecordDate: string | null
   totalIncome: number

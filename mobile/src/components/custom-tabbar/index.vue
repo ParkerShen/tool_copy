@@ -92,10 +92,8 @@ const handleActionSelect = (action) => {
       }
       break
     case "countdown":
-      // TODO: 跳转到添加倒数日页面
-      uni.showToast({
-        title: "添加倒数日功能开发中",
-        icon: "none",
+      uni.navigateTo({
+        url: "/pages/DayMaster/edit",
       })
       break
     case "diary":

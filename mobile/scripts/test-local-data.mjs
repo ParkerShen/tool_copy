@@ -72,6 +72,58 @@ async function loadSqlModule() {
   return import(`${pathToFileURL(bundlePath).href}?t=${Date.now()}`)
 }
 
+async function bundleModule(entry, outfile) {
+  await mkdir(cacheDir, { recursive: true })
+  await build({
+    entryPoints: [resolve(root, entry)],
+    outfile,
+    bundle: true,
+    format: "esm",
+    platform: "node",
+    target: "node18",
+    logLevel: "silent",
+  })
+  return import(`${pathToFileURL(outfile).href}?t=${Date.now()}`)
+}
+
+async function loadCountdownModules() {
+  const datePath = resolve(cacheDir, "countdown-date.mjs")
+  const sqlPath = resolve(cacheDir, "countdown-sql.mjs")
+  const [date, countdownSql] = await Promise.all([
+    bundleModule("src/api/countdown/date.ts", datePath),
+    bundleModule("src/api/countdown/sql.ts", sqlPath),
+  ])
+  return { date, sql: countdownSql }
+}
+
+function countdownEvent(overrides = {}) {
+  return {
+    id: "countdown-test",
+    title: "测试倒数日",
+    anchorDate: "2026-10-18",
+    anchorTime: null,
+    anchorEndDate: null,
+    anchorEndTime: null,
+    countupIncludeStart: false,
+    mode: "countdown",
+    category: "custom",
+    repeatRule: "none",
+    emoji: "⭐",
+    color: "#8f959e",
+    note: "",
+    remindDaysBefore: -1,
+    pinned: false,
+    archived: false,
+    createdAt: "2026-10-18 10:00:00",
+    updatedAt: "2026-10-18 10:00:00",
+    ...overrides,
+  }
+}
+
+function localDate(year, month, day, hour = 12, minute = 0) {
+  return new Date(year, month - 1, day, hour, minute, 0, 0)
+}
+
 function countRecords(db) {
   const result = db.exec("SELECT COUNT(*) AS total FROM mini_bookkeeping_record")
   return Number(result[0].values[0][0])
@@ -83,6 +135,7 @@ async function main() {
     locateFile: (file) => join(root, "node_modules/sql.js/dist", file),
   })
   const sql = await loadSqlModule()
+  const countdown = await loadCountdownModules()
 
   const newDb = () => {
     const db = new SQL.Database()
@@ -706,6 +759,580 @@ async function main() {
     assertEqual(sql.getAccountBalances(legacyDb, true).length, 1, "v1 JSON 导入后账户数")
     legacyDb.close()
   })
+
+  // ---------------- 倒数日 ----------------
+  const cdate = countdown.date
+  const csql = countdown.sql
+
+  await test("倒数日：日期差按日历日计算", () => {
+    assertEqual(cdate.daysBetweenKeys("2026-10-18", "2026-10-19"), 1, "相邻日期")
+    assertEqual(cdate.daysBetweenKeys("2026-12-31", "2027-01-01"), 1, "跨年")
+    assertEqual(cdate.daysBetweenKeys("2024-02-28", "2024-03-01"), 2, "闰年 2 月")
+    assertEqual(cdate.daysBetweenKeys("2026-10-18", "2026-10-18"), 0, "同一天")
+  })
+
+  await test("倒数日：当天/未来/过去文案", () => {
+    const now = localDate(2026, 10, 18, 12, 0)
+    const today = cdate.getEventView(countdownEvent({ anchorDate: "2026-10-18" }), now)
+    assertEqual(today.statusLabel, "就是今天", "当天文案")
+    assertEqual(today.status, "today", "当天状态")
+
+    const future = cdate.getEventView(countdownEvent({ anchorDate: "2026-10-20" }), now)
+    assertEqual(future.statusLabel, "还有 2 天", "未来文案")
+    assertEqual(future.numberLabel, "2", "未来数字")
+
+    const past = cdate.getEventView(countdownEvent({ anchorDate: "2026-10-16" }), now)
+    assertEqual(past.statusLabel, "已过 2 天", "过去文案")
+    assertEqual(past.status, "past", "过去状态")
+  })
+
+  await test("倒数日：带时间事件", () => {
+    const now = localDate(2026, 10, 18, 12, 0)
+    const upcoming = cdate.getEventView(
+      countdownEvent({ anchorDate: "2026-10-18", anchorTime: "18:00" }),
+      now,
+    )
+    assertEqual(upcoming.statusLabel, "今天 18:00", "今天未到时间")
+
+    const passed = cdate.getEventView(
+      countdownEvent({ anchorDate: "2026-10-18", anchorTime: "09:00" }),
+      now,
+    )
+    assertEqual(passed.status, "past", "今天已过时间状态")
+    assert(passed.statusLabel.includes("今天 · 已过 09:00"), "今天已过时间文案")
+  })
+
+  await test("倒数日：时间段事件", () => {
+    const now = localDate(2026, 10, 18, 12, 0)
+    const upcoming = cdate.getEventView(
+      countdownEvent({
+        anchorDate: "2026-10-18",
+        anchorTime: "14:00",
+        anchorEndTime: "16:00",
+      }),
+      now,
+    )
+    assertEqual(upcoming.status, "today", "时间段未开始状态")
+    assertEqual(upcoming.statusLabel, "今天 14:00–16:00", "时间段未开始文案")
+    assertEqual(upcoming.timeLabel, "14:00–16:00", "时间段展示")
+
+    const ongoing = cdate.getEventView(
+      countdownEvent({
+        anchorDate: "2026-10-18",
+        anchorTime: "10:00",
+        anchorEndTime: "14:00",
+      }),
+      now,
+    )
+    assertEqual(ongoing.status, "today", "时间段进行中状态")
+    assertEqual(ongoing.statusLabel, "进行中 · 14:00 结束", "时间段进行中文案")
+
+    const ended = cdate.getEventView(
+      countdownEvent({
+        anchorDate: "2026-10-18",
+        anchorTime: "08:00",
+        anchorEndTime: "10:00",
+      }),
+      now,
+    )
+    assertEqual(ended.status, "past", "时间段已结束状态")
+    assertEqual(ended.statusLabel, "今天 · 已结束 10:00", "时间段已结束文案")
+
+    const weeklyOngoing = cdate.getEventView(
+      countdownEvent({
+        anchorDate: "2026-10-11",
+        anchorTime: "10:00",
+        anchorEndTime: "14:00",
+        repeatRule: "weekly",
+      }),
+      now,
+    )
+    assertEqual(weeklyOngoing.occurrenceDate, "2026-10-18", "时间段进行中不滚到下周")
+    assertEqual(weeklyOngoing.statusLabel, "进行中 · 14:00 结束", "每周时间段进行中")
+
+    const weeklyEnded = cdate.getEventView(
+      countdownEvent({
+        anchorDate: "2026-10-11",
+        anchorTime: "08:00",
+        anchorEndTime: "10:00",
+        repeatRule: "weekly",
+      }),
+      now,
+    )
+    assertEqual(weeklyEnded.occurrenceDate, "2026-10-25", "时间段结束后滚到下周")
+  })
+
+  await test("倒数日：跨天结束日期", () => {
+    const now = localDate(2026, 10, 18, 12, 0)
+
+    const future = cdate.getEventView(
+      countdownEvent({ anchorDate: "2026-10-20", anchorEndDate: "2026-10-23" }),
+      now,
+    )
+    assertEqual(future.statusLabel, "还有 2 天", "未开始的跨天事件")
+    assertEqual(future.isRange, true, "跨天标记")
+    assertEqual(future.shortDateRangeLabel, "10月20日–10月23日", "跨天短日期")
+    assert(String(future.endDateLabel).includes("2026年10月23日"), "结束日期标签")
+
+    const active = cdate.getEventView(
+      countdownEvent({ anchorDate: "2026-10-16", anchorEndDate: "2026-10-20" }),
+      now,
+    )
+    assertEqual(active.status, "ongoing", "进行中状态")
+    assertEqual(active.statusLabel, "进行中 · 还有 2 天结束", "进行中文案")
+    assertEqual(active.numberLabel, "2", "进行中显示剩余结束天数")
+    assertEqual(active.isRangeActive, true, "进行中标记")
+    assertEqual(active.daysUntil, -2, "已开始 2 天")
+
+    const endingToday = cdate.getEventView(
+      countdownEvent({ anchorDate: "2026-10-16", anchorEndDate: "2026-10-18" }),
+      now,
+    )
+    assertEqual(endingToday.statusLabel, "今天结束", "最后一天文案")
+    assertEqual(endingToday.isEndingToday, true, "最后一天标记")
+    assertEqual(endingToday.numberLabel, "0", "最后一天数字")
+
+    const ended = cdate.getEventView(
+      countdownEvent({ anchorDate: "2026-10-10", anchorEndDate: "2026-10-15" }),
+      now,
+    )
+    assertEqual(ended.status, "past", "跨天已结束状态")
+    assertEqual(ended.statusLabel, "已结束 3 天", "跨天已结束文案")
+    assertEqual(ended.numberLabel, "3", "跨天已结束数字")
+
+    const sameDay = cdate.getEventView(
+      countdownEvent({ anchorDate: "2026-10-18", anchorEndDate: "2026-10-18" }),
+      now,
+    )
+    assertEqual(sameDay.isRange, false, "结束日等于目标日不算跨天")
+    assertEqual(sameDay.statusLabel, "就是今天", "同一天结束仍显示今天")
+
+    const startsToday = cdate.getEventView(
+      countdownEvent({
+        anchorDate: "2026-10-18",
+        anchorTime: "14:00",
+        anchorEndDate: "2026-10-20",
+      }),
+      now,
+    )
+    assertEqual(startsToday.statusLabel, "今天 14:00 开始", "今天尚未开始")
+    assertEqual(startsToday.isRange, true, "今天开始仍是跨天")
+
+    const weekly = countdownEvent({
+      anchorDate: "2026-10-04",
+      anchorEndDate: "2026-10-05",
+      repeatRule: "weekly",
+    })
+    const weeklyActive = cdate.getEventView(weekly, now)
+    assertEqual(weeklyActive.occurrenceDate, "2026-10-18", "每周区间进行中不滚动")
+    assertEqual(weeklyActive.occurrenceEndDate, "2026-10-19", "重复区间按跨度顺延")
+    assertEqual(weeklyActive.statusLabel, "进行中 · 还有 1 天结束", "每周区间进行中文案")
+
+    const weeklyEnded = cdate.getEventView(weekly, localDate(2026, 10, 20, 12, 0))
+    assertEqual(weeklyEnded.occurrenceDate, "2026-10-25", "每周区间结束后滚到下周")
+
+    const october = cdate.occurrencesInMonth(
+      countdownEvent({ anchorDate: "2026-10-18", anchorEndDate: "2026-10-20" }),
+      2026,
+      10,
+      now,
+    )
+    assertEqual(october[0].endDate, "2026-10-20", "月历保留结束日期")
+    assertEqual(october[0].daysUntilEnd, 2, "月历结束倒计时")
+  })
+
+  await test("倒数日：每年重复与闰日", () => {
+    const leap = countdownEvent({ anchorDate: "2024-02-29", repeatRule: "yearly" })
+    assertEqual(
+      cdate.getEventView(leap, localDate(2026, 10, 18)).occurrenceDate,
+      "2027-02-28",
+      "平年 2/29 clamp 到 2/28",
+    )
+    assertEqual(
+      cdate.getEventView(leap, localDate(2028, 1, 1)).occurrenceDate,
+      "2028-02-29",
+      "闰年恢复 2/29",
+    )
+
+    const birthday = countdownEvent({ anchorDate: "2024-11-11", repeatRule: "yearly" })
+    const view = cdate.getEventView(birthday, localDate(2026, 10, 18))
+    assertEqual(view.occurrenceDate, "2026-11-11", "今年还没到")
+    assertEqual(view.daysSinceAnchor, 706, "周年已过天数")
+  })
+
+  await test("倒数日：每月重复与短月", () => {
+    const monthly = countdownEvent({ anchorDate: "2026-01-31", repeatRule: "monthly" })
+    assertEqual(
+      cdate.getEventView(monthly, localDate(2026, 2, 10)).occurrenceDate,
+      "2026-02-28",
+      "2 月短月",
+    )
+    assertEqual(
+      cdate.getEventView(monthly, localDate(2026, 3, 1)).occurrenceDate,
+      "2026-03-31",
+      "3 月恢复 31 日",
+    )
+    assertEqual(
+      cdate.getEventView(monthly, localDate(2026, 4, 30)).occurrenceDate,
+      "2026-04-30",
+      "4 月 30 日",
+    )
+  })
+
+  await test("倒数日：每周重复", () => {
+    const weekly = countdownEvent({ anchorDate: "2026-10-04", repeatRule: "weekly" })
+    assertEqual(
+      cdate.getEventView(weekly, localDate(2026, 10, 18, 12, 0)).occurrenceDate,
+      "2026-10-18",
+      "今天正好是发生日",
+    )
+
+    const weeklyTimed = countdownEvent({
+      anchorDate: "2026-10-11",
+      anchorTime: "09:00",
+      repeatRule: "weekly",
+    })
+    assertEqual(
+      cdate.getEventView(weeklyTimed, localDate(2026, 10, 18, 12, 0)).occurrenceDate,
+      "2026-10-25",
+      "今天时间已过则滚到下周",
+    )
+
+    const futureAnchor = countdownEvent({ anchorDate: "2026-10-25", repeatRule: "weekly" })
+    assertEqual(
+      cdate.getEventView(futureAnchor, localDate(2026, 10, 18)).occurrenceDate,
+      "2026-10-25",
+      "未来锚点直接使用锚点",
+    )
+  })
+
+  await test("倒数日：正数日", () => {
+    const now = localDate(2026, 10, 18, 12, 0)
+    const ongoing = cdate.getEventView(
+      countdownEvent({ mode: "countup", anchorDate: "2026-10-01" }),
+      now,
+    )
+    assertEqual(ongoing.statusLabel, "已经 17 天", "正数日文案")
+    assertEqual(ongoing.numberLabel, "17", "正数日数字")
+    assertEqual(ongoing.status, "ongoing", "正数日状态")
+
+    const future = cdate.getEventView(
+      countdownEvent({ mode: "countup", anchorDate: "2026-10-20" }),
+      now,
+    )
+    assertEqual(future.statusLabel, "还有 2 天", "正数日尚未开始")
+
+    const inclusive = cdate.getEventView(
+      countdownEvent({
+        mode: "countup",
+        anchorDate: "2026-10-01",
+        countupIncludeStart: true,
+      }),
+      now,
+    )
+    assertEqual(inclusive.statusLabel, "已经 18 天", "包含起始日 +1 天")
+    assertEqual(inclusive.numberLabel, "18", "包含起始日数字")
+
+    const inclusiveToday = cdate.getEventView(
+      countdownEvent({
+        mode: "countup",
+        anchorDate: "2026-10-18",
+        countupIncludeStart: true,
+      }),
+      now,
+    )
+    assertEqual(inclusiveToday.statusLabel, "已经 1 天", "起始日当天算第 1 天")
+  })
+
+  await test("倒数日：月历发生日", () => {
+    const weekly = countdownEvent({ anchorDate: "2026-10-04", repeatRule: "weekly" })
+    const weeklyItems = cdate.occurrencesInMonth(weekly, 2026, 10, localDate(2026, 10, 18))
+    assertEqual(weeklyItems.length, 4, "每周重复一个月出现 4 次")
+    assertEqual(weeklyItems[0].dateKey, "2026-10-04", "第一次发生日")
+
+    const leap = countdownEvent({ anchorDate: "2024-02-29", repeatRule: "yearly" })
+    const leapItems = cdate.occurrencesInMonth(leap, 2028, 2, localDate(2028, 1, 1))
+    assertEqual(leapItems.length, 1, "每年重复只出现一次")
+    assertEqual(leapItems[0].dateKey, "2028-02-29", "闰年 2/29")
+
+    const monthly = countdownEvent({ anchorDate: "2026-01-31", repeatRule: "monthly" })
+    const febItems = cdate.occurrencesInMonth(monthly, 2026, 2, localDate(2026, 1, 1))
+    assertEqual(febItems[0].dateKey, "2026-02-28", "月历短月 clamp")
+
+    const future = countdownEvent({ anchorDate: "2026-12-01", repeatRule: "monthly" })
+    assertEqual(
+      cdate.occurrencesInMonth(future, 2026, 10, localDate(2026, 10, 18)).length,
+      0,
+      "锚点之前不产生发生日",
+    )
+  })
+
+  await test("倒数日：排序", () => {
+    const now = localDate(2026, 10, 18, 12, 0)
+    const list = [
+      cdate.getEventView(countdownEvent({ id: "future2", anchorDate: "2026-10-20" }), now),
+      cdate.getEventView(countdownEvent({ id: "future1", anchorDate: "2026-10-19" }), now),
+      cdate.getEventView(countdownEvent({ id: "past", anchorDate: "2026-10-16" }), now),
+      cdate.getEventView(
+        countdownEvent({ id: "pinned", anchorDate: "2026-10-25", pinned: true }),
+        now,
+      ),
+    ]
+    const sorted = cdate.sortEventViews(list)
+    assertEqual(sorted[0].event.id, "pinned", "置顶优先")
+    assertEqual(sorted[1].event.id, "future1", "未来升序")
+    assertEqual(sorted[2].event.id, "future2", "未来升序 2")
+    assertEqual(sorted[3].event.id, "past", "过去在后")
+  })
+
+  const cdDb = newDb()
+  let cdCreated
+
+  await test("倒数日：SQLite CRUD", () => {
+    cdCreated = csql.createEvent(cdDb, {
+      title: "妈妈生日",
+      anchorDate: "2026-12-01",
+      category: "birthday",
+      repeatRule: "yearly",
+      remindDaysBefore: 3,
+    })
+    assertEqual(csql.listEvents(cdDb).length, 1, "创建后数量")
+    assertEqual(cdCreated.emoji, "🎂", "分类默认 emoji")
+    assertEqual(cdCreated.color, "#ff9f43", "分类默认颜色")
+
+    const updated = csql.updateEvent(cdDb, cdCreated.id, {
+      title: "妈妈生日 🎂",
+      pinned: true,
+    })
+    assertEqual(updated.title, "妈妈生日 🎂", "更新标题")
+    assertEqual(updated.createdAt, cdCreated.createdAt, "更新保留创建时间")
+    assertEqual(updated.pinned, true, "更新置顶")
+
+    const timed = csql.updateEvent(cdDb, cdCreated.id, {
+      anchorTime: "09:00",
+      anchorEndDate: "2026-12-03",
+    })
+    assertEqual(timed.anchorTime, "09:00", "开始时间")
+    assertEqual(timed.anchorEndDate, "2026-12-03", "结束日期")
+
+    const legacyTimed = csql.createEvent(cdDb, {
+      title: "旧版时间段",
+      anchorDate: "2026-12-05",
+      anchorTime: "09:00",
+      anchorEndTime: "11:30",
+    })
+    assertEqual(legacyTimed.anchorEndTime, "11:30", "旧版结束时间可读写")
+    csql.deleteEvent(cdDb, legacyTimed.id)
+
+    const countup = csql.createEvent(cdDb, {
+      title: "正数测试",
+      anchorDate: "2026-01-01",
+      mode: "countup",
+      countupIncludeStart: true,
+    })
+    assertEqual(countup.countupIncludeStart, true, "正数包含起始日")
+    csql.deleteEvent(cdDb, countup.id)
+    assertEqual(csql.listEvents(cdDb).length, 1, "删除正数测试后数量")
+
+    csql.setArchived(cdDb, cdCreated.id, true)
+    assertEqual(csql.listEvents(cdDb).length, 0, "默认不返回归档")
+    assertEqual(csql.listEvents(cdDb, true).length, 1, "包含归档")
+    csql.setArchived(cdDb, cdCreated.id, false)
+  })
+
+  await test("倒数日：旧表补结束日期列", () => {
+    const legacyDb = new SQL.Database()
+    legacyDb.run(`
+      CREATE TABLE mini_countdown_event (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        anchor_date TEXT NOT NULL,
+        anchor_time TEXT,
+        mode TEXT NOT NULL DEFAULT 'countdown',
+        category TEXT NOT NULL DEFAULT 'custom',
+        repeat_rule TEXT NOT NULL DEFAULT 'none',
+        emoji TEXT NOT NULL DEFAULT '⭐',
+        color TEXT NOT NULL DEFAULT '#8f959e',
+        note TEXT NOT NULL DEFAULT '',
+        remind_days_before INTEGER NOT NULL DEFAULT -1,
+        pinned INTEGER NOT NULL DEFAULT 0,
+        archived INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+    `)
+    const legacyColumns = sql.__internal.tableColumns(legacyDb, "mini_countdown_event")
+    assertEqual(legacyColumns.has("anchor_end_time"), false, "旧表没有时间段列")
+    assertEqual(legacyColumns.has("anchor_end_date"), false, "旧表没有结束日期列")
+    sql.initSchema(legacyDb)
+    const migratedColumns = sql.__internal.tableColumns(legacyDb, "mini_countdown_event")
+    assert(migratedColumns.has("anchor_end_time"), "迁移后补上时间段列")
+    assert(migratedColumns.has("anchor_end_date"), "迁移后补上结束日期列")
+    assert(migratedColumns.has("countup_include_start"), "迁移后补上包含起始日列")
+    // 幂等：再次初始化不报错
+    sql.initSchema(legacyDb)
+    legacyDb.close()
+  })
+
+  await test("倒数日：输入校验", () => {
+    assertThrows(
+      () => csql.createEvent(cdDb, { title: "", anchorDate: "2026-01-01" }),
+      "请填写标题",
+      "空标题",
+    )
+    assertThrows(
+      () => csql.createEvent(cdDb, { title: "x", anchorDate: "2026-02-30" }),
+      "日期",
+      "非法日期",
+    )
+    assertThrows(
+      () =>
+        csql.createEvent(cdDb, {
+          title: "x",
+          anchorDate: "2026-01-01",
+          anchorTime: "25:00",
+        }),
+      "时间",
+      "非法时间",
+    )
+    assertThrows(
+      () =>
+        csql.createEvent(cdDb, {
+          title: "x",
+          anchorDate: "2026-01-01",
+          anchorEndTime: "10:00",
+        }),
+      "开始时间",
+      "只有结束时间",
+    )
+    assertThrows(
+      () =>
+        csql.createEvent(cdDb, {
+          title: "x",
+          anchorDate: "2026-01-01",
+          anchorTime: "10:00",
+          anchorEndTime: "09:00",
+        }),
+      "不能早于",
+      "结束早于开始",
+    )
+    assertThrows(
+      () =>
+        csql.createEvent(cdDb, {
+          title: "x",
+          anchorDate: "2026-01-10",
+          anchorEndDate: "2026-01-09",
+        }),
+      "结束日期",
+      "结束日期早于目标日",
+    )
+    assertThrows(
+      () =>
+        csql.createEvent(cdDb, {
+          title: "x",
+          anchorDate: "2026-01-10",
+          anchorEndDate: "2026-02-30",
+        }),
+      "结束日期",
+      "非法结束日期",
+    )
+    assertThrows(
+      () =>
+        csql.createEvent(cdDb, {
+          title: "x",
+          anchorDate: "2026-01-01",
+          anchorEndDate: "2026-01-08",
+          repeatRule: "weekly",
+        }),
+      "重复周期",
+      "重复区间不能超过一个周期",
+    )
+    assertThrows(
+      () =>
+        csql.createEvent(cdDb, {
+          title: "x",
+          anchorDate: "2026-01-01",
+          mode: "countup",
+          repeatRule: "yearly",
+        }),
+      "正数日",
+      "正数日不能重复",
+    )
+    assertThrows(
+      () =>
+        csql.createEvent(cdDb, {
+          title: "x",
+          anchorDate: "2026-01-01",
+          color: "red",
+        }),
+      "颜色",
+      "非法颜色",
+    )
+
+    const sameDay = csql.createEvent(cdDb, {
+      title: "同天结束",
+      anchorDate: "2026-01-01",
+      anchorEndDate: "2026-01-01",
+    })
+    assertEqual(sameDay.anchorEndDate, null, "结束日等于目标日会归一化为 null")
+    csql.deleteEvent(cdDb, sameDay.id)
+
+    const countupRange = csql.createEvent(cdDb, {
+      title: "正数区间",
+      anchorDate: "2026-01-01",
+      anchorEndDate: "2026-01-03",
+      mode: "countup",
+    })
+    assertEqual(countupRange.anchorEndDate, null, "正数日清空结束日期")
+    csql.deleteEvent(cdDb, countupRange.id)
+  })
+
+  await test("倒数日：JSON 与 SQLite 备份", () => {
+    const payload = sql.exportJson(cdDb)
+    assertEqual(payload.countdownEvents.length, 1, "JSON 导出包含倒数日")
+    assertEqual(payload.countdownEvents[0].title, "妈妈生日 🎂", "导出标题")
+    assertEqual(sql.getStats(cdDb).countdownCount, 1, "统计倒数日数量")
+
+    const bytes = cdDb.export()
+    const reopened = new SQL.Database(bytes)
+    const reopenedEvents = csql.listEvents(reopened, true)
+    assertEqual(reopenedEvents.length, 1, "SQLite 文件包含倒数日")
+    assertEqual(reopenedEvents[0].anchorDate, "2026-12-01", "SQLite 文件字段")
+    assertEqual(reopenedEvents[0].anchorEndDate, "2026-12-03", "SQLite 文件结束日期")
+    assertEqual(reopenedEvents[0].anchorTime, "09:00", "SQLite 文件开始时间")
+    assertEqual(payload.countdownEvents[0].anchorEndDate, "2026-12-03", "JSON 导出结束日期")
+    reopened.close()
+  })
+
+  await test("倒数日：JSON 导入替换与旧备份兼容", () => {
+    const payload = sql.exportJson(cdDb)
+    payload.countdownEvents = [
+      countdownEvent({
+        id: "imported-1",
+        title: "导入的纪念日",
+        anchorDate: "2026-11-11",
+        anchorEndDate: "2026-11-13",
+        repeatRule: "yearly",
+      }),
+    ]
+    sql.importJson(cdDb, payload)
+    const imported = csql.listEvents(cdDb, true)
+    assertEqual(imported.length, 1, "导入后数量")
+    assertEqual(imported[0].title, "导入的纪念日", "导入后标题")
+    assertEqual(imported[0].anchorEndDate, "2026-11-13", "导入后结束日期")
+
+    const oldPayload = sql.exportJson(cdDb)
+    delete oldPayload.countdownEvents
+    sql.importJson(cdDb, oldPayload)
+    assertEqual(csql.listEvents(cdDb, true).length, 1, "旧备份保留现有倒数日")
+
+    const badPayload = sql.exportJson(cdDb)
+    badPayload.countdownEvents = [{ ...countdownEvent(), title: "" }]
+    assertThrows(() => sql.importJson(cdDb, badPayload), "请填写标题", "非法倒数日回滚")
+    assertEqual(csql.listEvents(cdDb, true).length, 1, "回滚后数据不变")
+  })
+
+  cdDb.close()
 
   // 清理账户相关记录，验证删除保护
   sql.deleteRecord(db, bankIncome.id)

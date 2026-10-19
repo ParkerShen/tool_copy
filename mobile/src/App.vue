@@ -94,7 +94,7 @@ function scheduleBackupReminder(): void {
     try {
       if (!isLocalDataMode || isBackupSnoozed()) return
       const stats = await getDatabaseStats()
-      if (stats.recordCount <= 0) return
+      if (stats.recordCount + stats.countdownCount <= 0) return
       const days = daysSinceLastExport()
       if (days !== null && days < BACKUP_INTERVAL_DAYS) return
       uni.showModal({
@@ -152,6 +152,7 @@ onHide(() => {
 
 <style lang="scss">
 @import "./styles/bookkeeping.scss";
+@import "./styles/countdown.scss";
 
 /* stylelint-disable selector-type-no-unknown */
 button::after {
