@@ -19,6 +19,12 @@
     <view class="page-head">
       <text class="page-title">记账</text>
       <view class="head-actions">
+        <view class="head-btn" @click="goSearch">
+          <wd-icon name="search" size="19px" color="#646a73" />
+        </view>
+        <view class="head-btn" @click="goCalendar">
+          <wd-icon name="calendar" size="19px" color="#646a73" />
+        </view>
         <view class="head-btn" @click="goStats">
           <wd-icon name="chart" size="19px" color="#646a73" />
         </view>
@@ -44,24 +50,14 @@
     </view>
 
     <view class="summary-card">
-      <view class="summary-top">
-        <text class="summary-label">{{ summaryLabel }}</text>
-        <text class="summary-badge">{{ accountFilter ? "账户" : "月度" }}</text>
+      <view class="summary-item">
+        <text class="summary-item-label">{{ accountFilter ? "本期收入" : "收入" }}</text>
+        <text class="summary-item-value income bk-amount">{{ incomeText }}</text>
       </view>
-      <text class="summary-value bk-amount" :class="{ negative: summaryValueCents < 0 }">
-        ¥{{ formatCents(summaryValueCents) }}
-      </text>
-
-      <view class="summary-row">
-        <view class="summary-item">
-          <text class="summary-item-label">{{ accountFilter ? "本期收入" : "收入" }}</text>
-          <text class="summary-item-value income bk-amount">{{ incomeText }}</text>
-        </view>
-        <view class="summary-divider" />
-        <view class="summary-item">
-          <text class="summary-item-label">{{ accountFilter ? "本期支出" : "支出" }}</text>
-          <text class="summary-item-value expense bk-amount">{{ expenseText }}</text>
-        </view>
+      <view class="summary-divider" />
+      <view class="summary-item">
+        <text class="summary-item-label">{{ accountFilter ? "本期支出" : "支出" }}</text>
+        <text class="summary-item-value expense bk-amount">{{ expenseText }}</text>
       </view>
     </view>
 
@@ -123,7 +119,7 @@
             <text class="day-total bk-amount">{{ groupTotalText(group) }}</text>
           </view>
 
-          <view class="day-card">
+          <view class="day-records">
             <view
               v-for="record in group.records"
               :key="record.id"
@@ -143,7 +139,6 @@
                 />
               </view>
               <view class="record-main">
-                <text class="record-title">{{ record.title || record.category.name }}</text>
                 <input
                   v-if="editingRemarkId === String(record.id)"
                   v-model="remarkDraft"
@@ -157,8 +152,13 @@
                   @blur="saveRemark(record)"
                   @confirm="saveRemark(record)"
                 />
-                <text v-else class="record-sub" @click.stop="startRemarkEdit(record)">
-                  {{ recordSubText(record) }}
+                <text
+                  v-else
+                  class="record-title"
+                  :class="{ 'is-placeholder': !record.remark }"
+                  @click.stop="startRemarkEdit(record)"
+                >
+                  {{ record.remark || "添加备注" }}
                 </text>
               </view>
               <text
@@ -337,20 +337,6 @@ const range = computed(() => ({
 
 const monthLabel = computed(() => dayjs(`${month.value}-01`).format("YYYY年M月"))
 
-const selectedAccount = computed(() =>
-  accounts.value.find((account) => account.id === accountFilter.value),
-)
-
-const summaryLabel = computed(() =>
-  accountFilter.value && selectedAccount.value ? `${selectedAccount.value.name}余额` : "本期结余",
-)
-
-const summaryValueCents = computed(() =>
-  accountFilter.value && selectedAccount.value
-    ? selectedAccount.value.balanceCents
-    : stats.value.netCents,
-)
-
 const incomeText = computed(() => formatCents(stats.value.incomeCents, { sign: true }))
 const expenseText = computed(() => formatCents(-stats.value.expenseCents, { sign: true }))
 
@@ -406,19 +392,6 @@ function groupTotalText(group: DailyRecordGroup): string {
     segments.push(`收 ${formatCents(dayIncomeCents(group))}`)
   }
   return segments.join("  ")
-}
-
-function recordSubText(record: DailyRecord): string {
-  const parts: string[] = []
-  const title = record.title || record.category.name
-  if (record.category.name && record.category.name !== title) {
-    parts.push(record.category.name)
-  }
-  if (record.account?.name) parts.push(record.account.name)
-  if (record.remark) parts.push(record.remark)
-  for (const tag of record.tags || []) parts.push(`#${tag}`)
-  if (record.images?.length) parts.push(`[图${record.images.length}]`)
-  return parts.join(" · ") || "无备注"
 }
 
 function recordAmountText(record: DailyRecord): string {
@@ -746,6 +719,22 @@ function goStats(): void {
   uni.navigateTo({ url: `/pages/BookKeeping/stats?month=${month.value}` })
 }
 
+function goSearch(): void {
+  if (!isLocal) {
+    toast("搜索功能仅本地模式可用")
+    return
+  }
+  uni.navigateTo({ url: "/pages/BookKeeping/search" })
+}
+
+function goCalendar(): void {
+  if (!isLocal) {
+    toast("日历功能仅本地模式可用")
+    return
+  }
+  uni.navigateTo({ url: `/pages/BookKeeping/calendar?month=${month.value}` })
+}
+
 function openManage(): void {
   if (!isLocal) {
     toast("管理功能仅本地模式可用")
@@ -852,50 +841,13 @@ onPullDownRefresh(async () => {
 }
 
 .summary-card {
-  padding: 34rpx;
+  display: flex;
+  align-items: center;
+  padding: 32rpx 34rpx;
   color: #fff;
   background: linear-gradient(135deg, #ffc000, #ff9f00);
   border-radius: 28rpx;
   box-shadow: 0 12rpx 30rpx rgb(255 192 0 / 25%);
-}
-
-.summary-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.summary-label {
-  font-size: 26rpx;
-  opacity: 0.9;
-}
-
-.summary-badge {
-  padding: 4rpx 14rpx;
-  font-size: 20rpx;
-  background: rgb(255 255 255 / 22%);
-  border-radius: 999rpx;
-}
-
-.summary-value {
-  display: block;
-  margin: 16rpx 0 28rpx;
-  font-size: 64rpx;
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: 1rpx;
-}
-
-.summary-value.negative {
-  color: #fff3f3;
-}
-
-.summary-row {
-  display: flex;
-  align-items: center;
-  padding: 18rpx 22rpx;
-  background: rgb(255 255 255 / 18%);
-  border-radius: 18rpx;
 }
 
 .summary-item {
@@ -905,20 +857,21 @@ onPullDownRefresh(async () => {
 }
 
 .summary-item-label {
-  font-size: 22rpx;
+  font-size: 24rpx;
   opacity: 0.85;
 }
 
 .summary-item-value {
-  margin-top: 4rpx;
-  font-size: 30rpx;
-  font-weight: 600;
+  margin-top: 8rpx;
+  font-size: 40rpx;
+  font-weight: 700;
 }
 
 .summary-divider {
+  flex-shrink: 0;
   width: 1rpx;
   height: 52rpx;
-  margin: 0 24rpx;
+  margin: 0 30rpx;
   background: rgb(255 255 255 / 25%);
 }
 
@@ -987,22 +940,27 @@ onPullDownRefresh(async () => {
 }
 
 .list-section {
-  margin-top: 26rpx;
+  margin-top: 16rpx;
 }
 
 .day-group {
-  margin-bottom: 26rpx;
+  padding: 4rpx 0;
+  border-top: 1rpx solid #eceef1;
+}
+
+.day-group:last-of-type {
+  border-bottom: 1rpx solid #eceef1;
 }
 
 .day-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 6rpx 12rpx;
+  padding: 14rpx 6rpx 4rpx;
 }
 
 .day-date {
-  font-size: 26rpx;
+  font-size: 24rpx;
   font-weight: 600;
   color: var(--bk-text-secondary);
 }
@@ -1012,27 +970,15 @@ onPullDownRefresh(async () => {
   color: var(--bk-text-tertiary);
 }
 
-.day-card {
-  overflow: hidden;
-  background: #fff;
-  border-radius: 24rpx;
-  box-shadow: 0 4rpx 16rpx rgb(31 35 41 / 4%);
-}
-
 .record-row {
   display: flex;
   align-items: center;
-  min-height: 112rpx;
-  padding: 18rpx 24rpx;
-  border-bottom: 1rpx solid #f2f3f5;
-}
-
-.record-row:last-child {
-  border-bottom: none;
+  min-height: 68rpx;
+  padding: 14rpx 6rpx;
 }
 
 .record-row:active {
-  background: #fafafa;
+  background: rgb(0 0 0 / 2%);
 }
 
 .record-icon {
@@ -1040,9 +986,9 @@ onPullDownRefresh(async () => {
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 76rpx;
-  height: 76rpx;
-  border-radius: 22rpx;
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 20rpx;
 }
 
 .record-main {
@@ -1055,20 +1001,16 @@ onPullDownRefresh(async () => {
 
 .record-title {
   overflow: hidden;
-  font-size: 30rpx;
+  font-size: 28rpx;
   font-weight: 500;
   color: var(--bk-text);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.record-sub {
-  margin-top: 6rpx;
-  overflow: hidden;
-  font-size: 22rpx;
+.record-title.is-placeholder {
+  font-weight: 400;
   color: var(--bk-text-tertiary);
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .record-sub-input {
@@ -1076,7 +1018,6 @@ onPullDownRefresh(async () => {
   width: 100%;
   height: 56rpx;
   padding: 0 10rpx;
-  margin-top: 4rpx;
   font-size: 16px;
   color: var(--bk-text);
   background: #f2f3f5;

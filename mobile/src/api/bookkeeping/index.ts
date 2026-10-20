@@ -16,6 +16,7 @@ import type {
   AccountPeriodStats,
   ApiMessageResult,
   ApiResult,
+  CalendarDayStat,
   Category,
   CategoryStat,
   CreateAccountRequest,
@@ -29,6 +30,7 @@ import type {
   MonthlyStatsResult,
   RangeStats,
   RecordFilters,
+  RecordSearchFilters,
   TagUsage,
   UpdateAccountRequest,
   UpdateCategoryRequest,
@@ -142,6 +144,20 @@ export function deleteCategory(id: string | number): Promise<ApiMessageResult> {
 export function listRecordGroups(filters: RecordFilters): Promise<ApiResult<DailyRecordGroup[]>> {
   if (useLocalData) return localApi.listRecordGroups(filters)
   return Promise.reject(new Error("当前为远程接口模式，暂不支持组合筛选"))
+}
+
+/** 关键词搜索记录（类别 / 标签 / 备注 / 金额） */
+export function searchRecordGroups(
+  filters: RecordSearchFilters,
+): Promise<ApiResult<DailyRecordGroup[]>> {
+  if (useLocalData) return localApi.searchRecordGroups(filters)
+  return Promise.reject(new Error("当前为远程接口模式，暂不支持搜索"))
+}
+
+/** 某月每天的收支汇总（日历页） */
+export function getCalendarMonth(month: string): Promise<ApiResult<CalendarDayStat[]>> {
+  if (useLocalData) return localApi.getCalendarMonth(month)
+  return Promise.reject(new Error("当前为远程接口模式，暂不支持日历"))
 }
 
 /** 获取单条记录（编辑页预填） */
@@ -340,6 +356,7 @@ export type {
   AccountType,
   ApiMessageResult,
   ApiResult,
+  CalendarDayStat,
   Category,
   CategoryStat,
   CreateAccountRequest,
@@ -354,6 +371,8 @@ export type {
   RangeStats,
   RecordAccount,
   RecordFilters,
+  RecordSearchField,
+  RecordSearchFilters,
   TagUsage,
   UpdateAccountRequest,
   UpdateCategoryRequest,

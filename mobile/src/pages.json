@@ -81,6 +81,15 @@
       }
     },
     {
+      "path": "pages/BookKeeping/calendar",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "日历",
+        "navigationBarBackgroundColor": "#FFFFFF"
+      }
+    },
+    {
       "path": "pages/BookKeeping/categories",
       "type": "page",
       "layout": "default",
@@ -107,6 +116,15 @@
         "navigationBarTitleText": "记账",
         "navigationBarBackgroundColor": "#FFFFFF",
         "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/BookKeeping/search",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "搜索",
+        "navigationBarBackgroundColor": "#FFFFFF"
       }
     },
     {

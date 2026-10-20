@@ -195,6 +195,19 @@ export interface RecordFilters extends DateRange {
   categoryId?: string
 }
 
+/** 搜索字段：类别 / 标签 / 备注 / 金额，all 表示全部字段 */
+export type RecordSearchField = "all" | "category" | "tag" | "remark" | "amount"
+
+/** 记录搜索条件（start/end 省略表示不限时间） */
+export interface RecordSearchFilters {
+  keyword?: string
+  field?: RecordSearchField
+  type?: "income" | "expense"
+  accountId?: string
+  start?: string
+  end?: string
+}
+
 export interface RangeStats {
   incomeCents: number
   expenseCents: number
@@ -222,6 +235,14 @@ export interface CategoryStat {
 export interface DailyStat {
   date: string
   amountCents: number
+  count: number
+}
+
+/** 日历按日汇总：同一天的收入与支出（分） */
+export interface CalendarDayStat {
+  date: string
+  incomeCents: number
+  expenseCents: number
   count: number
 }
 
@@ -1331,7 +1352,10 @@ export function listRecordGroups(db: Database, filters: RecordFilters): DailyRec
      ORDER BY r.record_date DESC, r.created_at DESC, r.id DESC`,
     params,
   )
+  return groupRecordRows(rows)
+}
 
+function groupRecordRows(rows: Record<string, SqlValue>[]): DailyRecordGroup[] {
   const groups = new Map<string, DailyRecordGroup>()
   for (const row of rows) {
     const record = mapRecord(row)
@@ -1357,6 +1381,81 @@ export function listRecordGroups(db: Database, filters: RecordFilters): DailyRec
     }
   }
   return Array.from(groups.values())
+}
+
+function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (match) => `\\${match}`)
+}
+
+/** 金额关键词：允许 ¥ / ￥ / 千分位逗号；非法输入返回 null */
+function normalizeAmountKeyword(keyword: string): string | null {
+  const normalized = keyword.replace(/[¥￥,，\s]/g, "")
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) return null
+  return normalized
+}
+
+/**
+ * 关键词搜索：类别 / 标签 / 备注 / 金额，可选收支与时间范围。
+ * 时间不传表示全部记录；结果按日期倒序分组。
+ */
+export function searchRecordGroups(db: Database, filters: RecordSearchFilters): DailyRecordGroup[] {
+  const keyword = (filters.keyword ?? "").trim()
+  const field = filters.field ?? "all"
+  const where: string[] = ["r.user_id = ?"]
+  const params: SqlValue[] = [DEFAULT_USER_ID]
+
+  if (filters.start && filters.end) {
+    assertRange(filters.start, filters.end)
+    where.push("r.record_date BETWEEN ? AND ?")
+    params.push(filters.start, filters.end)
+  }
+  if (filters.type) {
+    assertType(filters.type)
+    where.push("r.type = ?")
+    params.push(filters.type)
+  }
+  if (filters.accountId) {
+    where.push("r.account_id = ?")
+    params.push(filters.accountId)
+  }
+
+  if (keyword) {
+    const token = `%${escapeLike(keyword)}%`
+    const clauses: string[] = []
+    const addLike = (column: string): void => {
+      clauses.push(`${column} LIKE ? ESCAPE '\\'`)
+      params.push(token)
+    }
+
+    if (field === "all" || field === "category") {
+      addLike("c.name")
+      addLike("r.title")
+    }
+    if (field === "all" || field === "tag") addLike("r.tags")
+    if (field === "all" || field === "remark") addLike("r.remark")
+    if (field === "all" || field === "amount") {
+      const amount = normalizeAmountKeyword(keyword)
+      if (amount) {
+        // 同时匹配「元」字符串（23.5 → 23.50）与整数分（23.5 → 2350 含 235）
+        clauses.push("printf('%.2f', r.amount_cents / 100.0) LIKE ? ESCAPE '\\'")
+        params.push(`%${escapeLike(amount)}%`)
+        clauses.push("CAST(r.amount_cents AS TEXT) LIKE ? ESCAPE '\\'")
+        params.push(`%${escapeLike(amount.replace(".", ""))}%`)
+      }
+    }
+
+    if (clauses.length === 0) return []
+    where.push(`(${clauses.join(" OR ")})`)
+  }
+
+  const rows = queryAll(
+    db,
+    `${RECORD_SELECT}
+     WHERE ${where.join(" AND ")}
+     ORDER BY r.record_date DESC, r.created_at DESC, r.id DESC`,
+    params,
+  )
+  return groupRecordRows(rows)
 }
 
 /** 某月记录，按日期倒序分组 */
@@ -1388,6 +1487,29 @@ export function getMonthlyChartData(
     }
   }
   return result
+}
+
+/** 某月每天的收支汇总（仅返回有记录的日期） */
+export function getCalendarMonth(db: Database, month: string): CalendarDayStat[] {
+  const { start, end } = monthRange(month)
+  const rows = queryAll(
+    db,
+    `SELECT record_date AS date,
+            SUM(CASE WHEN type = 'income' THEN amount_cents ELSE 0 END) AS income_cents,
+            SUM(CASE WHEN type = 'expense' THEN amount_cents ELSE 0 END) AS expense_cents,
+            COUNT(*) AS record_count
+     FROM mini_bookkeeping_record
+     WHERE user_id = ? AND record_date BETWEEN ? AND ?
+     GROUP BY record_date
+     ORDER BY record_date ASC`,
+    [DEFAULT_USER_ID, start, end],
+  )
+  return rows.map((row) => ({
+    date: asString(row.date),
+    incomeCents: asNumber(row.income_cents),
+    expenseCents: asNumber(row.expense_cents),
+    count: asNumber(row.record_count),
+  }))
 }
 
 function assertType(type: unknown): asserts type is "income" | "expense" {

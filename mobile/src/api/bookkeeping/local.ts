@@ -33,6 +33,7 @@ import type {
   AccountPeriodStats,
   ApiMessageResult,
   ApiResult,
+  CalendarDayStat,
   Category,
   CategoryStat,
   CreateAccountRequest,
@@ -46,6 +47,7 @@ import type {
   MonthlyStatsResult,
   RangeStats,
   RecordFilters,
+  RecordSearchFilters,
   TagUsage,
   UpdateAccountRequest,
   UpdateCategoryRequest,
@@ -88,6 +90,18 @@ export function getDailyRecords(month: string): Promise<ApiResult<DailyRecordGro
 /** 按日期范围 / 类型 / 账户 / 分类筛选记录 */
 export function listRecordGroups(filters: RecordFilters): Promise<ApiResult<DailyRecordGroup[]>> {
   return read((db) => sql.listRecordGroups(db, filters) as DailyRecordGroup[])
+}
+
+/** 关键词搜索记录（类别 / 标签 / 备注 / 金额） */
+export function searchRecordGroups(
+  filters: RecordSearchFilters,
+): Promise<ApiResult<DailyRecordGroup[]>> {
+  return read((db) => sql.searchRecordGroups(db, filters) as DailyRecordGroup[])
+}
+
+/** 某月每天的收支汇总（日历页） */
+export function getCalendarMonth(month: string): Promise<ApiResult<CalendarDayStat[]>> {
+  return read((db) => sql.getCalendarMonth(db, month) as CalendarDayStat[])
 }
 
 /** 获取单条记录（编辑页预填） */

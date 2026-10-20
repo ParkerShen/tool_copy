@@ -260,6 +260,19 @@ export interface RecordFilters extends DateRange {
   categoryId?: string
 }
 
+/** 搜索字段：类别 / 标签 / 备注 / 金额，all 表示全部字段 */
+export type RecordSearchField = "all" | "category" | "tag" | "remark" | "amount"
+
+/** 记录搜索条件（时间可不限） */
+export interface RecordSearchFilters {
+  keyword?: string
+  field?: RecordSearchField
+  type?: "income" | "expense"
+  accountId?: string
+  start?: string
+  end?: string
+}
+
 /** 区间收支汇总（分） */
 export interface RangeStats {
   incomeCents: number
@@ -291,6 +304,14 @@ export interface CategoryStat {
 export interface DailyStat {
   date: string
   amountCents: number
+  count: number
+}
+
+/** 日历按日汇总：同一天的收入与支出（分） */
+export interface CalendarDayStat {
+  date: string
+  incomeCents: number
+  expenseCents: number
   count: number
 }
 

@@ -6,9 +6,11 @@
 interface NavigateToOptions {
   url: "/pages/index/index" |
        "/pages/BookKeeping/accounts" |
+       "/pages/BookKeeping/calendar" |
        "/pages/BookKeeping/categories" |
        "/pages/BookKeeping/edit" |
        "/pages/BookKeeping/index" |
+       "/pages/BookKeeping/search" |
        "/pages/BookKeeping/stats" |
        "/pages/DayMaster/edit" |
        "/pages/DayMaster/index" |
