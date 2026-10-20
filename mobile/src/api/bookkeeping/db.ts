@@ -10,11 +10,16 @@ import type { Database, SqlJsStatic } from "sql.js"
 import { idbDelete, idbGet, idbKeys, idbSet, isIndexedDbAvailable } from "@/utils/idb"
 import {
   TAG_DIARY_TOOL_KEY,
+  countSavedTagDiaries,
   parseTagDiaryRaw,
+  readTagDiaryData,
   readTagDiaryRaw,
   writeTagDiaryRaw,
 } from "@/utils/toolData"
-import { clearAll, initSchema, seedDefaults } from "./sql"
+import { normalizeDiaryBackupEntries } from "@/api/diary"
+import { readAllDiaryEntries, replaceAllDiaryEntries } from "@/api/diary/storage"
+import type { DiaryEntry } from "@/api/diary/types"
+import { clearAll, getStats, initSchema, seedDefaults } from "./sql"
 
 const DB_KEY = "db"
 const CORRUPT_KEY = "db.corrupt"
@@ -24,13 +29,20 @@ const SAFETY_SNAPSHOT_LIMIT = 3
 const MANUAL_SNAPSHOT_LIMIT = 5
 const TOOL_DATA_TABLE = "app_tool_data"
 
+/** SQLite 统一备份里存放「日记」的 key */
+const DIARY_TOOL_KEY = "diary"
+
 /**
- * 导出/快照前把标签日记写进 SQLite 的 app_tool_data 表，
+ * 导出/快照前把不在 SQLite 里的工具数据写进 app_tool_data 表：
+ * - 标签日记（localStorage）
+ * - 日记（独立 IndexedDB）
  * 这样 .sqlite 文件也能一次备份所有工具的数据。
  */
-function injectToolData(db: Database): void {
-  const raw = readTagDiaryRaw()
-  if (!raw) return
+function injectToolData(db: Database, diaryEntries: DiaryEntry[] | null = null): void {
+  const tagDiaryRaw = readTagDiaryRaw()
+  // null 表示日记读取失败：不写入 diary key，避免导入时误清空
+  if (!tagDiaryRaw && diaryEntries === null) return
+
   db.run(
     `CREATE TABLE IF NOT EXISTS ${TOOL_DATA_TABLE} (
        key TEXT PRIMARY KEY,
@@ -41,10 +53,48 @@ function injectToolData(db: Database): void {
   const stmt = db.prepare(
     `INSERT OR REPLACE INTO ${TOOL_DATA_TABLE} (key, value, updated_at) VALUES (?, ?, ?)`,
   )
+  const now = new Date().toISOString()
   try {
-    stmt.run([TAG_DIARY_TOOL_KEY, raw, new Date().toISOString()])
+    if (tagDiaryRaw) stmt.run([TAG_DIARY_TOOL_KEY, tagDiaryRaw, now])
+    if (diaryEntries !== null) {
+      stmt.run([
+        DIARY_TOOL_KEY,
+        JSON.stringify({ version: 1, exportedAt: now, entries: diaryEntries }),
+        now,
+      ])
+    }
   } finally {
     stmt.free()
+  }
+}
+
+/**
+ * 导出/快照用的 SQLite 字节。
+ *
+ * 在临时副本里注入工具数据，避免把日记图片等大字段永久写进主库；
+ * diaryEntries 传 undefined 表示自动读取，传 null 表示读取失败、跳过日记。
+ */
+async function exportDbBytes(
+  db: Database,
+  diaryEntries?: DiaryEntry[] | null,
+): Promise<Uint8Array> {
+  let entries = diaryEntries
+  if (entries === undefined) {
+    try {
+      entries = await readAllDiaryEntries()
+    } catch (error) {
+      console.warn("[db] 读取日记失败，备份中暂不包含日记:", error)
+      entries = null
+    }
+  }
+
+  const SQL = await loadSqlJs()
+  const copy = new SQL.Database(db.export())
+  try {
+    injectToolData(copy, entries)
+    return copy.export()
+  } finally {
+    copy.close()
   }
 }
 
@@ -336,8 +386,8 @@ async function saveSnapshotBytes(bytes: Uint8Array, kind: SnapshotKind): Promise
 /** 立即创建一份快照；type 为 manual 时可由用户主动触发 */
 export async function createSnapshot(kind: SnapshotKind = "manual"): Promise<string> {
   const db = await getDb()
-  injectToolData(db)
-  const key = await saveSnapshotBytes(db.export(), kind)
+  const bytes = await exportDbBytes(db)
+  const key = await saveSnapshotBytes(bytes, kind)
   if (!key) throw new Error("当前浏览器无法保存快照")
   return key
 }
@@ -345,18 +395,28 @@ export async function createSnapshot(kind: SnapshotKind = "manual"): Promise<str
 async function maybeCreateDailySnapshot(db: Database): Promise<void> {
   if (memoryOnly || !isIndexedDbAvailable()) return
   try {
-    // 只用倒数日的用户也要有每日快照
-    const result = db.exec(
-      `SELECT
-         (SELECT COUNT(*) FROM mini_bookkeeping_record) +
-         (SELECT COUNT(*) FROM mini_countdown_event)`,
-    )
-    const count = Number(result[0]?.values?.[0]?.[0] || 0)
-    if (count <= 0) return
+    // 今天已经有快照就不再重复读取日记图片
     const key = snapshotKey("daily")
     if (await idbGet(key)) return
-    injectToolData(db)
-    await idbSet(key, db.export())
+
+    // 只要任意一个工具有数据，就保留当天的本机快照
+    const stats = getStats(db)
+    let diaryEntries: DiaryEntry[] | null = null
+    try {
+      diaryEntries = await readAllDiaryEntries()
+    } catch (error) {
+      console.warn("[db] 读取日记失败，快照暂不包含日记:", error)
+    }
+    const count =
+      stats.recordCount +
+      stats.countdownCount +
+      stats.inventoryItemCount +
+      stats.inventoryLocationCount +
+      (diaryEntries?.length ?? 0) +
+      countSavedTagDiaries(readTagDiaryData())
+    if (count <= 0) return
+
+    await idbSet(key, await exportDbBytes(db, diaryEntries))
     await pruneSnapshots()
   } catch (error) {
     console.warn("[db] 创建每日快照失败:", error)
@@ -391,8 +451,7 @@ export async function deleteSnapshot(key: string): Promise<void> {
 export async function exportSqliteFile(): Promise<Uint8Array> {
   const db = await getDb()
   await persistChain
-  injectToolData(db)
-  return db.export()
+  return exportDbBytes(db)
 }
 
 /** 用 .sqlite 文件整体替换当前数据库 */
@@ -404,6 +463,7 @@ export async function importSqliteFile(bytes: Uint8Array): Promise<void> {
   const SQL = await loadSqlJs()
   let nextDb: Database
   let incomingTagDiary: string | null = null
+  let incomingDiary: DiaryEntry[] | null = null
   try {
     nextDb = new SQL.Database(bytes)
     const result = nextDb.exec("SELECT name FROM sqlite_master WHERE type='table'")
@@ -417,6 +477,10 @@ export async function importSqliteFile(bytes: Uint8Array): Promise<void> {
       throw new Error("不是有效的本地记账数据库")
     }
     incomingTagDiary = readToolData(nextDb, TAG_DIARY_TOOL_KEY)
+    const diaryRaw = readToolData(nextDb, DIARY_TOOL_KEY)
+    if (diaryRaw) {
+      incomingDiary = normalizeDiaryBackupEntries(JSON.parse(diaryRaw))
+    }
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : "备份文件无法读取")
   }
@@ -463,6 +527,15 @@ export async function importSqliteFile(bytes: Uint8Array): Promise<void> {
     } catch (error) {
       const reason = error instanceof Error ? error.message : "未知错误"
       throw new Error(`记账数据已恢复，但标签日记恢复失败：${reason}`)
+    }
+  }
+
+  if (incomingDiary !== null) {
+    try {
+      await replaceAllDiaryEntries(incomingDiary)
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "未知错误"
+      throw new Error(`记账数据已恢复，但日记恢复失败：${reason}`)
     }
   }
 }

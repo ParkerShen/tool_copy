@@ -159,6 +159,14 @@ export function getRangeStats(
   return Promise.reject(new Error("当前为远程接口模式，暂不支持区间统计"))
 }
 
+/** 记账记录的最早/最晚日期（统计页年份 tab 据此确定起点） */
+export function getRecordDateRange(): Promise<
+  ApiResult<{ firstRecordDate: string | null; lastRecordDate: string | null }>
+> {
+  if (useLocalData) return localApi.getRecordDateRange()
+  return Promise.reject(new Error("当前为远程接口模式，暂不支持日期范围统计"))
+}
+
 /** 分类排行（分） */
 export function getCategoryStats(
   type: "income" | "expense",

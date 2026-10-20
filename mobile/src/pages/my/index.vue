@@ -12,7 +12,7 @@
         <wd-icon name="user" size="26px" color="#ff9f00" />
       </view>
       <view class="header-info">
-        <text class="header-title">本地记账</text>
+        <text class="header-title">本地工具箱</text>
         <text class="header-sub">数据只保存在这台设备</text>
       </view>
     </view>
@@ -31,7 +31,7 @@
           </view>
           <view class="action-info">
             <text class="action-title">导出 SQLite 数据库</text>
-            <text class="action-sub">全部工具数据，可原样恢复</text>
+            <text class="action-sub">全部工具，可原样恢复</text>
           </view>
           <wd-icon name="arrow-right" size="18px" color="#ccc" />
         </view>
@@ -41,7 +41,7 @@
           </view>
           <view class="action-info">
             <text class="action-title">导出 JSON 备份</text>
-            <text class="action-sub">全部工具数据，可读文本</text>
+            <text class="action-sub">全部工具，可读文本</text>
           </view>
           <wd-icon name="arrow-right" size="18px" color="#ccc" />
         </view>
@@ -62,8 +62,9 @@
           建议每 {{ BACKUP_INTERVAL_DAYS }} 天导出一次
         </text>
       </view>
+      <text v-if="backupContents" class="backup-contents">{{ backupContents }}</text>
       <text class="backup-scope">
-        一次导出即包含记账、倒数日和标签日记；DeepSeek API Key 不会写入备份。
+        一次导出即包含记账、日记、标签日记、倒数日、收纳；DeepSeek API Key 不会写入备份。
       </text>
     </view>
 
@@ -89,7 +90,7 @@
         还没有快照。记一笔后每天首次打开会自动生成，也可以点「立即快照」。
       </text>
       <text class="snapshot-tip">
-        快照会同时保存记账、倒数日和标签日记，最多保留 7 份每日快照和最近 3
+        快照会同时保存记账、日记、标签日记、倒数日和收纳，最多保留 7 份每日快照和最近 3
         份操作前快照。它能防止误删、误导入，但无法防止清理 Safari
         网站数据或删除主屏幕图标，所以仍建议定期导出 .sqlite 到「文件」或 iCloud。
       </text>
@@ -99,15 +100,15 @@
       <text class="section-title">危险操作</text>
       <view class="danger-btn" @click="handleClear">清空所有记账数据</view>
       <text class="danger-tip">
-        清空后只保留默认分类和默认账户；倒数日和标签日记不会被清空。建议先导出备份。
+        清空后只保留默认分类和默认账户；日记、标签日记、倒数日和收纳不会被清空。建议先导出备份。
       </text>
     </view>
 
     <view class="section about">
       <text class="about-title">关于本地模式</text>
       <text class="about-text">
-        记账、倒数日等接口逻辑运行在页面内，数据库为 SQLite（WebAssembly），数据库文件持久化在浏览器的
-        IndexedDB 中。因此不需要电脑或线上服务器，断网也能使用。
+        记账、日记、标签日记、倒数日、收纳的数据都保存在本机：SQLite（WebAssembly）与 IndexedDB
+        持久化在浏览器中。因此不需要电脑或线上服务器，断网也能使用。
       </text>
       <text class="about-text">
         注意：清理 Safari 网站数据、卸载主屏幕图标或更换访问地址（origin）都会导致数据不可见，
@@ -147,6 +148,17 @@ const exportStatus = computed(() => {
   if (exportDays.value === null) return "从未导出"
   if (exportDays.value === 0) return "今天"
   return `${exportDays.value} 天前`
+})
+const backupContents = computed(() => {
+  const value = stats.value
+  if (!value) return ""
+  return [
+    `记账 ${value.recordCount} 笔`,
+    `日记 ${value.diaryCount} 篇`,
+    `标签日记 ${value.tagDiaryCount} 篇`,
+    `倒数日 ${value.countdownCount} 个`,
+    `收纳 ${value.inventoryItemCount} 件`,
+  ].join(" · ")
 })
 
 function errorMessage(error: unknown, fallback: string): string {
@@ -237,7 +249,7 @@ async function handleExportSqlite(): Promise<void> {
     const bytes = await exportSqliteBackup()
     const blob = new Blob([bytes], { type: "application/x-sqlite3" })
     uni.hideLoading()
-    await shareOrDownload(blob, `bookkeeping-${timestamp()}.sqlite`)
+    await shareOrDownload(blob, `all-tools-${timestamp()}.sqlite`)
     markExported()
     refreshExportStatus()
   } catch (error) {
@@ -254,7 +266,7 @@ async function handleExportJson(): Promise<void> {
     const text = JSON.stringify(payload, null, 2)
     const blob = new Blob([text], { type: "application/json;charset=utf-8" })
     uni.hideLoading()
-    await shareOrDownload(blob, `bookkeeping-${timestamp()}.json`)
+    await shareOrDownload(blob, `all-tools-${timestamp()}.json`)
     markExported()
     refreshExportStatus()
   } catch (error) {
@@ -280,7 +292,7 @@ async function importFile(file: File): Promise<void> {
   const name = (file.name || "").toLowerCase()
   const confirmed = await confirmModal(
     "导入备份",
-    "导入会整体替换当前的本机数据；备份中的倒数日和标签日记会一并恢复（旧 JSON 备份不含倒数日时保留现有倒数日）。建议先导出备份，确定继续吗？",
+    "导入会整体替换当前的本机数据；备份中的日记、标签日记、倒数日和收纳会一并恢复（旧备份缺少某个工具时会保留该工具的现有数据）。建议先导出备份，确定继续吗？",
     "导入",
   )
   if (!confirmed) return
@@ -518,10 +530,18 @@ async function handleClear(): Promise<void> {
   color: #ff4d4f;
 }
 
+.backup-contents {
+  display: block;
+  padding: 12rpx 4rpx 0;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: #646a73;
+}
+
 .backup-scope {
   display: block;
   padding: 16rpx 18rpx;
-  margin-top: 16rpx;
+  margin-top: 12rpx;
   font-size: 22rpx;
   line-height: 1.65;
   color: #ad6800;

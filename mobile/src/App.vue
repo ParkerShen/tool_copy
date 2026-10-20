@@ -16,6 +16,7 @@ import {
   snoozeBackup,
 } from "@/utils/backupReminder"
 import { registerServiceWorker } from "@/utils/serviceWorker"
+import { installOverscrollLock } from "@/utils/overscrollLock"
 // #endif
 
 const langStore = useLangStore()
@@ -94,15 +95,24 @@ function scheduleBackupReminder(): void {
     try {
       if (!isLocalDataMode || isBackupSnoozed()) return
       const stats = await getDatabaseStats()
-      if (stats.recordCount + stats.countdownCount <= 0) return
+      // 任意一个工具有数据就提醒，不能只看记账和倒数日
+      const hasAnyData =
+        stats.recordCount +
+          stats.countdownCount +
+          stats.inventoryItemCount +
+          stats.inventoryLocationCount +
+          stats.diaryCount +
+          stats.tagDiaryCount >
+        0
+      if (!hasAnyData) return
       const days = daysSinceLastExport()
       if (days !== null && days < BACKUP_INTERVAL_DAYS) return
       uni.showModal({
         title: "该备份了",
         content:
           days === null
-            ? "还没有导出过备份。数据只保存在这台手机上，建议现在导出一份 .sqlite 放到「文件」或 iCloud。"
-            : `已经 ${days} 天没有导出备份了。建议现在导出一份 .sqlite 放到「文件」或 iCloud。`,
+            ? "还没有导出过备份。记账、日记、标签日记、倒数日、收纳都只保存在这台手机上，建议现在导出一份 .sqlite 放到「文件」或 iCloud。"
+            : `已经 ${days} 天没有导出备份了。建议现在导出一份包含全部工具数据的 .sqlite 放到「文件」或 iCloud。`,
         confirmText: "去备份",
         cancelText: "稍后",
         success: (result) => {
@@ -133,6 +143,8 @@ onLaunch(() => {
   preloadLocalDb()
   // HTTPS 下注册 Service Worker，支持离线打开
   registerServiceWorker()
+  // 锁住 H5 顶部/底部回弹，避免 iOS 下拉、上推露出白边
+  installOverscrollLock()
   // 每周提醒导出一次真正离开手机本地的备份
   scheduleBackupReminder()
   // #endif
@@ -154,6 +166,35 @@ onHide(() => {
 @import "./styles/bookkeeping.scss";
 @import "./styles/countdown.scss";
 @import "./styles/inventory.scss";
+
+/* #ifdef H5 */
+/* 全局锁：禁止页面级回弹，回弹时露出的底色也不再是白色 */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;
+  background-color: #f0f0f2;
+}
+
+/* uni-app 运行时会再写一条 #app{background:#fff}，这里提高优先级压住 */
+#app {
+  background-color: #f0f0f2 !important;
+}
+
+/* 局部锁：滚动容器到顶/到底后不把滚动链传给页面 */
+uni-scroll-view,
+.uni-scroll-view,
+.uni-scroll-view-content,
+.overscroll-lock,
+[data-overscroll-lock="contain"] {
+  overscroll-behavior: contain;
+}
+
+.overscroll-lock-y {
+  overscroll-behavior-y: contain;
+}
+/* #endif */
 
 /* stylelint-disable selector-type-no-unknown */
 button::after {

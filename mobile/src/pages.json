@@ -115,7 +115,7 @@
       "layout": "default",
       "style": {
         "navigationBarTitleText": "统计",
-        "navigationBarBackgroundColor": "#FFFFFF",
+        "navigationBarBackgroundColor": "#FFD60A",
         "enablePullDownRefresh": true
       }
     },

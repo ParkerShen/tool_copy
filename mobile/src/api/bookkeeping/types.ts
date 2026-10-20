@@ -302,6 +302,12 @@ export interface LocalDatabaseStats {
   categoryCount: number
   customCategoryCount: number
   countdownCount: number
+  inventoryItemCount: number
+  inventoryLocationCount: number
+  /** 日记篇数（不含回收站） */
+  diaryCount: number
+  /** 标签日记已保存篇数 */
+  tagDiaryCount: number
   firstRecordDate: string | null
   lastRecordDate: string | null
   totalIncome: number

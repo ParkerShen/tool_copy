@@ -480,6 +480,7 @@ onPullDownRefresh(async () => {
   max-height: 88vh;
   padding: 26rpx 28rpx calc(24rpx + env(safe-area-inset-bottom));
   overflow-y: auto;
+  overscroll-behavior-y: contain;
   background: #fff;
   border-radius: 28rpx 28rpx 0 0;
   animation: sheet-up 0.18s ease-out;

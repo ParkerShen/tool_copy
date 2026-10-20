@@ -1,8 +1,8 @@
 /**
  * 金额工具：内部一律使用整数「分」（cents）计算，避免浮点误差。
  *
- * 页面上用户输入的金额最多两位小数；历史数据里可能存在负数（退款/冲正），
- * 迁移与统计时按原符号保留，新表单只允许正数。
+ * 页面上用户输入的金额最多两位小数；支出金额在入库与迁移时统一取正，
+ * 退款按收入记录，新表单只允许正数。
  */
 
 /** 单笔金额上限：99,999,999.99 元 */
@@ -135,7 +135,7 @@ export function formatCents(cents: number, options: FormatCentsOptions = {}): st
   return `${sign}${yuanText}.${String(fen).padStart(2, "0")}`
 }
 
-/** 列表展示：支出显示负号，收入显示正号；历史负支出会显示为正（退款） */
+/** 列表展示：支出显示负号，收入显示正号；兼容历史负数（会显示为正） */
 export function formatRecordAmount(cents: number, type: "income" | "expense"): string {
   const signed = type === "expense" ? -cents : cents
   return formatCents(signed, { sign: true })

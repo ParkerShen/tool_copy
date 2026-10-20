@@ -266,8 +266,12 @@ function sanitizeImportedEntry(raw: any): DiaryEntry | null {
   }
 }
 
-/** 导入备份，会整体替换当前日记数据 */
-export async function importDiaryData(payload: unknown): Promise<number> {
+/**
+ * 校验并规范化备份里的日记条目。
+ * 同时供日记页单独导入和「我的」统一备份使用；
+ * 支持 `{ entries }` 和纯数组两种旧格式。
+ */
+export function normalizeDiaryBackupEntries(payload: unknown): DiaryEntry[] {
   const source = Array.isArray(payload) ? payload : (payload as any)?.entries
   if (!Array.isArray(source)) throw new Error("备份文件格式不正确")
 
@@ -275,7 +279,12 @@ export async function importDiaryData(payload: unknown): Promise<number> {
     .map((item) => sanitizeImportedEntry(item))
     .filter((item): item is DiaryEntry => !!item)
   if (!entries.length && source.length > 0) throw new Error("备份文件中没有可导入的日记")
+  return entries
+}
 
+/** 导入备份，会整体替换当前日记数据 */
+export async function importDiaryData(payload: unknown): Promise<number> {
+  const entries = normalizeDiaryBackupEntries(payload)
   await replaceAllDiaryEntries(entries)
   return entries.length
 }

@@ -5,6 +5,12 @@
  */
 export const LAST_EXPORT_KEY = "local-bookkeeping.last-export-at"
 const SNOOZE_KEY = "local-bookkeeping.backup-snooze-until"
+/**
+ * 7 天提醒一次：
+ * - 本机每天已有自动快照，能兜住误删；
+ * - 导出需要手动存到「文件」/iCloud，太频繁会打扰；
+ * - 7 天也把「设备丢失/网站数据被清理」的最坏损失控制在一周内。
+ */
 export const BACKUP_INTERVAL_DAYS = 7
 
 export function getLastExportAt(): string | null {

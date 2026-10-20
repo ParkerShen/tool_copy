@@ -100,6 +100,10 @@ async function loadInventoryModule() {
   return bundleModule("src/api/inventory/sql.ts", resolve(cacheDir, "inventory-sql.mjs"))
 }
 
+async function loadDiaryModule() {
+  return bundleModule("src/api/diary/index.ts", resolve(cacheDir, "diary-index.mjs"))
+}
+
 function dateOffset(days) {
   const date = new Date()
   date.setDate(date.getDate() + days)
@@ -148,6 +152,7 @@ async function main() {
   const sql = await loadSqlModule()
   const countdown = await loadCountdownModules()
   const inventory = await loadInventoryModule()
+  const diary = await loadDiaryModule()
 
   const newDb = () => {
     const db = new SQL.Database()
@@ -468,6 +473,10 @@ async function main() {
     assertEqual(stats.netCents, 3000, "区间结余")
     assertEqual(stats.recordCount, 2, "区间记录数")
 
+    const dateRange = sql.getRecordDateRange(db)
+    assertEqual(dateRange.firstRecordDate, "2026-10-20", "最早记录日期")
+    assertEqual(dateRange.lastRecordDate, "2026-10-21", "最晚记录日期")
+
     const onlySecondDay = sql.getRangeStats(db, { start: "2026-10-21", end: "2026-10-21" })
     assertEqual(onlySecondDay.incomeCents, 0, "范围首尾均包含（无收入）")
     assertEqual(onlySecondDay.expenseCents, 2000, "范围首尾均包含（支出）")
@@ -565,7 +574,7 @@ async function main() {
 
   await test("JSON 备份包含账户、金额分、图片与标签", () => {
     const backup = sql.exportJson(db)
-    assertEqual(backup.schemaVersion, 4, "备份版本")
+    assertEqual(backup.schemaVersion, sql.SCHEMA_VERSION, "备份版本")
     assert(Array.isArray(backup.accounts), "备份应包含 accounts")
     assert(
       backup.accounts.some((account) => account.id === bank.id),
@@ -707,7 +716,7 @@ async function main() {
     )
     const stamp = "2025-01-05 10:00:00"
     insertRecord.run(["old-1", food.id, 12.34, "餐饮", "2026-01-05", stamp, stamp])
-    insertRecord.run(["old-2", food.id, -5.01, "退款", "2026-01-06", stamp, stamp])
+    insertRecord.run(["old-2", food.id, -5.01, "旧数据负数", "2026-01-06", stamp, stamp])
     insertRecord.free()
 
     const beforeColumns = sql.__internal.tableColumns(oldDb, "mini_bookkeeping_record")
@@ -721,28 +730,29 @@ async function main() {
     assert(afterColumns.has("account_id"), "迁移后新增 account_id")
     assert(afterColumns.has("images"), "迁移后新增 images")
     assert(afterColumns.has("tags"), "迁移后新增 tags")
-    assertEqual(sql.__internal.getUserVersion(oldDb), 4, "迁移后的 schema 版本")
+    assertEqual(sql.__internal.getUserVersion(oldDb), 5, "迁移后的 schema 版本")
 
     const oldRecord = sql.getRecord(oldDb, "old-1")
     assertEqual(oldRecord.amountCents, 1234, "旧记录金额回填为分")
     assertEqual(oldRecord.accountId, sql.DEFAULT_ACCOUNT_ID, "旧记录关联默认账户")
     assertEqual(oldRecord.images.length, 0, "旧记录图片为空数组")
     assertEqual(oldRecord.tags.length, 0, "旧记录标签为空数组")
-    assertEqual(sql.getRecord(oldDb, "old-2").amountCents, -501, "历史负金额保留")
-    assertEqual(sql.getRecord(oldDb, "old-2").amount, "-5.01", "历史负金额显示")
+    assertEqual(sql.getRecord(oldDb, "old-2").amountCents, 501, "负支出迁移为绝对值")
+    assertEqual(sql.getRecord(oldDb, "old-2").amount, "5.01", "负支出金额取正")
 
     assertEqual(sql.listAccounts(oldDb, true).length, 1, "迁移后默认账户")
     assertEqual(
       sql.getRangeStats(oldDb, { start: "2026-01-01", end: "2026-12-31" }).expenseCents,
-      733,
-      "迁移后统计（含负数冲减）",
+      1735,
+      "迁移后统计不再正负抵消",
     )
-    assertEqual(sql.getMonthlyStats(oldDb, "2026-01").expense, 7.33, "迁移后月度统计")
+    assertEqual(sql.getMonthlyStats(oldDb, "2026-01").expense, 17.35, "迁移后月度统计")
 
     // 幂等：再次初始化不应改变数据
     sql.initSchema(oldDb)
     sql.seedDefaults(oldDb)
     assertEqual(sql.getRecord(oldDb, "old-1").amountCents, 1234, "重复迁移金额不变")
+    assertEqual(sql.getRecord(oldDb, "old-2").amountCents, 501, "重复迁移不重复取绝对值")
     assertEqual(countRecords(oldDb), 2, "重复迁移记录数不变")
     oldDb.close()
   })
@@ -765,8 +775,8 @@ async function main() {
     })
 
     const legacyRecord = sql.getRecord(legacyDb, "legacy-record")
-    assertEqual(legacyRecord.amountCents, -501, "v1 JSON 金额推导为分")
-    assertEqual(legacyRecord.amount, "-5.01", "v1 JSON 金额保留")
+    assertEqual(legacyRecord.amountCents, 501, "v1 JSON 负支出导入取正")
+    assertEqual(legacyRecord.amount, "5.01", "v1 JSON 金额取正")
     assertEqual(legacyRecord.accountId, sql.DEFAULT_ACCOUNT_ID, "v1 JSON 补默认账户")
     assertEqual(sql.getAccountBalances(legacyDb, true).length, 1, "v1 JSON 导入后账户数")
     legacyDb.close()
@@ -1373,11 +1383,7 @@ async function main() {
       "客厅/电视柜/抽屉",
       "位置路径",
     )
-    assertThrows(
-      () => inventory.createLocation(invDb, { name: "客厅" }),
-      "同名",
-      "同层不允许重名",
-    )
+    assertThrows(() => inventory.createLocation(invDb, { name: "客厅" }), "同名", "同层不允许重名")
     assertThrows(
       () => inventory.moveLocation(invDb, room.id, drawer.id),
       "子位置",
@@ -1400,17 +1406,9 @@ async function main() {
 
     const item = inventory.createItem(invDb, { name: "遥控器", locationId: drawer.id })
     inventory.deleteLocation(invDb, cabinet.id)
-    assertEqual(
-      inventory.getLocation(invDb, drawer.id).parentId,
-      null,
-      "删除位置后子位置移到顶层",
-    )
+    assertEqual(inventory.getLocation(invDb, drawer.id).parentId, null, "删除位置后子位置移到顶层")
     inventory.deleteLocation(invDb, drawer.id)
-    assertEqual(
-      inventory.getItem(invDb, item.id).locationId,
-      null,
-      "删除位置后物品变为未指定",
-    )
+    assertEqual(inventory.getItem(invDb, item.id).locationId, null, "删除位置后物品变为未指定")
     invDb.close()
   })
 
@@ -1506,11 +1504,7 @@ async function main() {
     assertEqual(inventory.listItems(invDb, { keyword: "%" }).total, 1, "LIKE 通配符转义")
     assertEqual(inventory.listItems(invDb, { keyword: "不存在的物品" }).total, 0, "无结果")
 
-    assertEqual(
-      inventory.listItems(invDb, { locationId: room.id }).total,
-      2,
-      "位置筛选包含后代",
-    )
+    assertEqual(inventory.listItems(invDb, { locationId: room.id }).total, 2, "位置筛选包含后代")
     assertEqual(
       inventory.listItems(invDb, { locationId: room.id, includeArchived: true }).total,
       3,
@@ -1527,11 +1521,7 @@ async function main() {
     assertEqual(page.items[0].locationPath, "客厅 / 电视柜 / 抽屉", "列表位置路径")
     assertEqual(page.items[0].tags[0].name, "工具", "列表标签")
     assertEqual(page.items[0].thumbUrl, photo.thumbUrl, "列表缩略图")
-    assertEqual(
-      inventory.listItems(invDb).totalValueCents,
-      0,
-      "总价值（未填价格）",
-    )
+    assertEqual(inventory.listItems(invDb).totalValueCents, 0, "总价值（未填价格）")
     invDb.close()
   })
 
@@ -1589,7 +1579,7 @@ async function main() {
     inventory.createMaintenance(invDb, item.id, { name: "清灰", completedOn: "2026-01-01" })
 
     const payload = sql.exportJson(invDb)
-    assertEqual(payload.schemaVersion, 4, "备份版本为 4")
+    assertEqual(payload.schemaVersion, sql.SCHEMA_VERSION, "备份版本与当前 schema 一致")
     assertEqual(payload.inventory.items.length, 1, "JSON 包含物品")
     assertEqual(payload.inventory.items[0].photos.length, 1, "JSON 包含照片")
     assertEqual(payload.inventory.items[0].fields[0].value, "2000W", "JSON 包含自定义属性")
@@ -1615,11 +1605,7 @@ async function main() {
 
     const badPayload = sql.exportJson(target)
     badPayload.inventory.items[0].locationId = "missing-location"
-    assertThrows(
-      () => sql.importJson(target, badPayload),
-      "不存在的位置",
-      "非法收纳引用应拒绝",
-    )
+    assertThrows(() => sql.importJson(target, badPayload), "不存在的位置", "非法收纳引用应拒绝")
     assertEqual(inventory.listItems(target).total, 1, "失败后收纳数据不变")
 
     inventory.clearInventoryAll(target)
@@ -1628,6 +1614,47 @@ async function main() {
     assertEqual(sql.listCategories(target).length, 9, "清空收纳不影响记账分类")
     target.close()
     invDb.close()
+  })
+
+  await test("日记：统一备份校验与规范化", () => {
+    const normalized = diary.normalizeDiaryBackupEntries({
+      entries: [
+        {
+          id: "diary-1",
+          content: "今天很好",
+          date: "2026-10-20",
+          mood: "happy",
+          weather: "sunny",
+          tags: ["生活", "生活", " "],
+          images: ["data:image/png;base64,AA"],
+        },
+        { id: "diary-2", content: "坏日期", date: "not-a-date" },
+        { id: "diary-3", content: "回收站", date: "2026-10-19", deletedAt: 123 },
+      ],
+    })
+    assertEqual(normalized.length, 2, "过滤无效日期")
+    assertEqual(normalized[0].tags.length, 1, "标签去重并去掉空值")
+    assertEqual(normalized[0].mood, "happy", "保留合法心情")
+    assertEqual(normalized[0].images.length, 1, "保留图片 data URL")
+    assertEqual(normalized[1].deletedAt, 123, "保留回收站标记")
+
+    const arrayForm = diary.normalizeDiaryBackupEntries([
+      { id: "diary-4", content: "纯数组格式", date: "2026-10-18" },
+    ])
+    assertEqual(arrayForm.length, 1, "兼容纯数组旧格式")
+    assertEqual(arrayForm[0].mood, "neutral", "非法心情回退为 neutral")
+
+    assertEqual(diary.normalizeDiaryBackupEntries({ entries: [] }).length, 0, "空备份合法")
+    assertThrows(
+      () => diary.normalizeDiaryBackupEntries({ entries: "bad" }),
+      "格式不正确",
+      "非数组应拒绝",
+    )
+    assertThrows(
+      () => diary.normalizeDiaryBackupEntries([{ id: "bad", content: "x", date: "not-a-date" }]),
+      "没有可导入",
+      "全部无效应拒绝",
+    )
   })
 
   console.log("")

@@ -94,8 +94,8 @@
         </template>
 
         <text class="list-tip">
-          点账户 →「设为默认账户」，新建账单时会自动选中它。
-          余额按「期初 + 收入 − 支出」实时计算，删除记录后会自动更新。
+          点账户 →「设为默认账户」，新建账单时会自动选中它。 余额按「期初 + 收入 −
+          支出」实时计算，删除记录后会自动更新。
         </text>
       </template>
     </view>
@@ -644,6 +644,7 @@ onPullDownRefresh(async () => {
   max-height: 90vh;
   padding: 26rpx 28rpx calc(24rpx + env(safe-area-inset-bottom));
   overflow-y: auto;
+  overscroll-behavior-y: contain;
   background: #fff;
   border-radius: 28rpx 28rpx 0 0;
   animation: sheet-up 0.18s ease-out;

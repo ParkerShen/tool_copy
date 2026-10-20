@@ -154,6 +154,7 @@ const confirmAdd = () => {
   flex-direction: column;
   padding: 30rpx;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
   background-color: #fff;
   border-top-left-radius: 20rpx;
   border-top-right-radius: 20rpx;

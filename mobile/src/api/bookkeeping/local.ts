@@ -18,11 +18,15 @@ import {
 import * as sql from "./sql"
 import type { BackupPayload } from "./sql"
 import {
+  countSavedTagDiaries,
   isTagDiaryData,
   readTagDiaryData,
   writeTagDiaryData,
   type TagDiaryData,
 } from "@/utils/toolData"
+import { normalizeDiaryBackupEntries } from "@/api/diary"
+import { readAllDiaryEntries, replaceAllDiaryEntries } from "@/api/diary/storage"
+import type { DiaryEntry } from "@/api/diary/types"
 import type {
   Account,
   AccountBalance,
@@ -97,6 +101,13 @@ export function getRangeStats(
   accountId?: string,
 ): Promise<ApiResult<RangeStats>> {
   return read((db) => sql.getRangeStats(db, range, accountId))
+}
+
+/** 记账记录的最早/最晚日期（统计页年份 tab 据此确定起点） */
+export function getRecordDateRange(): Promise<
+  ApiResult<{ firstRecordDate: string | null; lastRecordDate: string | null }>
+> {
+  return read((db) => sql.getRecordDateRange(db))
 }
 
 /** 分类排行（返回分与占比） */
@@ -231,8 +242,21 @@ export async function getDatabaseStats(): Promise<LocalDatabaseStats> {
   const db = await getDb()
   const stats = sql.getStats(db)
   const bytes = db.export()
+
+  // 日记、标签日记不在 SQLite 里，需要单独统计
+  let diaryCount = 0
+  try {
+    const entries = await readAllDiaryEntries()
+    diaryCount = entries.filter((entry) => !entry.deletedAt).length
+  } catch (error) {
+    console.warn("[local] 统计日记数量失败:", error)
+  }
+  const tagDiaryCount = countSavedTagDiaries(readTagDiaryData())
+
   return {
     ...stats,
+    diaryCount,
+    tagDiaryCount,
     size: bytes.byteLength,
     memoryOnly: isMemoryOnly(),
   }
@@ -244,15 +268,28 @@ export function exportSqliteBackup(): Promise<Uint8Array> {
 }
 
 export type UnifiedBackupPayload = BackupPayload & {
-  tools?: { tagDiary?: TagDiaryData }
+  tools?: {
+    tagDiary?: TagDiaryData
+    diary?: DiaryEntry[]
+  }
 }
 
-/** 导出 JSON 备份：记账数据 + 标签日记（不含 API Key） */
+/** 导出 JSON 备份：记账、倒数日、收纳、日记、标签日记（不含 API Key） */
 export async function exportJsonBackup(): Promise<UnifiedBackupPayload> {
   const db = await getDb()
   const payload: UnifiedBackupPayload = sql.exportJson(db)
   const tagDiary = readTagDiaryData()
-  if (tagDiary) payload.tools = { tagDiary }
+  let diary: DiaryEntry[] | undefined
+  try {
+    diary = await readAllDiaryEntries()
+  } catch (error) {
+    console.warn("[local] 读取日记失败，JSON 备份暂不包含日记:", error)
+  }
+  if (tagDiary || diary) {
+    payload.tools = {}
+    if (tagDiary) payload.tools.tagDiary = tagDiary
+    if (diary) payload.tools.diary = diary
+  }
   return payload
 }
 
@@ -269,6 +306,21 @@ function extractTagDiary(payload: unknown): TagDiaryData | undefined {
   return tagDiary
 }
 
+/** 从统一 JSON 备份中取出日记；没有该字段时返回 undefined（保留现有日记） */
+function extractDiary(payload: unknown): DiaryEntry[] | undefined {
+  if (!payload || typeof payload !== "object") return undefined
+  const tools = (payload as { tools?: unknown }).tools
+  if (!tools || typeof tools !== "object") return undefined
+  const diary = (tools as { diary?: unknown }).diary
+  if (diary === undefined || diary === null) return undefined
+  try {
+    return normalizeDiaryBackupEntries(diary)
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "格式不正确"
+    throw new Error(`备份中的日记格式不正确：${reason}`)
+  }
+}
+
 /** 从 .sqlite 文件恢复 */
 export async function importSqliteBackup(bytes: Uint8Array): Promise<void> {
   try {
@@ -278,10 +330,11 @@ export async function importSqliteBackup(bytes: Uint8Array): Promise<void> {
   }
 }
 
-/** 从 JSON 备份恢复：先校验标签日记，再整体替换记账数据 */
+/** 从 JSON 备份恢复：先校验工具数据，再整体替换记账数据 */
 export async function importJsonBackup(payload: unknown): Promise<void> {
   try {
     const tagDiary = extractTagDiary(payload)
+    const diary = extractDiary(payload)
     try {
       await createSnapshot("safety")
     } catch (error) {
@@ -294,6 +347,14 @@ export async function importJsonBackup(payload: unknown): Promise<void> {
       } catch (error) {
         const reason = error instanceof Error ? error.message : "未知错误"
         throw new Error(`记账数据已恢复，但标签日记恢复失败：${reason}`)
+      }
+    }
+    if (diary !== undefined) {
+      try {
+        await replaceAllDiaryEntries(diary)
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : "未知错误"
+        throw new Error(`记账数据已恢复，但日记恢复失败：${reason}`)
       }
     }
   } catch (error) {

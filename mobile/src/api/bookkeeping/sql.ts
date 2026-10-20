@@ -10,6 +10,10 @@
  * - record 增加 amount_cents（整数分，统计以此为准）、account_id；
  * - record 增加 images（图片 data URL 数组）与 tags（标签数组）；
  * - 保留 amount REAL，写入时双写，保证旧代码/旧备份仍可读。
+ *
+ * schema v5：
+ * - 支出金额统一存正数。旧导入数据沿用了来源应用的负数约定，
+ *   会导致年度合计正负抵消、分类排行倒序、账户余额反向增长。
  */
 import type { Database, SqlValue } from "sql.js"
 import { MAX_AMOUNT_CENTS, centsToAmount, decimalToCents, roundAmountToCents } from "./money"
@@ -30,7 +34,7 @@ import {
 import type { InventoryBackup } from "../inventory/types"
 import { generateId } from "../../utils/id"
 
-export const SCHEMA_VERSION = 4
+export const SCHEMA_VERSION = 5
 
 /** 单条记录最多保存的图片数量 */
 export const MAX_RECORD_IMAGES = 3
@@ -680,6 +684,22 @@ function backfillRecordCents(db: Database): void {
 }
 
 /**
+ * 支出金额统一取正。
+ *
+ * 来源应用（随手记/银行流水等）用负数表示支出，早期导入时原样保留，
+ * 结果同一年里一半月份是负数：总支出被正负抵消、分类排行按带符号的
+ * 合计排序（花得最多的反而排最后）、账户余额因为「减去负数」反向增长。
+ * 本地模型约定支出金额一律为正、退款按收入记录，所以这里做一次幂等修复。
+ */
+function normalizeExpenseSigns(db: Database): void {
+  db.run(
+    `UPDATE mini_bookkeeping_record
+        SET amount_cents = ABS(amount_cents), amount = ABS(amount)
+      WHERE type = 'expense' AND (amount_cents < 0 OR amount < 0)`,
+  )
+}
+
+/**
  * schema v2 迁移：只加列、不删列，可重复执行。
  * 不依赖 user_version 判断是否缺列——导入的旧库版本号可能不可信。
  */
@@ -704,13 +724,12 @@ export function migrateSchema(db: Database): void {
     // 已迁移过：顺手修复异常行与未关联账户的记录，保证幂等
     seedDefaultAccount(db)
     backfillRecordCents(db)
+    normalizeExpenseSigns(db)
     db.run(
       "UPDATE mini_bookkeeping_record SET account_id = ? WHERE account_id IS NULL OR account_id = ''",
       [DEFAULT_ACCOUNT_ID],
     )
-    db.run(
-      "UPDATE mini_bookkeeping_record SET images = '[]' WHERE images IS NULL OR images = ''",
-    )
+    db.run("UPDATE mini_bookkeeping_record SET images = '[]' WHERE images IS NULL OR images = ''")
     db.run("UPDATE mini_bookkeeping_record SET tags = '[]' WHERE tags IS NULL OR tags = ''")
     return
   }
@@ -734,14 +753,13 @@ export function migrateSchema(db: Database): void {
 
     seedDefaultAccount(db)
     backfillRecordCents(db)
+    normalizeExpenseSigns(db)
 
     db.run(
       "UPDATE mini_bookkeeping_record SET account_id = ? WHERE account_id IS NULL OR account_id = ''",
       [DEFAULT_ACCOUNT_ID],
     )
-    db.run(
-      "UPDATE mini_bookkeeping_record SET images = '[]' WHERE images IS NULL OR images = ''",
-    )
+    db.run("UPDATE mini_bookkeeping_record SET images = '[]' WHERE images IS NULL OR images = ''")
     db.run("UPDATE mini_bookkeeping_record SET tags = '[]' WHERE tags IS NULL OR tags = ''")
     db.run("CREATE INDEX IF NOT EXISTS idx_record_account ON mini_bookkeeping_record(account_id)")
     db.run(
@@ -1428,7 +1446,9 @@ export function createRecord(db: Database, input: CreateRecordInput): RecordRow 
   if (type !== category.type) throw new Error("分类与收支类型不匹配")
   assertDate(input.recordDate)
 
-  const amountCents = normalizeAmountCents(input.amount)
+  const rawCents = normalizeAmountCents(input.amount)
+  // 支出金额一律存正；导入的旧数据可能是负数
+  const amountCents = type === "expense" ? Math.abs(rawCents) : rawCents
 
   const accountId = input.accountId ? String(input.accountId) : DEFAULT_ACCOUNT_ID
   const account = getAccountById(db, accountId)
@@ -1508,7 +1528,9 @@ export function updateRecord(
   }
 
   if (patch.amount !== undefined) {
-    const cents = normalizeAmountCents(patch.amount)
+    const rawCents = normalizeAmountCents(patch.amount)
+    // 支出金额一律存正；导入的旧数据可能是负数
+    const cents = nextType === "expense" ? Math.abs(rawCents) : rawCents
     sets.push("amount = ?")
     params.push(centsToAmount(cents))
     sets.push("amount_cents = ?")
@@ -1745,6 +1767,21 @@ export function listTags(db: Database, limit = 200): TagUsage[] {
     .slice(0, Math.max(0, limit))
 }
 
+/** 记账记录的最早/最晚日期（统计页据此确定年份 tab 的起点） */
+export function getRecordDateRange(db: Database): {
+  firstRecordDate: string | null
+  lastRecordDate: string | null
+} {
+  const row = queryOne(
+    db,
+    "SELECT MIN(record_date) AS first_date, MAX(record_date) AS last_date FROM mini_bookkeeping_record",
+  )
+  return {
+    firstRecordDate: row?.first_date ? asString(row.first_date) : null,
+    lastRecordDate: row?.last_date ? asString(row.last_date) : null,
+  }
+}
+
 /** 数据库概览（记录数、分类数、日期范围、累计收支） */
 export function getStats(db: Database): DatabaseStats {
   initCountdownSchema(db)
@@ -1928,9 +1965,7 @@ function validateBackup(payload: unknown): BackupPayload {
   }
 
   const countdownEvents =
-    data.countdownEvents === undefined
-      ? undefined
-      : validateCountdownBackup(data.countdownEvents)
+    data.countdownEvents === undefined ? undefined : validateCountdownBackup(data.countdownEvents)
   const inventory =
     data.inventory === undefined ? undefined : validateInventoryBackup(data.inventory)
 
@@ -2016,10 +2051,12 @@ export function importJson(db: Database, payload: unknown): void {
     `)
     try {
       for (const record of data.records) {
-        const cents =
+        const rawCents =
           record.amountCents !== undefined
             ? Math.trunc(Number(record.amountCents))
             : roundAmountToCents(Number(record.amount))
+        // 旧备份可能把支出存成负数（来源应用的符号约定），导入时统一取正
+        const cents = record.type === "expense" ? Math.abs(rawCents) : rawCents
         const accountId =
           record.accountId && accountIds.has(String(record.accountId))
             ? String(record.accountId)

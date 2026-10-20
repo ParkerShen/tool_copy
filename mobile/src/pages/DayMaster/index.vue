@@ -1200,6 +1200,7 @@ $dm-blue-dark: #0a6fb8;
   height: 100%;
   padding: calc(env(safe-area-inset-top) + 56rpx) 22rpx 40rpx;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
   background: linear-gradient(180deg, #6f4b2e 0%, #5a3b24 55%, #4a2f1c 100%);
   animation: dm-drawer-in 0.22s ease-out;
 }
